@@ -31,7 +31,6 @@
     'FindBufferGetXSaveL'.
     These are similar to 'FindBuffer', but as said, they set up user flags
     instead of the internal flag set.
-    This is the normal case.
 
     Exiting needs to be matched with the variant of FindBuffer used. The
     exit routines depend a lot on the flag set that is active.
@@ -54,8 +53,18 @@ KeyEntry:     .macro  fun
               .endm
 
 ;;; Create a FAT entry with an appropriate label.
+;;; The purpose of this label is to allow us to refer to the entry point,
+;;; which is used for accessing the instruction (few uses) and setting
+;;; up the keyboard layout (many uses).
+;;; The first header entry doubles as the prefix to literals in programs,
+;;; which is handled automatically. However, there are a few places in the
+;;; code that hardcodes this XROM code without using the corresponding label
+;;; and XROM number, we simply assume it will be A4-00 in a few places.
+;;; If the XROM number or another entry point than 0 is used, some few
+;;; changes are also needed in the code.
+
 FAT:          .macro  entry
-LFE(entry):   .fat    \entry
+LFE(entry):   .fat    `\entry`
               .endm
 
 ;;; Define key code symbol for a function.
@@ -86,7 +95,7 @@ FatStart:
               FAT     WINDOW
               FAT     CLIX          ; clear IX
               FAT     ENTERI        ; ENTER^ on integer stack
-              FAT     LASTIX
+              FAT     LASTXI
               FAT     SWAPI
               FAT     RDNI
               FAT     RUPI
@@ -111,6 +120,9 @@ FatStart:
               FAT     DMUL
               FAT     DDIV
               FAT     DRMD
+              FAT     B?
+              FAT     CB
+              FAT     SB
 FatEnd:       .con    0,0
 
               .section Code
@@ -219,8 +231,7 @@ Header:       ?s13=1                ; running?
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
               rtn nc                ; no, do nothing
-10$:          rxq     FindBufferUserFlags
-              rxq     LiftStackS11
+10$:          rxq     FindBufferUserFlags_LiftStackS11
               rxq     fetchLiteral
               regn=c  X
               gosub   PUTPCA        ; we already have chip 0 selected
@@ -246,7 +257,6 @@ ClearDigitEntry:
               nop
               cstex
               st=0    IF_DigitEntry
-;              st=0    IF_Message
               cstex
               pt=     8
               lc      0             ; clear window display
@@ -344,13 +354,13 @@ KeyHandler:   nop                   ; ignore back arrow entry (deal with it as a
               c=c-1   xs            ; a local XROM function?
               goc     KeyH20        ; yes
               c=c-1   xs            ; numeric entry key?
-              goc     numEntryJ4    ; yes
+              goc     numEntry      ; yes
               m=c                   ; no, same function as normal keyboard
               c=c-1   xs
               gonc    ShiftUser     ; does not clear digit entry
               rxq     ClearDigitEntry
 PARS56_M:     c=m                   ;  restore keycode
-PARS56_1:     golong  PARS56
+              golong  PARS56
 
 ShiftUser:    rxq     chkbuf
               goto    PARS56_M      ; (P+1)
@@ -378,16 +388,102 @@ KeyH20:       cmex                  ; handle XROM code in C[1:0]
               c=a+c   x
               golong  RAK70
 
-numEntryJ4:   goto    numEntryJ3    ; relay
+;;; Handle numeric entry
+numEntry:     pt=     0
+              g=c                   ; save digit number in G
+              rxq     FindBuffer    ; buffer address to B[12:10]
+              c=st                  ; restore C[1:0]
+              acex    x             ; base - 1 to A[0]
+              pt=     0             ; get digit to C[2:0]
+              c=0     x             ; C.XS= 0
+              dadd=c                ; select chip 0
+              c=g
+              c=c-1   xs            ; test for backspace
+              c=c+1   x
+              goc     backSpaceJ1   ; backspace
+              c=c-1   x             ; restore digit
+              c=0     xs
+              ?a<c    pt            ; digit out of range?
+              goc     digAbort      ; yes, blink and return via reset keyboard
+              c=regn  14            ; are we in program mode?
+              rcr     -2
+              c=c+c   xs
+              gonc    runMode       ; no
+              st=1    Flag_PRGM
+              rxq     prgmDigent    ; yes
+              goto    dig35         ; (P+1) start digit entry
+              goto    dig40         ; (P+2) ongoing digit entry
+
+KeyCLIXJ1:    goto    KeyCLIX       ; relay
+backSpaceJ1:  goto    backSpace     ; relay
+
+runMode:      st=0    Flag_PRGM
+              ?st=1   IF_DigitEntry ; start digit entry?
+              goc     dig37         ; no
+              rxq     LiftStackS11  ; check if we should lift stack
+
+;;; Start entry with 0, clear digit cache
+dig35:        b=0     x             ; Load X (0)
+              c=0
+              goto    dig40
+
+digAbort:     gosub   BLINK         ; not accepted key, blink
+              ?st=1   IF_DigitEntry
+              goc     kbDoneJ1
+              golong  NFRKB
+
+;;; Ongoing digit entry, load X
+dig37:        rxq     LoadX         ; load X to B.X-A
+              c=regn  X
+
+dig40:        acex                  ; A= load part of X
+              ?s1=1                 ; dispatch on base
+              goc     hexoct        ; hex or octal
+              ?s3=1
+              goc     decDigit      ; decimal
+              goto    binDigit      ; binary
+
+hexoct:       ?s3=1
+              goc     hexDigit      ; hex
+              goto    octDigit      ; octal
+
+decDigit:     rxq     Mul10         ; prepare for a new decimal digit
+              goto    dig50
+
+KeyCLIXJ2:    goto    KeyCLIXJ1     ; relay
+
+hexDigit:     acex    s             ; prepare for a new hex digit
+              bcex    x
+              rcr     -1
+              bcex    x
+              asl
+              goto    dig50
+
+octDigit:     rxq     Shift1
+              rxq     Shift1
+binDigit:     rxq     Shift1
+
+;;; Having made room for the new digit, add digit
+dig50:        c=0
+              pt=     0
+              c=g                   ; get digit
+              a=a+c                 ; add digit to X
+              gonc    44$
+              bcex    x
+              c=c+1   x
+              bcex    x
+
+44$:          rxq     AcceptAndSave ; Check if value is accepted, save it
+              goto    digAbort      ; too big, blink and return
+              st=1    IF_DigitEntry
+kbDoneJ1:     goto    kbDone
 
 ;;; Backspace is pressed, we have four cases.
 ;;; 1. In program mode, delete the current instruction
 ;;; 2. If showing a message, cancel it by showing the integer X register instead.
 ;;; 3. If entering digits, rub out one (do CLIX if deleting to 0)
 ;;; 4. Perform CLIX
-backSpace:    c=0     x
-              dadd=c
-              c=regn  14
+backSpace:    c=regn  14
               rcr     -2
               c=c+c   xs            ; program mode?
               gonc    10$           ; no
@@ -404,39 +500,50 @@ backSpace:    c=0     x
               c=st
               regn=c  14
               ldi     11            ; program mode delete
-              goto    PARS56_1
+              golong  PARS56
 
 10$:          st=0    Flag_PRGM
               ?st=1   IF_DigitEntry ; doing digit entry
               goc     NumBSP
               ?st=1   IF_Message    ; showing a message?
-KeyCLIXJ1:    gonc    KeyCLIX       ; no, do CLIX
-              rxq     DisplayXB10   ; show the underlaying X contents
-              golong  NFRKB         ; return via reset keyboard
+KeyCLIXJ3:    gonc    KeyCLIXJ2     ; no, do CLIX
 
-numEntryJ3:   goto    numEntryJ2    ; relay
-backSpaceJ1:  goto    backSpace     ; relay
+kbDone:       ?st=1   Flag_PRGM
+              goc     10$
+              rxq     DisplayXB10
+5$:           ?s12=1                ; key released?
+              golnc   NFRKB         ; no, return via reset keyboard
+              s12=0                 ; clear s12 again, return without resetting
+              golong  NFRC          ;  keyboard
+10$:          rxq     DisplayPrgmLiteralDE
+              goto    5$
 
-;;; Back space doing hexadecimal input
-hexBSP:       asr                   ; delete hex digit
-              c=b     x
-              rcr     1
-              acex    s
-              c=0     xs
-              bcex    x
-              goto    dig10
+;;; Back space used, not 0, as the number is smaller than before (we deleted
+;;; a character), we can just save it without doing any range checking.
+bspNot0:      ?st=1   Flag_PRGM
+              goc     10$
+              rxq     SaveUpperPart
+              c=0
+              dadd=c
+              acex
+              regn=c  X
+              goto    kbDone
+10$:          rxq     saveLiteral
+              goto    kbDone
 
-              ;; Back arrow
+KeyCLIXJ4:    goto    KeyCLIXJ3     ; relay
+
+;;; Back arrow in digit entry
 NumBSP:       rxq     LoadX
               c=regn  X
-NumBSP10:     acex                  ; load current number to B.X:A
+NumBSP10:     acex                  ; B.X:A= current number being entered
               ?s1=1
               gonc    5$
               ?s3=1
               goc     hexBSP        ; hex
               goto    octBSP        ; oct
 5$:           ?s3=1
-              goc     decBSPJ1      ; dec
+              goc     decBSP        ; dec
 
               c=b                   ; bin, start with upper part
               c=c+c
@@ -466,21 +573,29 @@ NumBSP10:     acex                  ; load current number to B.X:A
               acex
 
 dig10:        ?a#0                  ; zero result?
-              goc     bspNoDecJ2    ; no
+              goc     bspNot0       ; no
               ?b#0    x
-              goc     bspNoDecJ2    ; no
+              goc     bspNot0       ; no
 
               ;; Back arrow down to nothing left
 dig20:        ?st=1   Flag_PRGM     ; in program mode?
-              goc     dig25
+              goc     dig25         ; yes
               s11=0                 ; clear push flag in case user NULL the CLIX !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-              goto    KeyCLIXJ1
+              goto    KeyCLIXJ4
 
-numEntryJ2:   goto    numEntryJ1    ; relay
-backSpaceJ2:  goto    backSpaceJ1   ; relay
-decBSPJ1:     goto    decBSP
+;;; Back space doing hexadecimal input
+hexBSP:       asr                   ; delete hex digit
+              c=b     x
+              rcr     1
+              acex    s
+              c=0     xs
+              bcex    x
+              goto    dig10
+
+decBSP:       rxq     Div10
+              goto    dig10
 
 ;;; Back space doing octal input
 octBSP:       c=b     x             ; oct, upper part
@@ -512,212 +627,6 @@ dig25:        rxq     ClearDigitEntry ; clear digit entry flags
               gosub   DELLIN
               gosub   PUTPC
               golong  ERR120        ; back up and show previous program line
-
-backSpaceJ3:  goto    backSpaceJ2   ; relay
-numEntryJ1:   goto    numEntry      ; relay
-bspNoDecJ2:   goto    bspNoDecJ1    ; relay
-
-;;; Back space doing decimal input. This is done in a slight different
-;;; as taking out the last digit is somewhat more complicated compared
-;;; to the other bases. This is done in backSpace10 which reconstructs
-;;; the number from the remaining cached digits.
-decBSP:       rxq     backSpaceLCD
-              goto    dig20         ; (P+1) zero result
-              rxq     backSpace10   ; (P+2) adjust number
-              s1=0                  ; set by backSpace10, restore it
-dig30:        rxq     saveInternalFlags
-              gosub   LDSST0
-              s5=1                  ; set message flag
-              c=st
-              regn=c  14
-              ?s3=1                 ; are we in program mode?
-              goc     kbDoneJ1      ; yes, done
-              rcr     12            ; bring up user flags
-              st=c
-              rxq     SetXFlags     ; no, set flags according to X
-              goto    kbDoneJ1      ; return
-
-;;; Handle numeric entry
-numEntry:     pt=     0
-              g=c                   ; save digit number in G
-              rxq     FindBuffer    ; buffer address to B[12:10]
-              c=st                  ; restore C[1:0]
-              acex    x             ; base - 1 to A[0]
-              pt=     0             ; get digit to C[2:0]
-              c=g
-              c=0     xs            ; test for backspace
-              c=c-1   xs
-              c=c+1   x
-              goc     backSpaceJ3   ; backspace
-              c=c-1   x             ; restore digit
-              c=0     xs
-
-              ;; Select chip 0. We know C.X is hex F or less.
-              ;; (This is needed when we start a new digit entry and push
-              ;; flag is not set.)
-              dadd=c
-              ?a<c    pt            ; digit out of range?
-              goc     digAbort      ; yes, blink and return via reset keyboard
-              c=regn  14            ; are we in program mode?
-              rcr     -2
-              c=c+c   xs
-              gonc    runMode       ; no
-              rxq     prgmDigent    ; yes
-              goto    dig35         ; (P+1) start digit entry
-              goto    dig40         ; (P+2) ongoing digit entry
-
-kbDoneJ1:     goto    kbDone        ; relay
-bspNoDecJ1:   goto    bspNoDec      ; relay
-
-runMode:      st=0    Flag_PRGM
-              ?st=1   IF_DigitEntry ; start digit entry?
-              goc     dig37         ; no
-              rxq     LiftStackS11  ; check if we should lift stack
-
-              ;; Start entry with 0, clear digit cache
-dig35:        b=0     x             ; Load X (0)
-              c=regn  8             ; clear decimal digits cache
-              rcr     8
-              c=0     x
-              rcr     3
-              c=0     x
-              rcr     3
-              regn=c  8
-              c=0
-              regn=c  9
-              goto    dig40
-dig37:        rxq     LoadX         ; load X to B.X-A
-              c=regn  X
-dig40:        acex                  ; A= load part of X
-              ?s1=1                 ; dispatch on base
-              goc     37$           ; hex or octal
-              ?s3=1
-              goc     decDigit      ; decimal
-              goto    binDigit      ; binary
-37$:          ?s3=1
-              goc     hexDigit      ; hex
-              goto    octDigit      ; octal
-
-digAbort:     gosub   BLINK         ; not accepted key, blink
-kbDone:       rxq     TakeOverKeyboard
-              golong  NFRKB         ; return via reset keyboard
-
-
-decDigit:     rxq     Mul10         ; prepare for a new decimal digit
-              goto    dig50
-
-hexDigit:     acex    s             ; prepare for a new hex digit
-              bcex    x
-              rcr     -1
-              bcex    x
-              asl
-              goto    dig50
-
-              ;; Back space used, not doing decimal
-bspNoDec:     rxq     saveInternalFlags
-              ?st=1   Flag_PRGM
-              goc     10$
-              rxq     SaveX
-              goto    20$
-10$:          rxq     saveLiteral
-20$:          rxq     backSpaceLCD
-              goto    kbDone        ; (P+1) assume we never use this, as we
-                                    ;       have already testedfor 0 before
-                                    ;       coming here, still we need to
-                                    ;       occupy this space
-              goto    kbDone        ; (P+2)
-
-octDigit:     rxq     Shift1
-              rxq     Shift1
-binDigit:     rxq     Shift1
-dig50:        c=0
-              pt=     0
-              c=g                   ; get digit
-              a=a+c                 ; add digit to X
-              gonc    44$
-              bcex    x
-              c=c+1   x
-              bcex    x
-
-44$:          rxq     AcceptAndSave ; Check if value is accepted, save it
-              goto    digAbort      ; too big, blink and return
-
-              gosub   ENCP00
-              pt=     0
-              c=g                   ; get new digit
-              rcr     1
-              bcex    s             ; B.S= new digit
-              c=regn  8             ; digits, upper part
-              rcr     -6
-              a=c
-              c=regn  9             ; digits, lower part
-              a=c     s             ; nibble move between registers
-              c=b     s             ;    //
-              rcr     -1
-              regn=c  9             ; done with low part
-              c=regn  8             ; put together high part
-              acex
-              rcr     5
-              pt=     7
-              acex    wpt
-              regn=c  8
-
-              s8=0                  ; assume no digits outside
-              c=0     wpt           ; test if we have digits outside display
-              ?c#0
-              goc     46$           ; yes
-              c=regn  9             ; check lower part
-              pt=     7
-              c=0     wpt
-              ?c#0
-              gonc    48$           ; zero outside
-46$:          s8=1                  ; digits outside
-
-48$:          gosub   ENLCD
-              ?st=1   IF_DigitEntry
-              gonc    55$
-              ldi     0x20          ; load a blank
-              srsabc                ; push in blank to drop base character
-              c=c-1   x
-              acex    x             ; A.X = underscore
-              pt=     1
-50$:          frsabc                ; loop to shift off underscore
-              ?a#c    wpt
-              goc     50$
-              goto    60$
-
-55$:          st=1    IF_DigitEntry ; new digit entry
-
-60$:          pt=     0
-              c=g
-              acex    x
-              rxq     digitChar     ; convert digit to character
-              slsabc                ; to LCD
-              ldi     0x1f          ; with underscore
-              slsabc
-              c=c+1   x             ; two spaces after underscore
-              slsabc
-              slsabc
-              slsabc
-              gosub   LEFTJ         ; left justify
-              acex    x             ; get the space
-              ?st=1   Flag_PRGM
-              goc     65$
-              frsabc                ; rotate right
-65$:          frsabc
-              ?s8=1                 ; digits outside?
-              gonc    66$           ; no
-              frsabc                ; yes, set a dot
-              cstex
-              s6=1
-              cstex
-              slsabc
-66$:          rxq     baseChar
-              slsabc
-              gosub   ENCP00        ; disable LCD
-              st=1    IF_DigitEntry ; remember we are in digit entry
-
-              rgo     dig30         ; save flags, X and return
 
 
 ;;; **********************************************************************
@@ -807,17 +716,6 @@ fetchLiteralA:
               rtn
 
 
-digitChar:    pt=     0
-              ldi     10
-              ?a<c    pt
-              gonc    10$
-              ldi     '0'           ; 0-9
-              goto    20$
-10$:          ldi     ('A' - 10) & 15 ; A-F
-20$:          c=a+c   pt
-              rtn
-
-
 baseChar:     ?s1=1
               goc     1$            ; oct or hex
               ?s3=1
@@ -833,75 +731,6 @@ baseChar:     ?s1=1
               rtn
 2$:           ldi     'B' - 0x40
               rtn
-
-saveInternalFlags:
-              c=b
-              rcr     10
-              dadd=c
-              c=data
-              c=st                  ; get internal flags
-              data=c                ; save them
-              rtn
-
-
-backSpaceLCD: c=regn  9             ; digits, lower part
-              csr                   ; right shift lower part
-              a=c
-              c=regn  8             ; digits, upper part
-              rcr     -5
-              a=c     s             ; move over digit from upper to lower
-              rcr     6             ; right shift upper part
-              c=0     s
-              regn=c  8
-              rcr     8             ; test for zero
-              pt=     5
-              b=0     x             ; assume return zero
-              ?c#0    wpt
-              goc     10$           ; not zero
-              ?a#0
-              rtn nc                ; zero
-
-10$:          bcex    wpt           ; B[5:0] = upper part
-              c=stk                 ; return to (P+2)
-              c=c+1   m
-              stk=c
-              acex
-              regn=c  9             ; write back lower part
-              ?b#0    wpt           ; zero upper part?
-              gonc    12$           ; yes
-              c=0     s             ; no, collapse that to pos 13
-              c=c+1   s
-12$:          n=c                   ; N= lower digits to be displayed
-              gosub   CLLCDE
-              c=c-1   x             ; underscore
-              srsabc
-              ldi     7             ; digit loop counter
-              rcr     1             ; C[13]= loop counter
-              a=c                   ; A[13]= loop counter
-              c=n
-
-20$:          a=c     x             ; loop to put digits in LCD
-              rcr     1
-              c=0     s
-              n=c
-              rxq     digitChar
-              srsabc
-              c=n
-              ?c#0
-              gonc    21$
-              a=a-1   s
-              gonc    20$
-
-21$:          pt=     12            ; set G[1] if we have digits outside
-              ?c#0
-              gonc    22$
-              c=c-1   s
-22$:          g=c
-
-              a=0     x             ; compensate line number by -1
-              a=a-1   x
-
-              frsabc                ; rotate right
 
 lineAndBaseLCD:
               ?st=1   Flag_PRGM     ; in program mode?
@@ -980,64 +809,6 @@ lineAndBaseLCD:
               golong  ENCP00
 
 
-backSpace10:  c=0                   ; clear real X
-              regn=c  X
-              b=0     x
-              c=regn  8             ; calculate the new value for X
-              n=c
-              rcr     8             ; do we need to do upper part?
-              pt=     5
-              ?c#0    wpt
-              gonc    30$           ; no
-              pt=     6
-              rxq     50$
-30$:          c=regn  9
-              n=c
-              pt=     0
-
-50$:          c=regn  X
-              a=c
-              c=n
-52$:          regn=c  X
-              ?s1=1
-              gonc    53$
-              rxq     Mul10
-53$:          c=regn  X
-              c=0     m
-              c=0     x
-              rcr     -1
-              ?c#0    x
-              gonc    54$
-              s1=1                  ; seen a non-zero digit
-54$:          a=a+c
-              gonc    55$
-              bcex    x
-              c=c+1   x
-              bcex
-55$:          c=regn  X
-              rcr     -1
-              dec pt
-              ?pt=    0
-              gonc    52$
-
-;;; Just save X
-SaveX:        c=b
-              rcr     10
-              c=c+1   x
-              dadd=c                ; select trailer register
-              c=data
-              rcr     2
-              bcex    x
-              bcex    xs
-              rcr     -2
-              data=c
-              c=0
-              dadd=c
-              acex
-              regn=c  X
-              rtn
-
-
 ;;; **********************************************************************
 ;;;
 ;;; PutX - Put back final X, update user flags accordingly
@@ -1051,6 +822,9 @@ SaveX:        c=b
 ;;;     M - carry word
 ;;;
 ;;; **********************************************************************
+
+PutXnoFlags:  rxq     MaskAndSave
+              goto    ExitUserST
 
 PutXDropCY_0: c=0
               c=b     x
@@ -1079,11 +853,12 @@ PutXDrop:     c=b                   ; select upper part register
               c=c+1   x
               dadd=c
               c=data                ; drop stack, upper part
-              rcr     4
-              pt=     5
-              csr     wpt
-              csr     wpt
-              rcr     -4
+              pt=     8
+              g=c
+              pt= 6
+              cgex
+              pt= 4
+              c=g
               data=c
               c=0     x
               dadd=c                ; select chip 0
@@ -1096,7 +871,7 @@ PutXDrop:     c=b                   ; select upper part register
               regn=c  Z             ; Z = T
 
 PutX:         rxq     MaskAndSave
-
+              rxq     SetXFlags
 ;;; Normal exit with loaded and modified user flags in ST.
 ;;; In most cases you exit via PutX or one of its friends.
 ExitUserST:   c=0
@@ -1106,6 +881,9 @@ ExitUserST:   c=0
               c=st                  ; write out user flags
               rcr     -12
               regn=c  14
+              c=b
+              rcr     10
+              goto    ExitNoUserST1
 
 ;;; Exit and show display of X register in integer mode if
 ;;; appropriate. This will give a steadier display as it sets
@@ -1115,7 +893,7 @@ ExitUserST:   c=0
 ;;; will temporarily show the float X before the I/O poll routine
 ;;; kicks in and changes it. Going out here give a steadier result.
 ;;;
-;;; Assume header address is in A.X and header is selected
+;;; Assume header address is in A.X
 ExitNoUserST: acex
 ExitNoUserST1:
               dadd=c
@@ -1131,15 +909,11 @@ ExitNoUserST1:
               goc     1$            ; yes, no display of X
               ?s7=1                 ; alpha mode?
               goc     1$            ; yes, no display of X
-              s5=1                  ; Set message flag to get stable display
-              cstex                 ;   of integer X
-              regn=c  14            ; write back SS0
               acex    x             ; select buffer header, for DisplayX
               dadd=c
               acex    x
               rxq     DisplayX      ; default display of integer X register
 1$:           golong  NFRC
-
 
 
 ;;; ************************************************************
@@ -1468,7 +1242,8 @@ FindBufferGetXSaveL0:
 
               s11=1                 ; set push flag (enable stack lift)
 
-              acex                  ; load hi(X) to B[2:0]
+              c=b                   ; load hi(X) to B[2:0]
+              rcr     10
               c=c+1   x
               dadd=c
               c=data
@@ -1520,7 +1295,7 @@ getSigns:     c=regn  X
               c=regn  Y
               a=c
               c=n
-              rcr     6             ; C[1:0]= upper Y
+              rcr     4             ; C[1:0]= upper Y
               bcex    x             ; B[1:0]= upper Y
               rxq     getSign
               a=c     s             ; A.S= sign(Y)
@@ -1535,6 +1310,12 @@ getSigns:     c=regn  X
 ;;;      A.S - 0 if bit is in lower part
 ;;;            1 if bit is in upper part
 ;;; USES: A,C
+;;;
+;;; bitMask_G - alternative entry that takes the bit number from G
+bitMask_G:    pt=     0
+              c=0     x
+              c=g
+              a=c
 bitMask:      ldi 64
               ?a<c    x
               gonc    50$           ; out of range
@@ -1564,6 +1345,40 @@ bitMask:      ldi 64
               rtn
 
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; MaskAndSave - finalize result in X by masking it, update zero/sign
+;;;               flags depending on value in X, and finally save the
+;;;               upper part to buffer
+;;;
+;;; In: B[12:10] - buffer header address
+;;;     X - lower part of X
+;;;     B[1:0] - upper part of X
+;;;     M - carry word
+;;;     ST - user flags
+;;;     chip 0 - selected
+;;;
+;;; Out: ST - updated user flags (sign and zero)
+;;;
+;;; ----------------------------------------------------------------------
+
+MaskAndSave:  rxq     MaskX
+
+SaveUpperPart:
+              ;; save upper part
+              c=b                   ; get buffer header address
+              rcr     10
+              c=c+1   x
+              dadd=c                ; select trailer register
+              c=data                ; write upper part of X to
+              rcr     2             ;  buffer
+              pt=     1
+              c=b     wpt
+              rcr     -2
+              data=c
+              rtn
+
+
 ;;; New value in B[2:0] and A
 AcceptAndSave:
               c=m                   ; make mask of bits outside word
@@ -1585,10 +1400,9 @@ AcceptAndSave:
               goc     saveLiteral   ; yes
               acex
               regn=c  X             ; write to X
-              rxq     SaveUpperPart
-              ?st=1   IF_DigitEntry ; first digit?
-              golnc   CLLCDE        ; yes
-              rtn
+              ?st=1   Flag_UpperHalf
+              rtn nc
+              goto    SaveUpperPart
 1$:           abex                  ; mask in upper part
               c=c&a
               abex
@@ -1615,11 +1429,7 @@ AcceptAndSave:
 saveLiteral:  acex
               n=c                   ; save lower part of number
 
-              ?st=1   IF_DigitEntry ; first digit?
-              goc     1$            ; no
-              rxq     lineNumber    ; put up line number
-
-1$:           rxq     NXBYTP        ; inspect program memory
+              rxq     NXBYTP        ; inspect program memory
               rcr     -1
               c=c+1   xs            ; is it a text wrapper?
               gonc    4$            ; no
@@ -1699,20 +1509,6 @@ saveLiteral:  acex
               goto    12$
 
 
-;;; This attempts to show the current line number. To do this properly,
-;;; one should call LINNUM, but it has the potential of busting basically
-;;; everything an we cannot afford that, so we just use the current line
-;;; number and assume that will be good enough in basically all scenarios
-;;; we are going to encounter when we enter an integer literal.
-lineNumber:   c=regn  15
-              a=c     x
-              gosub   CLLCDE
-              a=0     s
-              gosub   GENNUM        ; OUTPUT LINE #
-              flsabc                ; rotate a space around
-              golong ENCP00
-
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Load X register to B.X and X.
@@ -1747,10 +1543,9 @@ LoadX:        c=b
 MaskX:        ?st=1   Flag_UpperHalf ; is carry in upper part?
               gonc    1$            ; no
 
-              abex    x             ; high bits to A[2:0]
               c=m                   ; get carry
               c=c-1                 ; make it a mask
-              .suppress             ; suppress warning
+              abex    x             ; high bits to A[2:0]
               c=c&a                 ; mask upper bits
               bcex    x             ; save in B[2:0]
               rtn
@@ -1765,40 +1560,29 @@ MaskX:        ?st=1   Flag_UpperHalf ; is carry in upper part?
               rtn
 
 
-;;; ----------------------------------------------------------------------
-;;;
-;;; MaskAndSave - finalize result in X by masking it, update zero/sign
-;;;               flags depending on value in X, and finally save the
-;;;               upper part to buffer
-;;;
-;;; In: B[12:10] - buffer header address
-;;;     X - lower part of X
-;;;     B[1:0] - upper part of X
-;;;     M - carry word
-;;;     ST - user flags
-;;;     chip 0 - selected
-;;;
-;;; Out: A.X - buffer header address, for calling DisplayX afterwards
-;;;      ST - updated user flags
-;;;
-;;; ----------------------------------------------------------------------
+;;; Load low part of Y to A, mask as needed
+LoadMaskYLo:  c=regn  Y
+              a=c
+              c=m
+              c=c-1
+              ?st=1   Flag_UpperHalf
+              rtn c
+              c=c&a
+              a=c
+              rtn
 
-MaskAndSave:  rxq     MaskX
-              rxq     SetXFlags
-
-SaveUpperPart:
-              ;; save upper part
-              c=b                   ; get buffer header address
-              rcr     10
-              a=c     x             ; A[2:0] - header address
-              c=c+1   x
-              dadd=c                ; select trailer register
-              c=data                ; write upper part of X to
-              rcr     2             ;  buffer
-              bcex    x
-              bcex    xs
-              rcr     -2
-              data=c
+;;; Load high part of Y to A.X, mask as needed
+LoadMaskYHi:  a=0     x
+              ?st=1   Flag_UpperHalf
+              rtn nc
+              c=n
+              rcr     4
+              a=c
+              c=m
+              c=c-1   x
+              .suppress
+              c=c&a
+              a=c
               rtn
 
 
@@ -1821,6 +1605,8 @@ SaveUpperPart:
 
 SetXFlags:    st=0    Flag_Zero     ; clear flags we will update
 
+              c=0     x
+              dadd=c
               ?b#0    x             ; check for zero result
               goc     SetSignFlag   ; non-zero
               c=regn  X
@@ -1970,18 +1756,15 @@ ADD_2:        bcex    s             ; B.S= ADD/SUB flag
               st=1    Flag_56       ; check overflow later
               bcex    s             ; save flag to check against
 
-5$:           c=regn  X
-              a=c
-              c=regn  Y
+5$:           rxq     LoadMaskYLo
+              c=regn  X
               c=c+a
               gonc    10$           ; no carry
               bcex    x             ; carry to upper part
               c=c+1   x
               bcex    x
 10$:          regn=c  X             ; save lower part
-              c=n                   ; deal with upper part
-              rcr     4
-              acex    x
+              rxq     LoadMaskYHi   ; deal with upper part
               a=a+b   x
               abex    x
 
@@ -2004,16 +1787,13 @@ ADD_2:        bcex    s             ; B.S= ADD/SUB flag
 ;;; **********************************************************************
 
               .name   "CLIX"
-CLIX:         rxq     FindBuffer
-              st=0    IF_DigitEntry
-              cstex
-              data=c
+CLIX:         rxq     FindBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
               b=0     x
               s11=0                 ; disable stack lift
-putx_CLIX:    rgo    PutX
+              rgo     PutXnoFlags
 
 
 ;;; **********************************************************************
@@ -2026,7 +1806,7 @@ putx_CLIX:    rgo    PutX
 ABSI:         rxq     FindBufferGetXSaveL
               st=0    Flag_Overflow
               ?st=1   Flag_2
-              goc     putx_CLIX
+              goc     PutX_J0
               goto    NEG10
 
 
@@ -2057,7 +1837,7 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 
               ?st=1   Flag_UpperHalf
               gonc    10$
-              abex    x
+              a=b    x
 10$:          c=m
               c=c-1
               nop
@@ -2066,9 +1846,9 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
               a=c
               c=m
               ?a#c                  ; same as carry mask?
-              goc     putx_CLIX     ; no, did not overflow
+              goc     PutX_J0       ; no, did not overflow
               st=1    Flag_Overflow ; yes, overflow
-              goto    putx_CLIX
+              goto    PutX_J0
 
 
 ;;; **********************************************************************
@@ -2085,20 +1865,100 @@ NOT:          rxq     FindBufferGetXSaveL
               c=regn  X
               c=-c-1
               regn=c  X
-              goto    putx_CLIX
+PutX_J0:      rgo     PutX
 
 
 ;;; **********************************************************************
 ;;;
-;;; LASTIX - Recall L register.
+;;; SB - Set a bit.
 ;;;
 ;;; **********************************************************************
 
-              .name   "LASTIX"
-LASTIX:       rxq     FindBufferUserFlags
-              st=0    IF_DigitEntry
-              cstex
-              rxq     LiftStackS11
+              .name   "SB"
+SB:           nop
+              nop
+              rxq     Argument
+              .con    Operand00
+              c=0     s
+SB10:         bcex    s
+              rxq     FindBufferGetXSaveL
+              rxq     bitMask_G
+              ?b#0    s
+              gonc    10$
+              c=-c-1                ; CB - invert mask
+10$:          acex                  ; A= mask
+              ?c#0    s             ; bit affects upper part?
+              goc     20$           ; yes
+              c=regn  X
+              ?b#0    s             ; SB?
+              goc     15$           ; no
+              c=c|a                 ; yes
+              goto    17$
+15$:          c=c&a
+17$:          regn=c  X
+19$:          goto    PutX_J0
+
+20$:          bcex    x
+              ?b#0    s             ; SB?
+              goc     25$           ; no
+              c=c|a                 ; yes
+              goto    30$
+25$:          c=c&a
+30$:          bcex    x
+              goto    PutX_J0
+
+
+;;; **********************************************************************
+;;;
+;;; CB - Clear a bit.
+;;;
+;;; **********************************************************************
+
+              .name   "CB"
+CB:           nop
+              nop
+              rxq     Argument
+              .con    Operand00
+              c=0     s
+              c=c+1   s
+              goto    SB10
+
+
+;;; **********************************************************************
+;;;
+;;; B? - Test a bit.
+;;;
+;;; **********************************************************************
+
+              .name   "B?"
+`B?`:         nop
+              nop
+              rxq     Argument
+              .con    Operand00
+              rxq     FindBufferUserFlags
+              rxq     LoadX
+              rxq     bitMask_G
+              acex                  ; A= mask
+              ?c#0    s             ; bit in upper part?
+              goc     10$           ; yes
+              c=regn  X
+5$:           c=c&a
+              ?c#0
+              golc    NOSKP
+              golong  SKP
+10$:          c=b     x
+              goto    5$
+
+
+
+;;; **********************************************************************
+;;;
+;;; LASTXI - Recall L register.
+;;;
+;;; **********************************************************************
+
+              .name   "LASTXI"
+LASTXI:       rxq     FindBufferUserFlags_LiftStackS11
               c=b
               rcr     10
               c=c+1   x
@@ -2106,7 +1966,6 @@ LASTIX:       rxq     FindBufferUserFlags
               c=data
 
               bcex    x             ; B.X= upper part
-              b=0     xs
 
               c=0     x
               dadd=c                ; select chip 0
@@ -2140,16 +1999,16 @@ SWAPI:        rxq     FindBufferUserFlags
 
               pt=     0
               c=g
-              bcex                  ; B.X= X upper part
+              bcex    x             ; B.X= X upper part
 
               c=regn  Y
-              acex
+              a=c
               c=regn  X
               regn=c  Y
               acex
 SWAPIExit:    regn=c  X
 PutX11:       s11=1
-              rgo     PutX
+              rgo     PutXnoFlags
 
 
 ;;; **********************************************************************
@@ -2589,13 +2448,27 @@ RightShift:   ?b#0    m             ; 00 operand?
 
 Flag_LocalZeroFill: .equ   Flag_UpperHalf
 
-              ;; Entry point to show program literal
-              ;; IN: B.X-N - literal
-DisplayLiteral:
-              st=1    Flag_PRGM
+;;; Entry point to show program literal from digit entry. In this
+;;; case we want to fetch the literal from program memory (as we
+;;; lost it when writing it), as well as saving internal flags.
+;;; IN: B.X-N - literal
+DisplayPrgmLiteralDE:
+              rxq fetchLiteral
+              c=b
+              rcr     10
+              dadd=c
+              c=data
+              c=st
+              data=c
+              goto DisPRGM10
+
+;;; Entry point to show program literal from poll vector
+;;; IN: B.X-N - literal
+DisplayPrgmLiteral:
               c=m
               dadd=c                ; select buffer header
               c=data
+DisPRGM10:    st=1    Flag_PRGM
               pt=     7             ; set word size
               lc      4
               lc      0
@@ -2605,36 +2478,36 @@ DisplayLiteral:
               dadd=c
               goto    Display2
 
+;;; Entry point with buffer address in B[12:10] and a need to save internal
+;;; flags. This is used by digit entry in run mode.
 DisplayXB10:  c=b
               rcr     10
               dadd=c
               a=c     x
+              c=data
+              goto    Dis10
+
 DisplayX:     c=data                ; get buffer header
               st=c                  ; bring up internal flags
-              st=0    IF_Message
+Dis10:        st=0    IF_Message
               c=st
               data=c
               n=c                   ; save header in N
               rxq     CarryToM      ; get carry mask
               rxq     LoadX         ; load and mask X
               st=0    Flag_PRGM
-              st=0    Flag_LocalZeroFill
-              c=regn  14            ; move user zero-fill flag to
-              rcr     12            ;  local flag (outside low ST)
-              st=c
-              ?st=1   Flag_ZeroFill
-              gonc    10$
-              st=1    Flag_LocalZeroFill
-10$:          rxq     SetXFlags     ; set zero/sign flags to match X
-              c=regn  14            ; write back user flags
-              rcr     12
-              c=st
-              rcr     -12
-              regn=c  14
 
-              c=n                   ; bring up internal flags
-              st=c
-
+;;; During digit entry, check for a key up after about 0.1 seconds (here),
+;;; and handle key release by setting S12 (to be reset when digit entry
+;;; acknowledge it) and digit entry will leave without resetting the key
+;;; to allow for two rapid key presses.
+              ?st=1   IF_DigitEntry
+              gonc    12$
+              rst kb
+              chk kb
+              goc     12$           ; key still down
+              s12=1                 ; say key went up
+12$:
               c=regn  X
               a=c
 
@@ -2643,22 +2516,25 @@ Display2:     c=n                   ; check window#
               pt=     9
               lc      0
               g=c                   ; save in G[0] for '.' around base char
-              rcr     -5
-              ?c#0    s
-              gonc    17$           ; window 0
 
-              ?s1=1
-              goc     18$           ; hex or oct
+              ?s1=1                 ; check for decimal, it is done differently
+              goc     22$           ; hex or oct
               ?s3=1
               goc     100$          ; decimal
+22$:
+              rcr     -5
+              c=0     m             ; C.M= # digits outside window to the right / 2
+              ?c#0    s
+              gonc    1$            ; window 0
 
 18$:          c=c-1   s
-              goc     17$
+              goc     1$
               pt=     1
               abex    wpt
               b=0     x
               acex
               rcr     2
+              a=a+1   m
               ?s1=1
               goc     168$
                                     ; bin, window in 8 bits
@@ -2672,20 +2548,42 @@ Display2:     c=n                   ; check window#
               pt=     3             ; oct
               c=0     wpt
               rcr     4
-              goto    19$
+              goto    169$
 
 16$:          pt=     5
               c=0     wpt
               rcr     6
+              a=a+1   m
+169$:         a=a+1   m
+              a=a+1   m
               goto    19$
 
+1$:           pt=     1             ; adjust remaining word size for window
+              rcr     3
+              c=c+c   x             ; scale it up
+              c=c+c   x
+              c=c+c   x
+              acex
+              cnex
+              rcr     6             ; C[1:0]= word size
+              acex    wpt
+              c=a-c   wpt
+              gonc    11$
+              c=0     wpt           ; used up all quota
+11$:          rcr     -6
+              cnex                  ; write back updated word size
+              acex                  ; restore A
 
-17$:          ?s3=1                 ; hex or dec?
-              gonc    1$            ; yes
-              ?s1=1
-              gonc    100$          ; decimal
+              st=0    Flag_LocalZeroFill
+              c=regn  14            ; move user zero-fill flag to
+              rcr     12            ;  local flag (outside low ST)
+              cstex
+              ?st=1   Flag_ZeroFill
+              gonc    2$
+              st=1    Flag_LocalZeroFill
+2$:           cstex                 ; bring up internal flags
 
-1$:           gosub   CLLCDE
+              gosub   CLLCDE
               pt=     8             ; assume hex
               ?s3=1
               goc     20$
@@ -2725,16 +2623,25 @@ Display2:     c=n                   ; check window#
               a=c     x             ; A.X= bits per digit
               c=n
               rcr     6             ; C[1:0]= word size
+              pt=     0
               c=0     xs
               c=c-1   x
+              goc     29$           ; window outside limit
               acex    x
-              pt=     0
 28$:          inc pt
               ?pt=    8
               goc     29$           ; not more than 8 characters
               a=a-c   x
               gonc    28$
 29$:          abex    x             ; restore A
+
+              ?st=1   IF_DigitEntry
+              gonc    31$
+              ldi     0x1f          ; show we are in digit entry mode
+              srsabc
+
+31$:          ?pt=    0             ; show digits?
+              goc     61$           ; no, just an empty base
 
 ;;; Do next character. Extract the bits and right shift A depending on
 ;;; base to prepare it for next character
@@ -2750,7 +2657,7 @@ Display2:     c=n                   ; check window#
 40$:          rcr     1             ; C[7:0]= number >> base
               bcex    wpt           ; move the relevant bits to B
               c=0     x
-              rcr     -1            ; C.X= bits for this digit,
+              rcr     -1            ; C.X= bits for this digit
 42$:          c=c+c                 ; align it to C[1]
               gonc    42$
               csr     x             ; and finally in C.X
@@ -2776,6 +2683,9 @@ Display2:     c=n                   ; check window#
               gonc    38$
               goto    40$           ; hex
 
+10$:          rxq     Div10LCD      ; decimal
+              goto    61$
+
 50$:          ?st=1   Flag_LocalZeroFill
               gonc    60$           ; no zero fill
               ldi     '0'
@@ -2789,12 +2699,7 @@ Display2:     c=n                   ; check window#
 ;;; Done with characters, not put in base
 61$:          a=0     x             ; no line# compensation
               rxq     lineAndBaseLCD
-              goto    90$
-
-10$:          rxq     Div10LCD      ; decimal
-              goto    61$
-
-90$:          gosub   LDSST0        ; Set message flag to prevent the normal float
+              gosub   LDSST0        ; Set message flag to prevent the normal float
               s5=1                  ; display of X from corrupting what we really want
               c=st                  ; to see.
               regn=c  14
@@ -2970,6 +2875,8 @@ ENTERI:       rxq     FindBuffer
 ;;;
 ;;; ----------------------------------------------------------------------
 
+FindBufferUserFlags_LiftStackS11:
+              rxq     FindBufferUserFlags
 LiftStackS11: ?s11=1                ; push flag?
               goc     LiftStack     ; yes
               s11=1                 ; no, set it and do not lift stack
@@ -3061,7 +2968,7 @@ WINDOW:       nop
 
 #if  0
               .name   "PWINDOW"
-PWINDOW:       nop
+PWINDOW:      nop
               nop
               rxq     Argument
               .con    Operand00
@@ -3328,7 +3235,7 @@ MulCommon:    rxq     FindBufferGetXSaveL
               bcex                  ; C= result[27:14]
 
               ?st=1   Flag_DoubleMul ; doing "DMUL"?
-              goc     900$          ; yes, never gives carry
+              goc     90$           ; yes, never gives carry
 
               ;; Next line is needed, Flag_DoubleMul is the same flag, and we
               ;; borrow it, now set it as we leave with stack lift enabled.
@@ -3370,6 +3277,7 @@ MulCommon:    rxq     FindBufferGetXSaveL
               ?a#c    s             ; correct result sign?
               gonc    70$           ; yes
               st=1    Flag_Overflow ; no, overflowed
+#if 0
                                     ; set correct sign
               c=b
               rcr     10
@@ -3412,6 +3320,7 @@ MulCommon:    rxq     FindBufferGetXSaveL
 125$:         c=b     x             ; get upper part
               c=c|a                 ; set sign
 71$:          bcex    x             ; put back
+#endif
 
 70$:          ?st=1   Flag_UpperHalf
               goc     75$
@@ -3831,7 +3740,6 @@ DIVCommon:    rcr     2
 ;;;
 ;;; ----------------------------------------------------------------------
 
-
 getSign:      ?st=1   Flag_UpperHalf
               goc     50$
               acex                  ; sign in lower part
@@ -3848,7 +3756,7 @@ getSign:      ?st=1   Flag_UpperHalf
               cmex                  ; M= carry mask (restored)
               acex                  ; A= low part
               rtn
-19$:          ?a#0                  ; word size 56 ?
+19$:          ?a#0                  ; word size 56?
               goc     8$            ; no
 20$:          c=0     s             ; negative, C.S= F
               c=c+1   s
@@ -3899,8 +3807,9 @@ Argument:     ?s13=1                ; running?
 3$:           rxq     NXBYTP        ; examine argument byte
               b=a                   ; save address
               a=c     x             ; save operand byte
+              st=0    IF_Argument   ; argument not known yet
 
-;;; Entry point for executing from keyboard, in which case JF_Argument
+;;; Entry point for executing from keyboard, in which case IF_Argument
 ;;; must be set and the argument is in A[1:0]
 50$:          c=0     s             ; flag for register/numeric argument
               c=stk
@@ -4134,8 +4043,6 @@ pollio:       ?s3=1                 ; program mode?
               ?s5=1                 ; message flag?
               goc     TakeOver      ; yes, do not touch the display
               rxq     DisplayX      ; show integer display
-              gosub   ANNOUT        ; ensure annunciators are up to date,
-                                    ;   DisplayX may update sign/zero flags
               goto    ReconstructReturnRomCheck
 
 romrtn:       gosub   LDSST0
@@ -4340,7 +4247,7 @@ prgm:         ?s12=1                ; private?
               c=n                   ; get buffer address
               m=c
               rxq     fetchLiteralA ; fetch the literal
-              rxq     DisplayLiteral
+              rxq     DisplayPrgmLiteral
               goto    900$
 
 
@@ -4387,8 +4294,8 @@ prgm:         ?s12=1                ; private?
               .con    0x20f         ; ASN
               .con    0             ; right half of enter key
               .con    0x2a8         ; SF
-              .con    0             ; 4
-              KeyEntry AND        ; 1  (FIX key)
+              KeyEntry SB           ; 4
+              KeyEntry AND          ; 1  (FIX key)
               KeyEntry FLOAT        ; 0
 
               ;; Logical column 2
@@ -4407,9 +4314,9 @@ prgm:         ?s12=1                ; private?
               .con    0x2cf         ; LBL
               KeyEntry NOT          ; CHS
               .con    0x2a9         ; CF
-              .con    0             ; 5
+              KeyEntry CB           ; 5
               KeyEntry OR           ; 2
-              KeyEntry LASTIX       ; decimal point (LastX)
+              KeyEntry LASTXI       ; decimal point (LastX)
 
               ;; Logical column 3
               .con    0x10d         ; LOG   (D digit)
@@ -4427,7 +4334,7 @@ prgm:         ?s12=1                ; private?
               .con    0x2d0         ; GTO
               .con    0x285         ; EEX
               .con    0x2ac         ; FS?
-              KeyEntry XOR          ; 6
+              KeyEntry B?           ; 6
               KeyEntry XOR          ; 3
               KeyEntry WSIZE        ; R/S
 
@@ -4495,49 +4402,179 @@ Mul10:        gosub   GSB256        ; Shift1   *2
               abex    x
               rtn
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; Div10 - divide by 10 using shifts.
+;;;
+;;; Algorithm (from Hacker's Delight):
+;;; http://www.hackersdelight.org/divcMore.pdf
+;;;
+;;; unsigned divu10(unsigned n) {
+;;;   unsigned q, r;
+;;;   q = (n >> 1) + (n >> 2);
+;;;   q = q + (q >> 4);
+;;;   q = q + (q >> 8);
+;;;   q = q + (q >> 16);
+;;;   q = q + (q >> 32);
+;;;   q = q >> 3;
+;;;   r = n - q*10;
+;;;   return q + ((r + 6) >> 4);
+;;; }
+;;;
+;;; ----------------------------------------------------------------------
 
-Sum2:         .macro
+Div10:        acex                  ; save n in P[9:8]:Q
+              regn=c  Q
               acex
-              c=c+c
+              c=regn  P
+              rcr     8
+              c=b     x
+              rcr     -8
+              regn=c  P
+
+              gosub   GSB256        ; Shift1
+              gosub   GSB256        ; Shift1
               acex
-              c=c+c
-              gonc    1$
-              a=a+1
-1$:
-              .endm
+              n=c                   ; C.X : N = n << 2
+              acex
+              c=b     x
+              rcr     -3
+              stk=c
+              gosub   GSB256        ; Shift1
+                                    ; B.X : A = n << 3
+              c=stk
+              rcr     3
+              bcex    x
+              rcr     1
+              c=0     xs
+              bcex    x
+              asr
+              a=c     s             ; B.X : A = n >> 1
 
-              .section Code
-              .align  256
-accBCD:       cnex                  ; N= digit to add
-              acex                  ; A= upper part
-              cmex                  ; M= old A, C= low part
+              rcr     1             ; C.X= upper part of (n >> 2)
+              abex    x             ; A.X = upper part of (n >> 1)
+              a=a+c   x
+              abex    x             ; B.X= upper parts ((n >> 1) + (n >> 2))
 
-              setdec
-              Sum2                  ; Sum * 16
-              Sum2
-              Sum2
-              Sum2
+              bcex    s             ; B.S= nibble that goes between
+              c=n
+              csr
+              c=b     s             ; C= low part of (n >> 2)
 
-              acex                  ; A= low part
-              cnex                  ; save N, get digit
+              a=a+c                 ; B.X - A = (n >> 1) + (n >> 2)
+              gonc    5$
+              bcex    x
+              c=c+1   x
+              bcex    x
 
-              c=0     x
-              c=0     m
-              rcr     -1
-              c=c+1                 ; BCD convert digit
-              c=c-1
+5$:           c=b     x             ; q = q + (q >> 4);
+              rcr     1
+              c=0     xs
+              abex    x
+              a=a+c   x             ; add upper parts
+              abex    x
 
-              c=a+c                 ; add to sum
+              bcex    s
+              c=a
+              csr
+              bcex    s
+              a=a+c                 ; add lower parts
+              gonc    10$
+              bcex    x
+              c=c+1   x             ; carry to upper part
+              bcex    x
+
+10$:          c=a                   ; q = q + (q >> 8);
+              pt=     1
+              c=b     wpt
+              rcr     2
+              a=a+c
+              gonc    15$
+              bcex    x
+              c=c+1   x
+              bcex    x
+
+15$:          c=a                   ; q = q + (q >> 16);
+              c=b     wpt
+              rcr     2
+              csr
+              csr
+              a=a+c
               gonc    20$
-              cnex
-              c=c+1
-              cnex
-20$:          cmex
+              bcex    x
+              c=c+1   x
+              bcex    x
+
+20$:          c=a                   ; q = q + (q >> 32);
+              c=b     wpt
+              rcr     2
+              pt=     5
+              c=0     wpt
+              rcr     6
+              a=a+c
+              gonc    22$
+              bcex    x
+              c=c+1   x
+              bcex    x
+
+22$:          gosub   GSB256        ; (Shift1)   q = q >> 3;
+              bcex    x
+              rcr     1
+              c=0     xs
+              pt=     0
+              g=c                   ; G= upper(q)
+              bcex    x
+              asr
+              a=c     s
+
+              acex                  ; save q in G:M
+              m=c                   ;  (upper part was one just above)
               acex
-              sethex
+
+              rxq     Mul10         ; q * 10
+              c=regn  P
+              rcr     8
+              abex    x
+              acex    x
+              a=a-c   x             ; r = n - q*10 (upper part)
+              abex    x
+              c=regn  Q
+              acex
+              a=a-c                 ; r = n - q*10 (lower part)
+              gonc    25$
+              bcex    x             ; borrow
+              c=c-1   x
+              bcex    x
+
+25$:          c=0                   ; r + 6
+              ldi     6
+              a=a+c
+              gonc    30$
+              bcex    x
+              c=c+1   x
+              bcex    x
+
+30$:          bcex    x             ; ((r + 6) >> 4)
+              rcr     1
+              c=0     xs
+              bcex    x
+              asr
+              a=c     s
+
+              c=g                   ; q + ((r + 6) >> 4)
+              abex    x
+              a=a+c   x
+              abex    x
+              c=m
+              a=a+c
+              rtn nc
+              bcex    x
+              c=c+1   x
+              bcex    x
               rtn
 
 
+              .section Code
 Div10LCD:     c=regn  14
               rcr     12
               cstex
@@ -4571,106 +4608,214 @@ Div10LCD:     c=regn  14
               abex
               acex
               c=-c                  ; negate lower part
-              goto    4$
+              goc     4$            ; often carry set
+              goto    4$            ;  .. but not always
 
 6$:           cstex                 ; restore flags
-7$:           c=0
-              m=c
-              n=c
-              ?b#0    x
-              gonc    30$
-              c=b
+7$:           b=0     xs            ; clear flag for digits above
+              pt=     2             ; inspect window
+              c=g
+              acex
+              setdec
+              ?a#0    xs            ; window set?
+              goc     500$          ; yes
+
+;;; No window set, as we only need the lowest part of the result we can keep working in
+;;; a single output register.
+              pt=     0             ; assume we only do lower part (14 digits)
+              ?b#0    x             ; zero upper digits?
+              gonc    8$            ; yes
+              m=c                   ; no, M= lower digits
+              c=b     x             ; get upper digits
               rcr     2
-              gosub   GSB256        ; accBCD
-              c=b
-              rcr     1
-              gosub   GSB256        ; accBCD
-8$:           pt=     0
-10$:          acex    s
-              asl
-              gosub   GSB256        ; accBCD
+              pt=     2
+              s3=     0             ; remember we are doing upper part
+
+8$:           ?c#0                  ; everything zero?
+              gonc    12$           ; yes
+
+1$:           ?c#0    s             ; left align
+              goc     9$
+              rcr     -1
               dec pt
+              goto    1$
+
+9$:           n=c
+              c=0
+
+10$:          c=c+c                 ; Sum * 16
+              c=c+c
+              c=c+c
+              c=c+c
+              a=c
+              c=n
+              rcr     -1
+              cnex
+              c=0     x
+              c=0     m
+              rcr     -1
+              c=c+1                 ; BCD convert
+              c=c-1
+              c=a+c
+              gonc    11$
+              bcex    xs            ; set flag that we dropped bits
+              c=0     xs
+              c=c+1   xs
+              bcex
+11$:          dec pt
               ?pt=    0
               gonc    10$
 
-              gosub   CLLCDE
-
-              c=n
-              bcex                  ; B= high part
+              ?s3=1                 ; done with lower digits?
+              goc     12$           ; yes
+              s3=1                  ; no, do lower digits
+              cmex
+              n=c                   ; N= lower digits
               c=m
-              a=c                   ; A= low part
-              c=st                  ; save ST in G
-              cgex                  ; handle window
-              st=c
-              rcr     1
-
-15$:          c=c-1   s
-              goc     16$
-              m=c                   ; save counter
-              acex                  ; right shift 9 digits
-              pt=     8
-              c=0     wpt
-              rcr     9             ; low part
-              acex
-              c=b
-              rcr     -5            ; upper part
-              c=c|a                 ; combine
-              acex
-              b=0                   ; clear upper part
-              c=m                   ; load counter again
-              goto    15$
-
-30$:          pt=     8             ; test lower 32 bits
-              c=0
-              lc      1
-              c=c-1
-              nop
-              c=c&a
-              ?a#c                  ; values > 32 bits?
-              goc     8$            ; yes, do all 14 digits
-              pt=     8             ; no, settle for 8 digits
-              acex
-              rcr     -6            ; left align A
-              acex
               goto    10$
 
+500$:         goto    50$           ; relay
 
-16$:          ?b#0                  ; check for digit above window
-              goc     18$           ; yes
-              b=a
-              pt=     8
-              b=0     wpt
-              ?b#0
-              gonc    19$           ; no
+12$:          sethex
+              a=c                   ; result digits in A
+              pt=     7
+              c=0     wpt           ; clear digits area
+              ?c#0                  ; something set outside?
+              gonc    14$           ; no
+              bcex    xs            ; set flag for digits above
+              c=c+1   xs
+              bcex    xs
 
-18$:          s7=1                  ; set flag for digits above
+14$:          gosub   CLLCDE
 
-19$:          pt=     0
-              lc      8             ; show 9 (8+1) digits
+              ?st=1   IF_DigitEntry
+              gonc    150$
+              ldi     0x1f          ; show underscore if in digit entry
+              srsabc
+
+              rst kb
+              chk kb
+              goc     150$          ; key still down
+              s12=1                 ; say key went up
+              goto    150$
+
+;;; Window set, we have to use 2 registers here which makes a bit slower,
+;;; but the good news is that this is only used when asking for another
+;;; window explicitly, not when doing digit entry.
+50$:          bcex                  ; B= lower part of binary number
+                                    ; C[1:0] = upper part of binary number
+              rcr     2
+              pt=     2
+              s3=0                  ; remember we are doing upper part
+              n=c
+
+              c=0                   ; initial Sum = 0
+              m=c
+
+510$:         acex    x             ; set up for looping 4 times
+              ldi     3
+              acex    x
+
+520$:         c=c+c                 ; Sum * 2 upper part
+              cmex
+              c=c+c                 ; Sum * 2 lower part
+              gonc    522$
+              cmex
+              c=c+1
+              goto    524$
+
+120$:         goto    12$           ; relay
+
+522$:         cmex
+524$:         a=a-1   x
+              gonc    520$
+
+              cmex
+              a=c                   ; A= Sum lower part
+
+              c=n                   ; get next digit
+              rcr     -1
+              cnex
+              c=0     x
+              c=0     m
+              rcr     -1
+              c=c+1                 ; BCD convert digit
+              c=c-1
+              c=a+c                 ; add to sum
+              gonc    526$
+              cmex                  ; carry
+              c=c+1
+              goto    528$
+526$:         cmex
+528$:         dec pt
+              ?pt=    0
+              gonc    510$
+
+              acex
+              ?s3=1                 ; done with lower digits?
+              goc     540$          ; yes
+              s3=1                  ; no, do lower digits
+              c=b
+              n=c
+              acex
+              goto    510$
+
+150$:         goto    15$           ; relay
+
+540$:         c=g                   ; get window
+              c=c-1
+              pt=     7
+              rcr     1
+              bcex    s             ; B.S= window counter
+              c=m                   ; get low part
+542$:         c=0     wpt
+              acex    wpt
+              rcr     8
+              bcex    s
+              c=c-1   s
+              goc     544$
+              bcex    s
+              goto    542$
+
+544$:         bcex    s             ; restore C
+              b=0     x             ; clear upper part (we trashed it as we
+                                    ;  borrowed entire B for lower part of
+                                    ;  binary number), we will set B.XS if we
+                                    ;  have digits outside below by exiting
+                                    ;  to 12$ (120$ relay to it)
+              goto 120$
+
+15$:          pt=     0
+              lc      7             ; show 8 (7+1) digits
               rcr     1
               pt=     0
 20$:          ldi     0x30
               c=a+c   pt
               srsabc
               asr
-              ?s7=1                 ; digit above?
+              ?b#0    x             ; digit above?
               goc     22$           ; yes
               ?a#0                  ; no, are we out of digits now?
               gonc    25$           ; yes
 22$:          c=c-1   s
               gonc    20$
 
-25$:          cstex
-              cgex                  ; save dot info in G
-              cstex                 ; restore ST
-              ?s0=1                 ; positive?
-              goc     26$           ; yes
+25$:          ?s0=1                 ; positive?
+              goc     27$           ; yes
               ldi     '-'           ; no, negative
               srsabc
               s0=1                  ; restore flag
+
+26$:          ?b#0    x             ; digits above?
+              rtn nc                ; no
+              c=g                   ; yes, set flag in G
+              cstex
+              s7=1
+              cstex
+              g=c
               rtn
-26$:          frsabc
-              rtn
+27$:          frsabc                ; space for positive
+              goto    26$
 
 
               .section Tail
@@ -4697,7 +4842,6 @@ Div10LCD:     c=regn  14
 ;;; depth processing.
 ;;;
 ;;; ----------------------------------------------------------------------
-
 
 DeepWake:     n=c
               rxq     chkbuf
