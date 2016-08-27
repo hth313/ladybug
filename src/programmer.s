@@ -123,6 +123,8 @@ FatStart:
               FAT     B?
               FAT     CB
               FAT     SB
+              FAT     MASKL
+              FAT     MASKR
 FatEnd:       .con    0,0
 
               .section Code
@@ -1948,6 +1950,77 @@ CB:           nop
               golong  SKP
 10$:          c=b     x
               goto    5$
+
+
+;;; **********************************************************************
+;;;
+;;; MASKL - build left aligned bit mask.
+;;;
+;;; **********************************************************************
+
+              .name   "MASKL"
+MASKL:        nop
+              nop
+              rxq     Argument
+              .con    8
+              c=0     s
+              c=c+1   s
+MASK10:       bcex    s
+              rxq     FindBufferUserFlags_LiftStackS11
+              rxq     bitMask_G
+              b=0     x
+              c=c-1                 ; convert to mask
+              acex
+              ?c#0    s             ; bit affect upper part?
+              gonc    10$           ; no
+              bcex    x
+              a=0
+              a=a-1
+10$:          ?b#0    s             ; MASKL?
+              gonc    20$           ; no
+
+12$:          bcex
+              g=c
+              c=c+c   x
+              acex
+              n=c
+              c=c+c
+              gonc    14$
+              a=a+1   x
+14$:          bcex
+              ?st=1   Flag_UpperHalf
+              goc     15$
+              abex
+15$:          c=m
+              c=c&a
+              ?c#0
+              goc     17$
+              ?st=1   Flag_UpperHalf
+              gonc    12$
+              abex
+              goto    12$
+
+17$:          c=g
+              bcex    x
+              c=n
+              goto    SWAPIExit
+20$:          acex
+              goto    SWAPIExit
+
+
+;;; **********************************************************************
+;;;
+;;; MASKR - build right aligned bit mask.
+;;;
+;;; **********************************************************************
+
+              .name   "MASKR"
+MASKR:        nop
+              nop
+              rxq     Argument
+              .con    8
+              c=0     s
+              goto    MASK10
 
 
 
@@ -4273,8 +4346,8 @@ prgm:         ?s12=1                ; private?
               KeyEntry SWAPI        ; X<>Y
               .con    0x30e         ; SHIFT
               .con    0x200         ; CATALOG
-              KeyEntry RMD          ; -
-              KeyEntry DRMD         ; +
+              KeyEntry MASKR        ; -
+              KeyEntry MASKL        ; +
               KeyEntry DMUL         ; *
               KeyEntry DDIV         ; /
 
