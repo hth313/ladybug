@@ -934,7 +934,6 @@ Binary:       ldi     1
 BaseHelper:   rcr     1
               bcex    s
               rxq     FindBuffer
-              st=0    IF_DigitEntry
               cstex
               rcr     1
               bcex    s
