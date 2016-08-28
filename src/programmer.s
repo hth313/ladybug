@@ -646,6 +646,7 @@ dig25:        rxq     ClearDigitEntry ; clear digit entry flags
               golong  ERR120        ; back up and show previous program line
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Handle entry of digits in program mode.
@@ -749,6 +750,7 @@ baseChar:     ?s1=1
 2$:           ldi     'B' - 0x40
               rtn
 
+              .section Code
 lineAndBaseLCD:
               ?st=1   Flag_PRGM     ; in program mode?
               gonc    40$           ; no
@@ -826,6 +828,7 @@ lineAndBaseLCD:
               golong  ENCP00
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; PutX - Put back final X, update user flags accordingly
@@ -1076,6 +1079,7 @@ FLOAT:        nop                   ; non-programmable (allow mode switch in pro
               rtn
 
 
+              .section Code
 NoBuf:        rxq     ErrorMessage
               .messl  "NO PROG BUF"
 ErrorExit:    gosub   LEFTJ
@@ -1174,6 +1178,7 @@ CarryToM:     acex    x             ; (P+2)  C.X= buffer address
               goto    20$
 
 
+              .section Code
 FindBufferUserFlags:
               c=regn  14            ; bring up user flags
               rcr     12
@@ -1183,6 +1188,7 @@ FindBufferUserFlags:
               rtn
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Locate the integer buffer
@@ -1230,6 +1236,7 @@ chkbuf:       ldi     BufNumber
               goto    2$
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Find integer buffer, enable stack lift, load integer flags,
@@ -1301,6 +1308,7 @@ FindBufferGetXSaveL0:
               dadd=c
               rtn
 
+              .section Code
 ;;; Get the signs of X and Y
 getSigns:     c=regn  X
               a=c
@@ -1320,6 +1328,7 @@ getSigns:     c=regn  X
               bcex    x             ; B.X= upper X
               rtn
 
+              .section Code
 ;;; IN: A.X - bit number (0-63)
 ;;; OUT: C.X - upper part
 ;;;      C   - lower part
@@ -1361,6 +1370,7 @@ bitMask:      ldi 64
               rtn
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; MaskAndSave - finalize result in X by masking it, update zero/sign
@@ -1525,6 +1535,7 @@ saveLiteral:  acex
               goto    12$
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Load X register to B.X and X.
@@ -1576,6 +1587,7 @@ MaskX:        ?st=1   Flag_UpperHalf ; is carry in upper part?
               rtn
 
 
+              .section Code
 ;;; Load low part of Y to A, mask as needed
 LoadMaskYLo:  c=regn  Y
               a=c
@@ -1587,6 +1599,7 @@ LoadMaskYLo:  c=regn  Y
               a=c
               rtn
 
+              .section Code
 ;;; Load high part of Y to A.X, mask as needed
 LoadMaskYHi:  a=0     x
               ?st=1   Flag_UpperHalf
@@ -1602,6 +1615,7 @@ LoadMaskYHi:  a=0     x
               rtn
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; SetXFlags - set sign/zero flags according to X.
@@ -1651,6 +1665,7 @@ SetSignFlag:  st=0    Flag_Sign
               rtn
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; XOR - Entry point for exclusive OR between X and Y.
@@ -1796,6 +1811,7 @@ ADD_2:        bcex    s             ; B.S= ADD/SUB flag
 20$:          rgo     PutXDropCY
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; CLIX - Entry point for clear integer X register, and disable stack lift.
@@ -1812,6 +1828,7 @@ CLIX:         rxq     FindBufferUserFlags
               rgo     PutXnoFlags
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; IABS - Integer ABS, make the number positive
@@ -1940,6 +1957,7 @@ CB:           nop
               goto    SB10
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; B? - Test a bit.
@@ -2164,6 +2182,8 @@ RDNExit:      c=b
 RUPI:         rxq     RollDown
               goto    RDNExit
 
+
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Rotate and shift functions.
@@ -2357,6 +2377,7 @@ LeftShift:    ?b#0    m             ; 00 operand?
               goto    100$
 
 
+              .section Code
 ;;; ----------------------------------------
 ;;;
 ;;; Shift right
@@ -2523,6 +2544,7 @@ RightShift:   ?b#0    m             ; 00 operand?
               rgo     PutX
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; DisplayX - Display the X register
@@ -2901,6 +2923,7 @@ TakeOverKeyboard:
               gotoc
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Load - Load bits pointed out by pointer and a.x
@@ -2939,6 +2962,7 @@ Load:         acex    x
               goto    1$
 
 
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; ENTERI- Integer stack enter.lift.
@@ -2953,6 +2977,7 @@ ENTERI:       rxq     FindBuffer
                                     ; we keep the same value in X
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Lift the stack.
@@ -2999,6 +3024,7 @@ LiftStack:    c=b                   ; get buffer address to A.X
               rtn
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; WSIZE - set word size
@@ -3827,6 +3853,7 @@ DIVCommon:    rcr     2
 ;;;
 ;;; ----------------------------------------------------------------------
 
+              .section Code
 getSign:      ?st=1   Flag_UpperHalf
               goc     50$
               acex                  ; sign in lower part
