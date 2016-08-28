@@ -200,6 +200,7 @@ BufSize:      .equ    2
 
 #include "mainframe.i"
 
+SWPMD8:       .equlab 0x3fe0
 DSPLN:        .equlab 0xFC7
 PAR110:       .equlab 0xCEB
 ROW930:       .equlab 0x460
@@ -338,11 +339,25 @@ KeyHandler:   nop                   ; ignore back arrow entry (deal with it as a
 #endif
 
 10$:                                ; key not reassigned
-
-              c=regn  14
-              st=c
               c=n                   ; retrieve logical keycode
               a=c                   ; to A[2:1]
+
+              ?s1=1                 ; doing catalog?
+              gonc    11$           ; no
+
+              c=0     s             ; check if we are running on a 41CX
+              c=c+1   s
+              gosub   SWPMD8
+              ?c#0    s
+              goc     11$           ; not 41CX
+
+              ldi     0x030         ; yes, logical keycode for ENTER
+              ?a#c    x             ; ENTER pressed?
+              goc     11$           ; no
+              asr     x             ; A[0]= 3 (for call to 0x38e8)
+              golong 0x38e8
+11$:          c=regn  14
+              st=c
               pt=     3
               lc      0xc           ; default table starts at ?C00
               a=c     m             ; build CLK-
