@@ -1259,11 +1259,11 @@ chkbuf:       ldi     BufNumber
 FindBufferGetXSaveL:
               s0=0                  ; no division by 0 check
 FindBufferGetXSaveL0:
+              s11=1                 ; set push flag (enable stack lift)
+FindBufferGetXSaveL0no11:
               rxq     FindBuffer
               cstex                 ; restore header
               n=c                   ; save header
-
-              s11=1                 ; set push flag (enable stack lift)
 
               c=b                   ; load hi(X) to B[2:0]
               rcr     10
@@ -2053,7 +2053,6 @@ MASKR:        nop
               .con    8
               c=0     s
               goto    MASK10
-
 
 
 ;;; **********************************************************************
@@ -3100,459 +3099,379 @@ PWINDOW:      nop
               goto    WSZ_OK
 #endif
 
+
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; MUL - multiply, both double and single precision
 ;;;
 ;;; ----------------------------------------------------------------------
 
-;;; As we do not use Flag_56 in this routine, we use it to mark if
-;;; we are doing second time around.
-Flag_DoingUpper: .equ    Flag_56
+              .section Code
+              .align  256
+;;; Multiply 8x56
+;;; IN  ST= 8 bits
+;;;     M= 56 bits
+;;;     B[2:0] : A = sum
+;;; OUT
+;;;     B[2:0] : A = updated sum
+`Mul8x56`:    c=0     x             ; C[1:0]= extension of M
+              pt=     0
+              goto    15$
 
-;;; We borrow the push flag for marking if we are doing DMUL or MUL.
-;;; The input of this flag is irrelevant here and we will set it
-;;; before exiting back to mainframe.
-Flag_DoubleMul:    .equ    11
+10$:          cstex                 ; shift ST right
+              c=c+c   x
+              c=c+c   x
+              c=c+c   x
+              csr     x
+              cstex
+              c=0     xs
 
-;;; However, FindBufferGetXSaveL sets it, so we borrow the Flag_56
-;;; initially, check the code below.
-Flag_DoubleMul_Early: .equ Flag_56
+              c=c+c   x             ; shift M extension (C[1:0])
+              cmex
+              c=c+c
+              gonc    11$
+              cmex
+              c=c+1   x             ; handle carry from M to C[1:0]
+              goto    15$
+11$:          cmex
+
+15$:          ?s0=1
+              gonc    20$
+              cmex
+              a=a+c                 ; add lower 56 bits
+              gonc    16$
+              abex    x
+              a=a+1   x             ; handle carry
+              goto    17$
+16$:          abex    x
+17$:          cmex
+              a=a+c   x             ; add upper part
+              abex    x
+
+20$:          inc pt
+              ?pt=    8
+              gonc    10$
+              rtn
 
               .name   "DMUL"
-DMUL:         st=1    Flag_DoubleMul_Early ; want double result
+DMUL:         s11=1                 ; want double result
               goto    MulCommon
 
               .name   "MUL"
-MUL:          st=0    Flag_DoubleMul_Early ; want single result
-MulCommon:    rxq     FindBufferGetXSaveL
-
-              st=0    Flag_DoubleMul     ; move Flag_DoubleMul_Early -> Flag_DoubleMul
-              ?st=1   Flag_DoubleMul_Early
-              gonc    0$
-              st=1    Flag_DoubleMul
-
-0$:           st=0    Flag_DoingUpper
+MUL:          s11=0                 ; want single result
+MulCommon:    rxq     FindBufferGetXSaveL0no11
 
               rxq     getSigns
               c=a-c   s             ; C.S= 0 if same sign
               c=st
               rcr     -4
               stk=c
-              c=0
-              cnex                  ; clear upper 16 bits of both 128 bits
-                                    ;   result and op1.
-                                    ; this also gets buffer trailer register
-                                    ;   (saved there by FindBufferGetXSaveL)
 
-              pt=     4             ; point to op1[14]
-              g=c                   ; G= op1[15:14]
-
-;;; Multiply op1 (from Y) with op2 (from X)
-;;; First part takes care of lower registers
-;;; op1 is in    N[7:4] : M : Y
-;;; result is in N[3:0] : B : A   (initially cleared)
-;;; X = nibbles from op2
-
-              c=b
+              c=b                   ; save buffer address
               rcr     10 - 3
-              stk=c                 ; push buffer address
-              rcr     - (10 - 3) - 3
-              stk=c                 ; push op2[15:14] for now
+              stk=c
 
-              pt=     0             ; counter for 14 nibbles
+;;; Start with 56x56 multiplication.
+;;; SUM= B : A  (initially 0)
+;;; op1= X       we inspect bits from this one
+;;; op2= M : Y   M starts as 0, we shift this one each iteration
 
-              a=0                   ; clear result[27:0]
-              b=0
+              clrabc
+              cmex
+              regn=c  Q             ; Q= carry mask
 
-              c=g                   ; we know C=0 and PT=0
-              cmex                  ; M= op1[15:14]
-              regn=c  Q             ; preserve mask in Q
+              pt=     0             ; 14 iterations
 
-              ;; take next nibble
-10$:          c=regn  X
-              ?c#0
-              gonc    400$          ; 0, skip the rest
+              ;; main loop, 14 times
+10$:          c=regn  X             ; take next nibble
               st=c                  ; nibble to ST
               rcr     1
-              c=0     s             ; ensure we get all 0 as soon as done
               regn=c  X
+              ldi     3             ; load counter for nibble, 4 times
+              rcr     1
+              c=st
+              rcr     -1
+              st=c
 
-              gosub   PCTOC
-
-;;; DO NOT insert any code here, like relay jumps, we rely heavily
-;;; on the particular instructions in this sequence!!!!
-              stk=c                 ; push my own PC
-              ?s0=1                 ; test bits, just shift if zero
-              gonc    30$
-              goto    20$
-              ?s1=1
-              gonc    30$
-              goto    20$
-              ?s2=1
-              gonc    30$
-              goto    20$
-              ?s3=1
-              gonc    30$
+              ;; start of inner loop, 4 times
+15$:          c=m
+              ?s4=1                 ; lowest bit set?
+              gonc    24$           ; no
 
               ;; Add to result
-20$:          c=regn  Y             ; C -> A,  B -> C, A -> B
-              bcex
-              a=a+b                 ; add to to result
-              gonc    22$           ; no carry
-              c=c+1                 ; handle carry
-              gonc    22$
-              cnex                  ; carry ripples further to result[31:28]
-              c=c+1
-              cnex
-22$:          b=a                   ; B= result[13:0]
-              a=c                   ; A= result[27:14]
-              c=m                   ; get op1[27:14]
-              a=a+c                 ; add to result[27:14]
-              gonc    24$           ; no carry
+20$:          c=regn  Y             ; Update sum
+              a=a+c                 ; lower part
+              gonc    21$
+              abex                  ; got carry
+              a=a+1
+              goto    22$
+21$:          abex
+22$:          c=m                   ; upper part
+              a=a+c
+              abex
 
-              c=n                   ; carry to result[31:28]
-              c=c+1
-              goto    25$           ; could use a lot of cnex here, but
-                                    ; instruction count would be same, and
-                                    ; the goto opens up for relays
-              ;; relays
-400$:         goto    40$
-100$:         goto    10$
-
-24$:          c=n
-25$:          acex
-              cnex                  ; save A, get second copy of N
-              c=0     x
-              rcr     4             ; C[3:0] is op1[31:28]
-              c=0     s             ; rest of C is cleared
-              c=a+c                 ; add to result
-              cnex                  ; save N, get A back
-              acex                  ; put back to A
-              abex                  ; put result[27:0] in their correct places
-
-              ;; shift op1 one step left
-30$:          acex
-              cnex                  ; save A in N
-              rcr     1
-              c=c+c   m             ; op1[31:28] << 1
-              a=c
-              c=m
-              c=c+c                 ; op1[27:14] << 1
-              gonc    32$
-              a=a+1   m             ; carry to op1[31:28]
-32$:          acex
+              ;; shift op2 one step left
+24$:          c=c+c
               m=c
               c=regn  Y
-              c=c+c                 ; op1[13:0] << 1
-              gonc    34$
-              a=a+1                 ; carry to op1[27:14]
-34$:          regn=c  Y             ; save op1[13:0]
-              acex                  ; C= op1[27:14]
-              cmex                  ; M= op1[27:14], C.M= op1[31:28]
-              rcr     -1            ; realign
-              cnex                  ; N= op1[31:28], get saved A
-              a=c                   ; restore A
-
-              ;; See if we should inspect next nibble
-              c=stk
-              c=c+1   m
-              cxisa                 ; ?s0-2  has xs non zero, ?s3=1 is zero
-              ?c#0    xs            ; pointing to '?s3=1', meaning we
-                                    ;   have checked all bits in nibble?
-              gonc    39$           ; yes
-              c=c+1   m             ; no, advance pointer
-              c=c+1   m
-              stk=c                 ; 3 times each iteration
-              c=c+1   m             ; point to next flag test instruction
-              gotoc
-
-39$:          dec     pt
-              ?pt=    0
-1000$:        gonc    100$
-
-;;; After inner loops, we still may have op2[15:14] on stack to deal
-;;; with. We may also have exited inner loops early and op1 may need
-;;; to be shifted a certain multiples of 4 (indicated by PT)
-40$:          ?st=1   Flag_DoingUpper ; done with op2[15:14]?
-              goc     60$           ; yes
-
-              st=1    Flag_DoingUpper ; mark for second round
-
-              c=stk                 ; pop op2[15:14]
-              rcr     3
-              c=0     xs
-              ?c#0    x             ; is op2[15:14] zero?
-              gonc    60$           ; yes, no need to work on them
-
-              regn=c  X             ; save last op2 nibbles in X
-
-              ?pt=    0             ; does op1 need to be adjusted?
-              goc     55$           ; no
-
-              c=regn  Y             ; get op1[13:0]
-              bcex                  ; save in B
-              cnex                  ; save B in N
-              rcr     -3
-              stk=c                 ; push result[31:28]
-              rcr     4 + 3         ; align op1[31:28] to digit 0
-              acex
+              c=c+c
+              gonc    25$
               cmex
+              c=c+1
+              cmex
+25$:          regn=c  Y
 
-;;; B= op1[13:0]
-;;; C= op1[27:14]
-;;; A= op1[31:28]
-;;; Previous A and B are saved in N and M
-50$:          bcex    s             ; ripple highest nibble
-              abex    s             ;  to next register
-              b=0     s
+              ;; close inner loop (dealing with a nibble)
+              c=st
+              rcr     1
+              c=c-1   s
+              goc     28$           ; loop done
 
-              rcr     -1            ; shift all registers, rotating
-                                    ; in incoming nibble (in S pos)
-                                    ; to lowest digit
-              acex
+              c=c+c   x             ; right shift nibble
+              c=c+c   x
+              c=c+c   x
+              csr     x
               rcr     -1
-              acex
+              st=c
+              goto    15$
 
-              bcex
-              rcr     -1
-              bcex
-
-              dec pt
+              ;; close outer loop
+28$:          dec pt
               ?pt=    0
-              gonc    50$
+              gonc    10$
 
-              cmex                  ; reverse the order to restore op1 as
-              acex                  ;  well as A and B
-              rcr     -7
-              c=stk
-              rcr     3
-              cnex
+;;; Done with 56x56 MUL, the lowest 56 bits of the result in A will
+;;; not be affected by the two following 8x56 multiplications.
+;;; N has the upper parts, so we tuck it away there and gets the
+;;; two bytes at the same time.
+30$:          abex                  ; A= second 56 bits of sum
               bcex
-              regn=c  Y
+              cnex                  ; N= lower 56 bits of result
+                                    ; C= buffer trailer registers
 
-55$:          pt=     2             ; loop around two times
-              goto    1000$         ; go back to loop
+              st=c                  ; ST= upper part of X
+              pt=     4
+              g=c                   ; G= upper part of op2
 
-;;; Done looping around, we have result in N[3:0] : B : A
-;;; Buffer address and ST+sign is on stack.
-;;; Now we need to get back to carry mask flag to M
-60$:          acex                  ; put lower result in X
-              regn=c  X
+              c=0                   ; B[12:11]= high part of op1
+              c=st
+              rcr     3
+              bcex
 
-              c=regn  Q             ; get mask back
+              ?b#0
+              gsubc   GSB256        ; mul8x56
+
+              c=regn  X             ; get op1
               m=c
+              pt=     0
+              c=g
+              st=c
+              c=0     xs
+              ?c#0    x
+              gsubc   GSB256        ; mul8x56
 
-              c=stk                 ; restore buffer pointer to B[12:10]
+              ;; mul 8x8
+              acex
+              m=c                   ; M= second 56 bits of sum
+              a=0
+              pt=     1
+              abex    wpt           ; A= upper 16 bits
+              c=b
+              rcr     -3
+              c=0     xs
+              ?c#0    x
+              gonc    40$           ; operand is zero
+              st=c
+              c=0
+              pt=     0
+              c=g
+              ?c#0    x
+              gonc    40$           ; other operand is zero
+              goto    35$
+32$:          rcr     -3
+              cstex                 ; shift ST right
+              c=c+c   x
+              c=c+c   x
+              c=c+c   x
+              csr     x
+              cstex
+              rcr     3
+
+              c=c+c                 ; shift operand left
+
+35$:          ?s0=1
+              gonc    38$
+              a=a+c                 ; add to sum
+38$:          inc     pt
+              ?pt=    8
+              gonc    32$
+
+;;; Done, result is in A[3:0] : M : N
+40$:          c=stk                 ; restore buffer pointer to B[12:10]
               rcr     -(10 - 3)
-              bcex                  ; C= result[27:14]
+              bcex    m
 
-              ?st=1   Flag_DoubleMul ; doing "DMUL"?
-              goc     90$           ; yes, never gives carry
-
-              ;; Next line is needed, Flag_DoubleMul is the same flag, and we
-              ;; borrow it, now set it as we leave with stack lift enabled.
-              s11=1                 ; set push flag (enable stack lift)
-
-;;; Collapse all high bits together in a single nibble [2]
-              ?c#0    xs            ; test digit 2
-              gonc    65$           ; it is zero
-              c=0     xs            ; non-zero, make it 1 to ensure no overflow
-              c=c+1   xs            ;  when adding to it
-
-65$:          ?c#0    m             ; collapse upper bits to digit 2
-              gonc    66$
-              c=c+1   xs
-
-66$:          ?c#0    s
-              gonc    67$
-              c=c+1   xs
-
-67$:          a=c
-              c=n
-              pt=     3
-              ?c#0    wpt
-              gonc    68$
-              a=a+1   xs
-
-68$:          b=a     x             ; B[2:0]= final upper part
-              c=regn  X
-              a=c                   ; A= lower part
               c=stk                 ; get ST and calculated sign
               rcr     4
               st=c
-              n=c                   ; N.S= calculated sign
               st=0    Flag_Overflow
-              ?st=1   Flag_2
-              gonc    70$           ; unsigned mode
-              a=c    s              ; A.S= calculated sign
-              rxq     getSign
-              ?a#c    s             ; correct result sign?
-              gonc    70$           ; yes
-              st=1    Flag_Overflow ; no, overflowed
-#if 0
-                                    ; set correct sign
-              c=b
-              rcr     10
-              dadd=c
-              c=data
-              rcr     6
-              c=0     xs            ; C.X= word size
-              c=c-1   x             ; C.X= word size - 1
-              acex    x             ; A.X= word size - 1
-              c=0     x
-              dadd=c
-              rxq     bitMask
-              b=a     s             ; part flag
-              a=c                   ; A= sign bit mask
-              c=n
-              ?c#0    s             ; set sign?
-              goc     120$          ; yes
-              acex
-              c=-c-1                ; make sign unmask
-              acex
-              ?b#0    s             ; sign in upper part?
-              goc     105$          ; yes
-              c=regn  X
-              c=c&a                 ; clear sign bit
-              goto    72$
 
-900$:         goto    90$           ; relay
+              cnex                  ; N.S= calculated sign
+              regn=c  X             ; put lower result in X
 
-105$:         c=b     x             ; in upper part
-              c=c&a                 ; set sign
-              goto    71$
+              ?s11=1                ; doing "DMUL"?
+              goc     70$           ; yes
 
-120$:         ?a#0    s             ; sign in upper part?
-              goc     125$          ; yes
-              c=regn  X
-              c=c|a
-72$:          regn=c  X
-              goto    70$
-
-125$:         c=b     x             ; get upper part
-              c=c|a                 ; set sign
-71$:          bcex    x             ; put back
-#endif
-
-70$:          ?st=1   Flag_UpperHalf
-              goc     75$
-              ?b#0    x
-              goc     78$           ; overflowed
-              c=regn  X
-              a=c
-76$:          c=m
-              c=c-1                 ; make unmask
-              c=-c-1
-              nop
-              c=c&a
-              ?c#0
-              gonc    79$
-
-78$:          st=1    Flag_Overflow
-79$:          rgo     PutXDrop
-
-75$:          a=0                   ; test upper part
-              a=b     x
-              goto    76$
-
-;;; Save double result
-;;; We have result in N[3:0] : C : A
-90$:          ;; Next line is needed, Flag_DoubleMul is the same flag, and we
-              ;; borrow it, now set it as we leave with stack lift enabled.
+              ;; Next line is needed, Flag_DoubleMul is the same flag, and we
+              ;; borrowed it, now set it as we leave with stack lift enabled.
               s11=1                 ; set push flag (enable stack lift)
 
-              regn=c  Q             ; save middle part in Q
+              ?a#0                  ; check uppermost 16 bits which are way out
+                                    ;  of range for single precision MUL
+              gonc    41$
+              st=1    Flag_Overflow
+41$:          c=regn  Q             ; get carry mask
+              cmex                  ; get second 56 bits, M= carry mask
+              b=0     x
+              bcex    x             ; B.X= lower 12 bits of second 56 bits
+                                    ; C= remaining bits of second 56 bits
+              ?c#0                  ; any non-zero?
+              gonc    42$           ; no
+              st=1    Flag_Overflow ; yes, we overflowed
+42$:          c=regn  X
+              a=c                   ; A= lower 56 bits of result
+              ?st=1   Flag_2        ; in 2-complement signed mode?
+              gonc    50$           ; no, unsigned mode
+              rxq     getSign
+              b=a     s             ; preserve A.S in B.s
+              a=c     s
+              c=n
+              ?a#c    s             ; correct result sign?
+              gonc    50$           ; yes
+              st=1    Flag_Overflow ; no, overflowed
+50$:          c=m                   ; get carry mask
+              c=c-1
+              c=-c-1                ; make unmask
+              ?st=1   Flag_UpperHalf
+              goc     60$
+              abex    s             ; restore A.S
+              c=c&a
+              ?c#0
+              gonc    55$           ; no bits outside
+54$:          st=1    Flag_Overflow
+55$:          rgo     PutXDrop
+60$:          abex    x
+              c=c&a
+              abex    x
+              ?c#0    x
+              gonc    55$
+              goto    54$
+
+70$:          acex                  ; A= lower 56 bits of result
+                                    ; C[3:0]= uppermost 16 bits of result
+              rcr     -3
+              stk=c                 ; push uppermost 16 bits
+
+              c=regn  Q             ; get carry mask
+              cmex                  ; M= carry mask
+              n=c                   ; N= second 56 bits
               bcex    x             ; B.X= upper part of lower half
-
-              c=stk                 ; restore flags
-              rcr     4
-              st=c
-              st=1    Flag_Overflow ; always clear overflow
-
-              acex                  ; low part
-              regn=c  X             ; X=low part
-              regn=c  Y             ; save in Y
+              acex                  ; C= lower 56 bits of result
+              regn=c  Q             ; Q= lower 56 bits of result (unmasked)
               rxq     MaskX
-              c=regn  Y             ; get low part back
-              a=c                   ; A= low part
-              c=regn  X             ; get masked value back
-              regn=c  Y             ; low part goes to Y
+              c=regn  X             ; get masked lower part
+              regn=c  Y             ; goes to Y
 
+              ;; also save upper part (8 bits) to trailer register
               c=b
+              pt=     0
+              g=c                   ; G= upper 8 bits of Y
               rcr     10
-              c=c+1   x             ; C.X= address of buffer trailer
-              dadd=c
+              a=c     x             ; A.X= buffer header address
+              c=c+1   x
+              dadd=c                ; select trailer register
               c=data
-              rcr     4             ; C[1:0]= old upper Y
-              bcex    x
-              bcex    xs            ; C[1:0]= new upper Y
-              rcr     -4
+              pt=     4             ; point to Y register byte
+              c=g                   ; insert it
               data=c                ; write back
 
-;;; Value is in B.X - N[3:0] - Q - A, we now shift upper part
-;;; so that it resides in B.X-N.
-;;; To do this we shift 112 - WS steps to the left
-              c=b
-              rcr     10
+              ldi     111
+              acex    x
               dadd=c                ; select buffer header
-              rcr     -4
-              stk=c                 ; save buffer on stack
-
-              b=a                   ; B= low part
-              ldi     112
-              a=c     x
-              c=data
-              rcr     6             ; get word size
-              c=a-c   x             ; A.X= 112 - WS
+              c=data                ; read buffer header
+              rcr     6
+              c=0     xs            ; C.X= word size
+              c=a-c   x             ; C[1:0]= 111 - word size
+                                    ;   which is counter for shift loop to
+                                    ;   align upper part properly
               pt=     0
               g=c                   ; G= counter
+
+;;; Set up for shifting B.X : A : C : N
+;;; where N= lower 56 bits
+;;;       C= second 56 bits
+;;;       A[3:0]= upper 16 bits
+;;;       and the rest is 0 initially
+;;;
+;;; Shift '112 - wordSize' steps to left and the upper half will
+;;; end up in B.X : A
+
+              b=0     x
               c=0
-              dadd=c
-              abex                  ; A= first part
-              c=regn  Q             ; C= second part
-;;; B.X - N - C - A
-              goto    99$
-91$:          pt=     0             ; start of loop
-              cgex
+              dadd=c                ; select chip 0
+              c=stk
+              rcr     3
+              a=c
+              c=regn  Q             ; get lower 56 bits
+              cnex
 
-              bcex
+71$:          bcex                  ; shift loop
               c=c+c   x
-              bcex
-              cnex
-              c=c+c
-              gonc    92$
-              bcex
-              c=c+1   x
-              bcex
-92$:          cnex
-              c=c+c
-              gonc    93$
-              cnex
-              c=c+1
-              cnex
-93$:          acex
-              c=c+c
-              gonc    94$
               acex
-              c=c+1
-              goto    99$
-94$:          acex
+              c=c+c
+              gonc    72$
+              a=a+1   x
+72$:          acex
+              bcex
+              c=c+c
+              gonc    73$
+              a=a+1
+73$:          acex
+              cnex
+              c=c+c
+              gonc    74$
+              a=a+1
+74$:          cnex
+              acex
 
-99$:          pt=     0             ; decrement counter
+              pt=     0
               cgex
               pt=     1
               c=c-1   wpt
-              gonc    91$
+              goc     80$
+              pt=     0
+              cgex
+              goto    71$
 
-              c=n
-              regn=c  X
-              c=stk                 ; get buffer pointer back
-              rcr     -6
-              bcex    m
-              rgo     PutX
+80$:          acex
+              regn=c  X             ; save upper half in X
+              rxq     MaskAndSave
+              rxq     SetXFlags
+              c=regn  Y             ; set correct Z flag
+              ?c#0
+              goc     82$
+              c=b
+              rcr     10
+              rcr     4
+              pt=     1
+              c=0     xs
+              ?c#0     x
+              gonc    85$
+82$:          st=0    Flag_Zero
+85$:          rgo     ExitUserST
 
 
+              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; DIV, RMD, DDIV, DRMD - single and double divide routine
