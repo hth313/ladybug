@@ -2657,6 +2657,9 @@ Display2:     c=n                   ; check window#
               acex                  ; restore A
 
               st=0    Flag_LocalZeroFill
+              ?st=1   Flag_PRGM
+              goc     3$            ; no zero fill in program mode due
+                                    ;  to user flag
               c=regn  14            ; move user zero-fill flag to
               rcr     12            ;  local flag (outside low ST)
               cstex
@@ -2665,7 +2668,7 @@ Display2:     c=n                   ; check window#
               st=1    Flag_LocalZeroFill
 2$:           cstex                 ; bring up internal flags
 
-              gosub   CLLCDE
+3$:           gosub   CLLCDE
               pt=     8             ; assume hex
               ?s3=1
               goc     20$
