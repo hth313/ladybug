@@ -1057,6 +1057,53 @@ FLOAT:        nop                   ; non-programmable (allow mode switch in pro
 
 
               .section Code
+              .align  256
+;;; **********************************************************************
+;;;
+;;; Locate the integer buffer
+;;;
+;;; If not found, return to (PC+1)
+;;; If found, return to (PC+2) with:
+;;;   C - buffer header register
+;;;   A.X = address of buffer start register
+;;;
+;;; **********************************************************************
+
+chkbuf:       ldi     BufNumber
+              rcr     2             ; buffer number to C[12]
+              pt=     12
+              ldi     191           ; One below first register
+              a=c
+1$:           a=a+1   x             ; Start of search loop
+2$:           c=0     x             ; Select chip 0
+              dadd=c
+              c=regn  c             ; find chain head .END.
+              ?a<c    x             ; have we reached chainhead?
+              rtnnc                 ; yes, return to (P+1), not found
+              acex    x             ; no, select and load register
+              dadd=c
+              acex    x
+              c=data                ; read next register
+              ?c#0                  ; if it is empty, then we reached end
+              rtnnc                 ; of buffer area, return to not found
+                                    ; location
+              c=c+1   s             ; is it a key assignment register
+                                    ; (KAR)?
+              goc     1$            ; yes, move to next register
+              ?a#c    pt            ; no, must be a buffer, have we found
+                                    ; the buffer we are searching for?
+              goc     3$            ; no
+              c=stk                 ; yes, fix (P+2) as return point
+              c=c+1   m
+              stk=c
+              c=data                ; Load header register to C
+              rtn
+
+3$:           rcr     10            ; wrong buffer, skip to next
+              c=0     xs
+              a=a+c   x
+              goto    2$
+
 NoBuf:        rxq     ErrorMessage
               .messl  "NO PROG BUF"
 ErrorExit:    gosub   LEFTJ
@@ -1087,7 +1134,7 @@ ErrorExit:    gosub   LEFTJ
 ;;;
 ;;; **********************************************************************
 
-FindBuffer:   rxq     chkbuf
+FindBuffer:   gosub   GSB256        ; chkbuf
               goto    NoBuf         ; (P+1)
 CarryToM:     acex    x             ; (P+2)  C.X= buffer address
               rcr     -10
@@ -1162,54 +1209,6 @@ FindBufferUserFlags:
               rxq     FindBuffer
               cstex                 ; bring up user flags
               rtn
-
-
-              .section Code
-;;; **********************************************************************
-;;;
-;;; Locate the integer buffer
-;;;
-;;; If not found, return to (PC+1)
-;;; If found, return to (PC+2) with:
-;;;   C - buffer header register
-;;;   A.X = address of buffer start register
-;;;
-;;; **********************************************************************
-
-chkbuf:       ldi     BufNumber
-              rcr     2             ; buffer number to C[12]
-              pt=     12
-              ldi     191           ; One below first register
-              a=c
-1$:           a=a+1   x             ; Start of search loop
-2$:           c=0     x             ; Select chip 0
-              dadd=c
-              c=regn  c             ; find chain head .END.
-              ?a<c    x             ; have we reached chainhead?
-              rtnnc                 ; yes, return to (P+1), not found
-              acex    x             ; no, select and load register
-              dadd=c
-              acex    x
-              c=data                ; read next register
-              ?c#0                  ; if it is empty, then we reached end
-              rtnnc                 ; of buffer area, return to not found
-                                    ; location
-              c=c+1   s             ; is it a key assignment register
-                                    ; (KAR)?
-              goc     1$            ; yes, move to next register
-              ?a#c    pt            ; no, must be a buffer, have we found
-                                    ; the buffer we are searching for?
-              goc     3$            ; no
-              c=stk                 ; yes, fix (P+2) as return point
-              c=c+1   m
-              stk=c
-              c=data                ; Load header register to C
-              rtn
-
-3$:           rcr     10            ; wrong buffer, skip to next
-              c=0     xs
-              a=a+c   x
-              goto    2$
 
 
               .section Code
