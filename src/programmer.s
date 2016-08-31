@@ -1152,9 +1152,9 @@ CarryToM:     acex    x             ; (P+2)  C.X= buffer address
               goc     10$           ; yes
               a=a-c   x
               st=1    Flag_UpperHalf
-10$:          ?a#0    x             ; is carry from 56th pos?
+              ?a#0    x             ; is carry from 56th pos?
               gonc    30$           ; yes
-              acex    x
+10$:          acex    x
               cstex
               m=c                   ; M[1:0]= old ST
 
@@ -1196,8 +1196,10 @@ CarryToM:     acex    x             ; (P+2)  C.X= buffer address
               cstex                 ; bring up internal flags
               rtn                   ; done
 
-30$:          c=0                   ; carry out in 56 bit register carry
+30$:          c=st
+              m=c
               st=0    Flag_UpperHalf
+              c=0                   ; carry out in 56 bit register carry
               goto    20$
 
 
