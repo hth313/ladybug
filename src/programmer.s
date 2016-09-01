@@ -1287,6 +1287,8 @@ FindBufferGetXSaveL0no11:
 ;;;      This flag is the sign-flag, which will be updated by all callers
 ;;;      at the end, so we can borrow it here.
 getSignsMakePositive:
+              s6=0
+getSignsMakePositiveZ:              ; potential Z register operation (DDIV)
               s7=1
 getSigns:     c=regn  X
               a=c
@@ -1303,9 +1305,11 @@ getSigns:     c=regn  X
               a=c
               c=n
               rcr     4             ; C[1:0]= upper Y
+              c=0     xs            ; C[2]= non-zero flag indicating doing Y
+              c=c+1   xs
               bcex    x             ; B[1:0]= upper Y
               rxq     signPositive
-              goto    30$           ; (P+1) not changed
+              goto    20$           ; (P+1) not changed
                                     ; (P+2) changed
               acex                  ; A.S= sign(Y), C=lower Y
               regn=c  Y
@@ -1318,40 +1322,89 @@ getSigns:     c=regn  X
               cnex
 
 20$:          a=c     s
-21$:          bcex
+              bcex
               rcr     -4
               bcex    m             ; restore buffer pointer
               bcex    x             ; restore upper X
               rtn
 
-              ;; Y not changed, but we still need to mask it as X is
-              ;; delivered masked, but not Y
-30$:          bcex    s             ; save sign
-              rxq     maskABx
-              acex    s
-              goto    21$
-
               .section Code
 ;;; Get the sign and maybe make positive
 signPositive: rxq     getSign       ; get the sign
               ?c#0    s             ; positive?
-              rtn nc                ; yes
+              gonc    50$           ; yes
               ?s7=1                 ; make positive?
-              rtn nc                ; no
+              gonc    50$           ; no
               ?st=1   Flag_2        ; sign mode?
-              rtn nc                ; no
-negate:       acex                  ; yes, negate it
-              c=-c
+              gonc    50$           ; no
+
+              acex
+              ?s6=1                 ; double divide?
+              gonc    10$           ; no
+              ?b#0    xs            ; double divide, doing Y?
+              goc     20$           ; yes, need special treatment
+10$:          c=-c
               acex
               bcex    x
               c=-c-1  x
               bcex    x
-              rxq     maskABx
-              c=0     s            ; C.S= negative flag
+15$:          rxq     maskABx
+              c=0     s             ; C.S= negative flag
               c=c+1   s
-              c=stk
+17$:          c=stk                 ; return to (P+2)
               c=c+1   m
               gotoc
+
+;;; Negating for double divide and we have Y loaded in B[1:0]-A.
+;;; This is actually the upper bits, so they should be inverted.
+;;; We then load Z (lower bits), negate it and let the caller save
+;;; it in Y as the DDIV routine wants them swapped.
+20$:          c=-c-1                ; high bits, invert them
+              acex                  ; A= inverted high half
+              bcex    x             ; invert B[1:0] as well
+              c=-c-1  x
+              bcex    x
+              rxq     maskABx
+              c=regn  Z             ; load lower half
+              c=-c
+              acex
+              regn=c  Z             ; Z= Y (masked)
+              c=n
+              rcr     6
+              pt=     1
+              c=-c-1  wpt           ; invert upper part of lower half
+              bcex    wpt
+              rcr     -6
+              n=c
+              goto    15$
+
+;;; Cases below when we do not need to negate. For stack registers
+;;; other than X we need to mask them, and double divide also
+;;; requires swpping Y and Z
+50$:          ?b#0    xs            ; no need to negate, doing Y?
+              rtn nc                ; no, we are done, return to (P+1)
+                                    ; yes, mask Y
+              bcex    s             ; B.S= saved sign
+              rxq     maskABx
+              ?s6=1                 ; double divide?
+              gonc    55$           ; no
+
+;;; For double divide we need to mask Z, and swap it with Y.
+;;; Currently we have loaded Y, so we save Y in Z and mask
+;;; Z and leave it loaded and let the caller save it in Y
+;;; (believing it was Y).
+              c=regn  Z
+              acex                  ; A= Z
+              regn=c  Z             ; save Y in Z
+              c=n                   ; C= upper parts
+              rcr     6
+              bcex    x             ; save upper Y in Z and
+              bcex    xs            ; load upper Z to B[1:0]
+              rcr     -6
+              n=c
+              rxq     maskABx
+55$:          bcex    s             ; restore sign
+              goto    17$           ; return to (P+2)
 
 
               .section Code
@@ -1728,6 +1781,7 @@ ADD_2:        rxq     FindBufferGetXSaveL
               rxq     maskABx
               acex
               regn=c  X
+              s6=0                  ; not doing DDIV
               s7=0                  ; do not make the values positive
               rxq     getSigns
               st=0    Flag_Overflow ; prepare overflow flag
@@ -3706,9 +3760,6 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
 ;;;
 ;;; ----------------------------------------------------------------------
 
-Flag_RMD:     .equ    Flag_Zero     ; we borrow flags here
-Flag_DoubleDiv:  .equ    Flag_Sign
-
               .name   "DRMD"
 DRMD:         lc      8 + 4
               goto    DIVCommon
@@ -3732,25 +3783,26 @@ DIVCommon:    rcr     2
 ;;; We always want the low part of dividend to be in Y.
 ;;; For double operations that means we need to swap Y with Z.
               c=b     s             ; C.S= variant
-              st=0    Flag_DoubleDiv
-              st=0    Flag_RMD
+              s11=0                 ; S11 is borrowed as RMD flag
+              s6=0                  ; S6 is borrowed to notify if ww are doing
+                                    ;  a double divide, meaning we will need the
+                                    ;  Z register as input as well
 
               c=c+c   s             ; double operation?
               gonc    4$            ; no
-
-              st=1    Flag_DoubleDiv   ; yes
-              c=regn  Y
-              a=c
-              c=regn  Z
-              acex
-              regn=c  Y
-              acex
-              regn=c  Z
-4$:
-              c=c+c   s             ; doing remainder?
+              s6=1                  ; yes
+4$:           c=c+c   s             ; doing remainder?
               gonc    5$            ; no
-              st=1    Flag_RMD      ; yes
-5$:
+              s11=1                 ; yes
+5$:           rxq     getSignsMakePositiveZ
+              ?s11=1                ; doing remainder?
+              goc     7$            ; yes
+              a=a-c   s             ; divide, final result is negative if
+                                    ;  the signs are different
+                                    ; (for remainder we take the sign of the
+                                    ; dividend, which already is in A.S)
+7$:
+
 
 ;;; Basic algorithm:
 ;;; 0. r = 0
@@ -3768,26 +3820,24 @@ DIVCommon:    rcr     2
 ;;; hi(op1) - N[8:6]-Z (only when doing double)
 ;;; lo(op1) - N[5:3]-Y
 ;;; op2 - N[11:9]-X
+;;; sign is kept in N[13]
 
               c=n
               rcr     4
               a=c     x
-              a=0     xs            ; A[2:0]= Y
-              ?st=1   Flag_DoubleDiv
-              gonc    7$
-
-              rcr     2             ; doing double, swap Y and Z
-              c=0     xs            ; C[2:0]= Z
-              acex    x             ; do the swap
-              c=0     m
-              c=0     s
+              a=0     xs            ; A[2:0]= Y (lo part)
+              ?s6=1                 ; double operation?
+              gonc    8$            ; no
+              rcr     2             ; C[2:0]= Z (hi part)
+              c=0     xs
               rcr     3
-              goto    8$
-7$:           c=0
-8$:           c=b     x             ; hi(X)
+              goto    9$
+8$:           c=0
+9$:           c=b     x             ; C[2:0]= X (hi part)
               rcr     -6
               acex    x             ; hi(Y)
               rcr     -3
+              acex    s             ; get sign
               n=c
 
               c=b
@@ -3796,9 +3846,9 @@ DIVCommon:    rcr     2
               c=data                ; load buffer header
               rcr     6
               c=0     xs            ; C[2:0]= WSIZE
-              ?st=1   Flag_DoubleDiv
-              gonc    10$
-              c=c+c   x
+              ?s6=1                 ; double operation?
+              gonc    10$           ; no
+              c=c+c   x             ; yes, double loop counter
 10$:          pt=     0             ; C[2:0]= loop counter
               g=c                   ; G= loop counter
 
@@ -3813,7 +3863,7 @@ DIVCommon:    rcr     2
 
               ;; RLC r
               c=n
-              c=c+c                 ; shift upper part
+              c=c+c   x             ; shift upper part
               n=c
               c=regn  Q
               c=c+c
@@ -3860,10 +3910,10 @@ DIVCommon:    rcr     2
 
 40$:          ;; RLC op1
               c=n
-              ?st=1   Flag_DoubleDiv
-              gonc    50$           ; single precision
+              ?s6=1                 ; double operation?
+              gonc    50$           ; no
 
-              rcr     6             ; double precision
+              rcr     6             ; yes
               c=c+c   x             ; hi(op1) << 1
               n=c
               c=regn  Z
@@ -3904,9 +3954,10 @@ DIVCommon:    rcr     2
               goto    44$
 
 55$:          c=n                   ; make C[2:0] the high part word
-              ?st=1   Flag_DoubleDiv ;  to test ougoing carry from
-              gonc    52$
-              rcr     3
+                                    ;  to test ougoing carry from
+              ?s6=1                 ; double operation?
+              gonc    52$           ; no
+              rcr     3             ; yes
               goto    52$
 
 50$:          ;; RLC op1 single precision
@@ -3930,9 +3981,9 @@ DIVCommon:    rcr     2
               ?st=1   Flag_UpperHalf
               goc     55$
               c=regn  Y
-              ?st=1   Flag_DoubleDiv
-              gonc    52$
-              c=regn  Z
+              ?s6=1                 ; double operation?
+              gonc    52$           ; no
+              c=regn  Z             ; yes
 52$:          c=c&a
               a=0                   ; assume outgoing carry = 0
               ?c#0
@@ -3949,9 +4000,13 @@ DIVCommon:    rcr     2
               gonc    2000$
 
               c=n
+              bcex    s             ; B.S= final sign
 
-              ?st=1   Flag_RMD      ; remainder?
-              goc     65$           ; yes
+              ?s11=1                ; remainder?
+              goc     69$           ; yes
+
+              s11=1                 ; it is the push flag we borrowed,
+                                    ;   it should be set so lets fix that
 
               st=0    Flag_CY       ; no, set carry set on remainder /= 0
               ?c#0    x
@@ -3962,25 +4017,67 @@ DIVCommon:    rcr     2
 61$:          st=1    Flag_CY
 
 62$:          c=n
-              ?st=1   Flag_DoubleDiv
-              goc     70$
+              ?s6=1                 ; double operation?
+              goc     70$           ; yes
 
               rcr     3
               bcex    x
               c=regn  Y
-64$:          regn=c  X
-              rgo     PutX
-
+64$:          ?st=1   Flag_2        ; signed mode?
+              gonc    67$           ; no
+              ?b#0    s             ; negative?
+              gonc    67$           ; no
+              c=-c                  ; negate result
+              bcex    x
+              c=-c-1  x
 65$:          bcex    x
+67$:          regn=c  X
+              rgo     PutXDrop
+
+69$:          bcex    x
               c=regn  Q
               goto    64$
 
-70$:          ;;; @@@ need help here!!!
-              ;; do upper parts
+;;; Result after DDIV
+70$:          rcr     3             ; load low part of quotient
+              bcex    x
+              c=regn  Y
+              ?st=1   Flag_2        ; signed mode?
+              gonc    71$           ; no
+              ?b#0    s             ; negative result?
+              gonc    71$           ; no
+              c=-c                  ; yes, negate result
+              bcex    x
+              c=-c-1  x
+              bcex    x
+71$:          a=c
+              rxq     maskABx
+              c=regn  Z
+              acex
+              regn=c  Z             ; will be dropped to Y
+              c=b                   ; write upper part of Y to trailer
+              rcr     10
+              c=c+1   x
+              dadd=c
+              c=data
               rcr     6
               bcex    x
-              c=regn  Z
-              goto    64$
+              bcex    xs
+              rcr     -6
+              data=c
+              c=0     x             ; select chip 0
+              dadd=c
+              c=n
+              rcr     6             ; load high part of quotient
+              ?st=1   Flag_2
+              gonc    65$
+              ?b#0    s
+              gonc    65$
+              c=-c-1  x
+              acex
+              c=-c-1
+              acex
+72$:          goto    65$
 
 
 ;;; ----------------------------------------------------------------------
