@@ -4877,7 +4877,7 @@ prgm:         ?s12=1                ; private?
               KeyEntry Binary       ; TAN
               .con    0x208         ; SST
               .con    0x1ff         ; BACKARROW
-              .con    0x20c         ; MODE ALPHA
+              .con    0x30c         ; MODE ALPHA
               .con    0x20c         ; MODE PRGM
               .con    0x30c         ; MODE USER
               .con    0             ; OFF key special
@@ -4887,7 +4887,7 @@ prgm:         ?s12=1                ; private?
               KeyEntry RRC          ; TAN
               .con    0x207         ; BST
               KeyEntry CLIX         ; BACKARROW
-              .con    0x20c         ; MODE ALPHA
+              .con    0x30c         ; MODE ALPHA
               .con    0x20c         ; MODE PRGM
               .con    0x30c         ; MODE USER
               .con    0             ; OFF key special
