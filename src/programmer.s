@@ -4800,7 +4800,7 @@ prgm:         ?s12=1                ; private?
               .con    0x108         ; 8
               .con    0x105         ; 5
               .con    0x102         ; 2
-              .con    0             ; decimal point
+              KeyEntry WINDOW       ; decimal point
 
               ;; Logical column 2, shifted
               KeyEntry RL           ; SQRT
@@ -4816,7 +4816,7 @@ prgm:         ?s12=1                ; private?
               .con    0x10d         ; LOG   (D digit)
               KeyEntry Octal        ; COS
               KeyEntry LDI          ; RCL
-              KeyEntry WINDOW       ; EEX
+              .con    0             ; EEX
               .con    0x109         ; 9
               .con    0x106         ; 6
               .con    0x103         ; 3
