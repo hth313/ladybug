@@ -2843,7 +2843,7 @@ Display2:     c=n                   ; check window#
               gonc    38$
               goto    40$           ; hex
 
-10$:          rxq     div10LCD      ; decimal
+10$:          rxq     decDigits     ; decimal
               goto    61$
 
 50$:          ?st=1   Flag_LocalZeroFill
@@ -4153,7 +4153,7 @@ divCommon:    rcr     2
 ;;;
 ;;; Note: This routine is duplicated in bank 1 and 2, as it is used
 ;;;       within both banks.
-;;;       (The one in bank 1 is defined together with div10LCD.)
+;;;       (The one in bank 1 is defined together with decDigits.)
 ;;;
 ;;; ----------------------------------------------------------------------
 
@@ -5071,7 +5071,7 @@ Div10:        acex                  ; save n in P[9:8]:Q
               .section Code
               .align  256
               getSign
-div10LCD:     c=regn  14
+decDigits:    c=regn  14
               rcr     12
               cstex
               ?st=1   Flag_2        ; signed mode?
