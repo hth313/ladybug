@@ -27,8 +27,8 @@
 
     Operations (like add and shifts) uses a variant of 'FindBuffer' that
     sets up the user flags (such as sign mode, carry and zero flags).
-    Examples of such routines are 'FindBufferUserFlags' and
-    'FindBufferGetXSaveL'.
+    Examples of such routines are 'findBufferUserFlags' and
+    'findBufferGetXSaveL'.
     These are similar to 'FindBuffer', but as said, they set up user flags
     instead of the internal flag set.
 
@@ -245,11 +245,11 @@ Header:       ?s13=1                ; running?
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
               rtn nc                ; no, do nothing
-10$:          rxq     FindBufferUserFlags_LiftStackS11
+10$:          rxq     findBufferUserFlags_liftStackS11
               rxq     fetchLiteral
               regn=c  X
               gosub   PUTPCA        ; we already have chip 0 selected
-              rgo     PutX
+              rgo     putX
 
 
 ;;; **********************************************************************
@@ -268,7 +268,7 @@ XROMj:        .equ    64 * (XROMno % 4)
 
               .section Code
 
-ClearDigitEntry:
+clearDigitEntry:
               rxq     chkbuf
               nop
               cstex
@@ -286,7 +286,7 @@ ClearDigitEntry:
 
               .section CodeQ0
 
-RAK60J1:      rxq     ClearDigitEntry ; handle reassigned keys
+RAK60J1:      rxq     clearDigitEntry ; handle reassigned keys
               golong  RAK60
 
 ;;; During digit entry, we use flag 9 to keep track of programming mode
@@ -348,7 +348,7 @@ keyHandler:   nop                   ; ignore back arrow entry (deal with it as a
               ?c#0                  ; found?
               gonc    10$           ; no
               cmex                  ; yes
-              rxq     ClearDigitEntry
+              rxq     clearDigitEntry
               golong  PARS60+1      ; skip cmex at start of PARS60
 #endif
 
@@ -378,7 +378,7 @@ keyHandler:   nop                   ; ignore back arrow entry (deal with it as a
               asl                   ;  CLK--
               asl                   ; CLK---
               gosub   PCTOC
-              lc      3             ; C[2]= 3  (for ShiftUser below)
+              lc      3             ; C[2]= 3  (for shiftUser below)
               pt=     5
               acex    wpt           ; merge final table address
               cxisa                 ; and fetch
@@ -388,12 +388,12 @@ keyHandler:   nop                   ; ignore back arrow entry (deal with it as a
               goc     numEntry      ; yes
               m=c                   ; no, same function as normal keyboard
               c=c-1   xs
-              gonc    ShiftUser     ; does not clear digit entry
-              rxq     ClearDigitEntry
+              gonc    shiftUser     ; does not clear digit entry
+              rxq     clearDigitEntry
 PARS56_M:     c=m                   ;  restore keycode
               golong  PARS56
 
-ShiftUser:    rxq     chkbuf
+shiftUser:    rxq     chkbuf
               goto    PARS56_M      ; (P+1)
               rcr     -4            ; (P+2) found buffer
               a=c     s             ; LCD indentation
@@ -405,9 +405,9 @@ ShiftUser:    rxq     chkbuf
 11$:          gosub   ENCP00
               goto    PARS56_M
 
-KeyCLIX:      ldi     CLIX_Code
+keyCLIX:      ldi     CLIX_Code
 KeyH20:       cmex                  ; handle XROM code in C[1:0]
-              rxq     ClearDigitEntry
+              rxq     clearDigitEntry
               cmex
               acex    x
               a=0     xs            ; move to A[2:0]
@@ -422,7 +422,7 @@ KeyH20:       cmex                  ; handle XROM code in C[1:0]
 ;;; Handle numeric entry
 numEntry:     pt=     0
               g=c                   ; save digit number in G
-              rxq     FindBuffer    ; buffer address to B[12:10]
+              rxq     findBuffer    ; buffer address to B[12:10]
               c=st                  ; restore C[1:0]
               acex    x             ; base - 1 to A[0]
               pt=     0             ; get digit to C[2:0]
@@ -446,13 +446,13 @@ numEntry:     pt=     0
               acex                  ; (P+2) ongoing digit entry
               goto    dig40
 
-KeyCLIXJ1:    goto    KeyCLIX       ; relay
+keyCLIXJ1:    goto    keyCLIX       ; relay
 backSpaceJ1:  goto    backSpace     ; relay
 
 runMode:      st=0    Flag_PRGM
               ?st=1   IF_DigitEntry ; start digit entry?
               goc     dig37         ; no
-              rxq     LiftStackS11  ; check if we should lift stack
+              rxq     liftStackS11  ; check if we should lift stack
 
 ;;; Start entry with 0, clear digit cache
 dig35:        b=0     x             ; Load X (0)
@@ -463,7 +463,7 @@ digAbort:     gosub   BLINK         ; not accepted key, blink
               golong  NFRKB
 
 ;;; Ongoing digit entry, load X
-dig37:        rxq     LoadX         ; load X to B.X-A
+dig37:        rxq     loadX         ; load X to B.X-A
 dig40:        ?s1=1                 ; dispatch on base
               goc     hexoct        ; hex or octal
               ?s3=1
@@ -477,7 +477,7 @@ hexoct:       ?s3=1
 decDigit:     rxq     Mul10         ; prepare for a new decimal digit
               goto    dig50
 
-KeyCLIXJ2:    goto    KeyCLIXJ1     ; relay
+keyCLIXJ2:    goto    keyCLIXJ1     ; relay
 
 hexDigit:     acex    s             ; prepare for a new hex digit
               bcex    x
@@ -500,7 +500,7 @@ dig50:        c=0
               c=c+1   x
               bcex    x
 
-44$:          rxq     AcceptAndSave ; Check if value is accepted, save it
+44$:          rxq     acceptAndSave ; Check if value is accepted, save it
               goto    digAbort      ; too big, blink and return
               st=1    IF_DigitEntry
 kbDoneJ1:     goto    kbDone
@@ -520,7 +520,7 @@ backSpace:    c=regn  14
               rxq     fetchLiteral  ; yes, pick up current number
               st=1    Flag_PRGM
               a=c
-              goto    NumBSP10
+              goto    digBSP10
 
 5$:           c=regn  14
               st=c                  ; bring up SS0 for PARS56
@@ -532,25 +532,25 @@ backSpace:    c=regn  14
 
 10$:          st=0    Flag_PRGM
               ?st=1   IF_DigitEntry ; doing digit entry
-              goc     NumBSP
+              goc     digBSP
               ?st=1   IF_Message    ; showing a message?
-KeyCLIXJ3:    gonc    KeyCLIXJ2     ; no, do CLIX
+keyCLIXJ3:    gonc    keyCLIXJ2     ; no, do CLIX
 
 kbDone:       ?st=1   Flag_PRGM
               goc     10$
-              rxq     DisplayXB10
+              rxq     displayXB10
 5$:           ?s12=1                ; key released?
               golnc   NFRKB         ; no, return via reset keyboard
               s12=0                 ; clear s12 again, return without resetting
               golong  NFRC          ;  keyboard
-10$:          rxq     DisplayPrgmLiteralDE
+10$:          rxq     displayPrgmLiteralDE
               goto    5$
 
 ;;; Back space used, not 0, as the number is smaller than before (we deleted
 ;;; a character), we can just save it without doing any range checking.
 bspNot0:      ?st=1   Flag_PRGM
               goc     10$
-              rxq     SaveUpperPart
+              rxq     saveUpperPart
               c=0
               dadd=c
               acex
@@ -559,11 +559,11 @@ bspNot0:      ?st=1   Flag_PRGM
 10$:          rxq     saveLiteral
               goto    kbDone
 
-KeyCLIXJ4:    goto    KeyCLIXJ3     ; relay
+keyCLIXJ4:    goto    keyCLIXJ3     ; relay
 
 ;;; Back arrow in digit entry
-NumBSP:       rxq     LoadX
-NumBSP10:     ?s1=1
+digBSP:       rxq     loadX
+digBSP10:     ?s1=1
               gonc    5$
               ?s3=1
               goc     hexBSP        ; hex
@@ -609,7 +609,7 @@ dig20:        ?st=1   Flag_PRGM     ; in program mode?
               s11=0                 ; clear push flag in case user NULL the CLIX !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-              goto    KeyCLIXJ4
+              goto    keyCLIXJ4
 
 ;;; Back space doing hexadecimal input
 hexBSP:       asr                   ; delete hex digit
@@ -620,7 +620,7 @@ hexBSP:       asr                   ; delete hex digit
               bcex    x
               goto    dig10
 
-decBSP:       rxq     Div10
+decBSP:       rxq     div10
               goto    dig10
 
 ;;; Back space doing octal input
@@ -639,7 +639,7 @@ octBSP:       c=b     x             ; oct, upper part
               a=c     x
               goto    dig10
 
-dig25:        rxq     ClearDigitEntry ; clear digit entry flags
+dig25:        rxq     clearDigitEntry ; clear digit entry flags
               gosub   DATOFF        ; clear flags
               rxq     NXBYTP        ; clean up in program memory
               rcr     -1
@@ -695,7 +695,7 @@ prgmDigent:   ?s12=1                ; private?
               pt=     0
               g=c                   ;  entered char
 
-              rxq     FindBuffer    ; restore M, ST
+              rxq     findBuffer    ; restore M, ST
 
               c=0                   ; start out with 0
               b=0     x
@@ -838,13 +838,13 @@ lineAndBaseLCD:
 
 
               .section Code2
-              .shadow PutXDrop-1
-PutXDrop_rom2:
+              .shadow putXDrop-1
+putXDrop_rom2:
               enrom1
 
               .section Code2
-              .shadow PutX-1
-PutX_rom2:
+              .shadow putX-1
+putX_rom2:
               enrom1
 
               .section Code
@@ -861,10 +861,10 @@ PutX_rom2:
 ;;;
 ;;; **********************************************************************
 
-PutXnoFlags:  rxq     MaskAndSave
-              goto    ExitUserST
+putXnoFlags:  rxq     maskAndSave
+              goto    exitUserST
 
-PutXDrop:     c=b                   ; select upper part register
+putXDrop:     c=b                   ; select upper part register
               rcr     10
               c=c+1   x
               dadd=c
@@ -886,11 +886,11 @@ PutXDrop:     c=b                   ; select upper part register
               cnex                  ; get T
               regn=c  Z             ; Z = T
 
-PutX:         rxq     MaskAndSave
-              rxq     SetXFlags
+putX:         rxq     maskAndSave
+              rxq     setXFlags
 ;;; Normal exit with loaded and modified user flags in ST.
 ;;; In most cases you exit via PutX or one of its friends.
-ExitUserST:   c=0
+exitUserST:   c=0
               dadd=c                ; select chip 0
               c=regn  14
               rcr     12
@@ -899,7 +899,7 @@ ExitUserST:   c=0
               regn=c  14
               c=b
               rcr     10
-              goto    ExitNoUserST1
+              goto    exitNoUserST1
 
 ;;; Exit and show display of X register in integer mode if
 ;;; appropriate. This will give a steadier display as it sets
@@ -910,8 +910,8 @@ ExitUserST:   c=0
 ;;; kicks in and changes it. Going out here give a steadier result.
 ;;;
 ;;; Assume header address is in A.X
-ExitNoUserST: acex
-ExitNoUserST1:
+exitNoUserST: acex
+exitNoUserST1:
               dadd=c
               acex
               c=data                ; load buffer header
@@ -928,7 +928,7 @@ ExitNoUserST1:
               acex    x             ; select buffer header, for DisplayX
               dadd=c
               acex    x
-              rxq     DisplayX      ; default display of integer X register
+              rxq     displayX      ; default display of integer X register
 1$:           golong  NFRC
 
 
@@ -947,7 +947,7 @@ ExitNoUserST1:
 Binary:       ldi     1
 BaseHelper:   rcr     1
               bcex    s
-              rxq     FindBuffer
+              rxq     findBuffer
               cstex
               rcr     1
               bcex    s
@@ -959,9 +959,9 @@ BaseHelper:   rcr     1
 ;;; Exit routine with X already stored properly.
 ;;;
 ;;; IN: B[12:10]
-Exit:         c=b
+exit:         c=b
               rcr     10
-              goto    ExitNoUserST1
+              goto    exitNoUserST1
 
 
 ;;; ************************************************************
@@ -976,19 +976,19 @@ Exit:         c=b
 Integer:      nop                   ; non-programmable
                                     ;  (allow mode switch in program mode)
               rxq     chkbuf
-              goto    CreateBuf     ; create buffer
+              goto    createBuf     ; create buffer
               cstex
               ?st=1   IF_Integer
-              goc     ExitNoUserSTR0 ; already in integer mode
+              goc     exitNoUserSTR0 ; already in integer mode
               st=1    IF_Integer    ; enter integer mode
               cstex                 ; updated internal flags
               data=c
 
-ExitNoUserSTR0:                     ; assume header address in A.X
-              goto    ExitNoUserST
+exitNoUserSTR0:                     ; assume header address in A.X
+              goto    exitNoUserST
 
-ExitS11:      s11=1                 ; enable stack lift
-              goto Exit
+exitS11:      s11=1                 ; enable stack lift
+              goto    exit
 
               .name   "OCTI"
 Octal:        ldi   7
@@ -1009,7 +1009,7 @@ Hex:          ldi     15
 ;;;
 ;;; **********************************************************************
 
-CreateBuf:    acex    x             ; save address of first free register
+createBuf:    acex    x             ; save address of first free register
               n=c                   ; in N
               c=0                   ; select chip 0
               dadd=c
@@ -1017,7 +1017,7 @@ CreateBuf:    acex    x             ; save address of first free register
               a=c     x             ; buffer
               ldi     BufSize
               ?a<c    x
-              goc     NoRoom        ; no
+              goc     noRoom        ; no
 
               c=n                   ; yes, create it
               c=c+1   x             ; select upper part register
@@ -1044,14 +1044,14 @@ CreateBuf:    acex    x             ; save address of first free register
               lc      15            ; hex
               data=c                ; write buffer header
 
-ExitNoUserSTR1:
-              goto    ExitNoUserSTR0
+exitNoUserSTR1:
+              goto    exitNoUserSTR0
 
-NoRoom:       rxq     ErrorMessage
+noRoom:       rxq     errorMessage
               .messl  "NO ROOM"
-              rgo     ErrorExit
+              rgo     errorExit
 
-ErrorMessage: gosub   ERRSUB
+errorMessage: gosub   ERRSUB
               gosub   CLLCDE
               golong  MESSL
 
@@ -1123,9 +1123,9 @@ chkbuf:       ldi     BufNumber
               a=a+c   x
               goto    2$
 
-NoBuf:        rxq     ErrorMessage
+noBuf:        rxq     errorMessage
               .messl  "NO PROG BUF"
-ErrorExit:    gosub   LEFTJ
+errorExit:    gosub   LEFTJ
               s8=1
               gosub   MSG105
               golong  ERR110
@@ -1153,9 +1153,9 @@ ErrorExit:    gosub   LEFTJ
 ;;;
 ;;; **********************************************************************
 
-FindBuffer:   gosub   GSB256        ; chkbuf
-              goto    NoBuf         ; (P+1)
-CarryToM:     acex    x             ; (P+2)  C.X= buffer address
+findBuffer:   gosub   GSB256        ; chkbuf
+              goto    noBuf         ; (P+1)
+carryToM:     acex    x             ; (P+2)  C.X= buffer address
               rcr     -10
               bcex    m             ; save in B[12:10]
               st=0    Flag_UpperHalf
@@ -1223,11 +1223,11 @@ CarryToM:     acex    x             ; (P+2)  C.X= buffer address
 
 
               .section Code
-FindBufferUserFlags:
+findBufferUserFlags:
               c=regn  14            ; bring up user flags
               rcr     12
               st=c
-              rxq     FindBuffer
+              rxq     findBuffer
               cstex                 ; bring up user flags
               rtn
 
@@ -1253,24 +1253,24 @@ FindBufferUserFlags:
 ;;; **********************************************************************
 
 Flag_56:      .equ    9             ; set when word size is 56
-FindBufferGetXSaveL56:
+findBufferGetXSaveL56:
               st=0    Flag_56
-              rxq     FindBufferGetXSaveL
+              rxq     findBufferGetXSaveL
               c=m
               ?c#0
               rtn c
               st=1    Flag_56
               rtn
 
-FindBufferGetXSaveL:
+findBufferGetXSaveL:
               s0=0                  ; no division by 0 check
-FindBufferGetXSaveL0:
+findBufferGetXSaveL0:
               s11=1                 ; set push flag (enable stack lift)
-FindBufferGetXSaveL0no11:
-              rxq     FindBuffer
+findBufferGetXSaveL0no11:
+              rxq     findBuffer
               cstex                 ; restore header
               n=c                   ; save header
-              rxq     LoadX
+              rxq     loadX
               ?s0=1                 ; check for X=0?
               gonc    10$           ; no
               ?a#0
@@ -1471,7 +1471,7 @@ bitMask:      ldi 64
               .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
-;;; MaskAndSave - finalize result in X by masking it, update zero/sign
+;;; maskAndSave - finalize result in X by masking it, update zero/sign
 ;;;               flags depending on value in X, and finally save the
 ;;;               upper part to buffer
 ;;;
@@ -1486,13 +1486,13 @@ bitMask:      ldi 64
 ;;;
 ;;; ----------------------------------------------------------------------
 
-MaskAndSave:  c=regn  X
+maskAndSave:  c=regn  X
               a=c
               rxq     maskABx_rom1
               acex
               regn=c  X
 
-SaveUpperPart:
+saveUpperPart:
               ;; save upper part
               c=b                   ; get buffer header address
               rcr     10
@@ -1508,7 +1508,7 @@ SaveUpperPart:
 
 
 ;;; New value in B[2:0] and A
-AcceptAndSave:
+acceptAndSave:
               c=m                   ; make mask of bits outside word
               c=c-1
               c=-c-1
@@ -1530,7 +1530,7 @@ AcceptAndSave:
               regn=c  X             ; write to X
               ?st=1   Flag_UpperHalf
               rtn nc
-              goto    SaveUpperPart
+              goto    saveUpperPart
 1$:           abex                  ; mask in upper part
               c=c&a
               abex
@@ -1640,8 +1640,8 @@ saveLiteral:  acex
              .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
-;;; SetXFlags - set sign/zero flags according to X.
-;;; SetSignFlag - only set the sign flag.
+;;; setXFlags - set sign/zero flags according to X.
+;;; setSignFlag - only set the sign flag.
 ;;;
 ;;; In: B.X - upper part of X
 ;;;     X - lower part of X
@@ -1655,19 +1655,19 @@ saveLiteral:  acex
 ;;;
 ;;; ----------------------------------------------------------------------
 
-SetXFlags:    st=0    Flag_Zero     ; clear flags we will update
+setXFlags:    st=0    Flag_Zero     ; clear flags we will update
 
               c=0     x
               dadd=c
               ?b#0    x             ; check for zero result
-              goc     SetSignFlag   ; non-zero
+              goc     setSignFlag   ; non-zero
               c=regn  X
               ?c#0
-              goc     SetSignFlag   ; non-zero
+              goc     setSignFlag   ; non-zero
 
               st=1    Flag_Zero     ; set zero flag
 
-SetSignFlag:  st=0    Flag_Sign
+setSignFlag:  st=0    Flag_Sign
               ?st=1   Flag_UpperHalf ; high part exists?
               goc     2$            ; yes
               c=regn  X             ; align sign bit with carry
@@ -1695,7 +1695,7 @@ SetSignFlag:  st=0    Flag_Sign
 ;;; **********************************************************************
 
               .name   "XOR"
-XOR:          rxq     FindBufferGetXSaveL
+XOR:          rxq     findBufferGetXSaveL
               c=regn  X             ; XOR lower part of X with Y
               acex
               c=regn  Y
@@ -1721,7 +1721,7 @@ aoxfix_0:     abex    x             ; A[1:0] - upper part of X
               c=c&a
 aoxfix:       bcex    x
               b=0     xs            ; B[2:0] - upper result
-aoxfix_2:     rgo     PutXDrop
+aoxfix_2:     rgo     putXDrop
 
 
 ;;; **********************************************************************
@@ -1731,7 +1731,7 @@ aoxfix_2:     rgo     PutXDrop
 ;;; **********************************************************************
 
               .name   "OR"
-OR:           rxq     FindBufferGetXSaveL
+OR:           rxq     findBufferGetXSaveL
               c=regn  X             ; OR lower part of X with Y
               a=c
               c=regn  Y
@@ -1752,7 +1752,7 @@ OR:           rxq     FindBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "AND"
-AND:          rxq     FindBufferGetXSaveL
+AND:          rxq     findBufferGetXSaveL
               c=regn  X             ; AND lower part of X with Y
               a=c
               c=regn  Y
@@ -1788,7 +1788,7 @@ SUB:          s9=1
 
               .name   "ADD"
 ADD:          s9=0
-ADD_2:        rxq     FindBufferGetXSaveL
+ADD_2:        rxq     findBufferGetXSaveL
               switchBank 2
 ADD_3:        c=regn  X
               ?s9=1                 ; doing SUB?
@@ -1851,7 +1851,7 @@ ADD_3:        c=regn  X
               ?c#0
               gonc    25$
 24$:          st=1    Flag_CY
-25$:          rgo     PutXDrop_rom2
+25$:          rgo     putXDrop_rom2
 
 28$:          ?c#0
               goc     25$
@@ -1873,13 +1873,13 @@ ADD_3:        c=regn  X
 ;;; **********************************************************************
 
               .name   "CLIX"
-CLIX:         rxq     FindBufferUserFlags
+CLIX:         rxq     findBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
               b=0     x
               s11=0                 ; disable stack lift
-              rgo     PutXnoFlags
+              rgo     putXnoFlags
 
 
               .section Code
@@ -1890,10 +1890,10 @@ CLIX:         rxq     FindBufferUserFlags
 ;;; **********************************************************************
 
               .name   "ABSI"
-ABSI:         rxq     FindBufferGetXSaveL
+ABSI:         rxq     findBufferGetXSaveL
               st=0    Flag_Overflow
               ?st=1   Flag_2
-              goc     PutX_J0
+              goc     putX_J0
               goto    NEG10
 
 
@@ -1907,7 +1907,7 @@ ABSI:         rxq     FindBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "NEG"
-NEG:          rxq     FindBufferGetXSaveL
+NEG:          rxq     findBufferGetXSaveL
 NEG10:        st=0    Flag_Overflow ; assume no overflow
               ?st=1   Flag_2        ; signed mode?
               goc     5$            ; yes
@@ -1933,9 +1933,9 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
               a=c
               c=m
               ?a#c                  ; same as carry mask?
-              goc     PutX_J0       ; no, did not overflow
+              goc     putX_J0       ; no, did not overflow
               st=1    Flag_Overflow ; yes, overflow
-              goto    PutX_J0
+              goto    putX_J0
 
 
 ;;; **********************************************************************
@@ -1945,14 +1945,14 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 ;;; **********************************************************************
 
               .name   "NOT"
-NOT:          rxq     FindBufferGetXSaveL
+NOT:          rxq     findBufferGetXSaveL
               bcex    x
               c=-c-1  x
               bcex    x
               c=regn  X
               c=-c-1
               regn=c  X
-PutX_J0:      rgo     PutX
+putX_J0:      rgo     putX
 
 
 ;;; **********************************************************************
@@ -1967,7 +1967,7 @@ SB:           nop
               rxq     Argument
               .con    Operand00
               s9=0
-SB10:         rxq     FindBufferGetXSaveL
+SB10:         rxq     findBufferGetXSaveL
               rxq     bitMask_G
               ?s9=1                 ; SB?
               gonc    10$           ; yes
@@ -1982,7 +1982,7 @@ SB10:         rxq     FindBufferGetXSaveL
               goto    17$
 15$:          c=c&a
 17$:          regn=c  X
-19$:          goto    PutX_J0
+19$:          goto    putX_J0
 
 20$:          bcex    x
               ?s9=1                 ; SB?
@@ -1991,7 +1991,7 @@ SB10:         rxq     FindBufferGetXSaveL
               goto    30$
 25$:          c=c&a
 30$:          bcex    x
-              goto    PutX_J0
+              goto    putX_J0
 
 
 ;;; **********************************************************************
@@ -2021,8 +2021,8 @@ CB:           nop
               nop
               rxq     Argument
               .con    Operand00
-              rxq     FindBufferUserFlags
-              rxq     LoadX
+              rxq     findBufferUserFlags
+              rxq     loadX
               acex
               regn=c  X
               rxq     bitMask_G
@@ -2050,7 +2050,7 @@ MASKL:        nop
               rxq     Argument
               .con    8
               s9=1
-MASK10:       rxq     FindBufferUserFlags_LiftStackS11
+MASK10:       rxq     findBufferUserFlags_liftStackS11
               rxq     bitMask_G
               b=0     x
               c=c-1                 ; convert to mask
@@ -2114,7 +2114,7 @@ MASKR:        nop
 ;;; **********************************************************************
 
               .name   "LASTXI"
-LASTXI:       rxq     FindBufferUserFlags_LiftStackS11
+LASTXI:       rxq     findBufferUserFlags_liftStackS11
               c=b
               rcr     10
               c=c+1   x
@@ -2136,7 +2136,7 @@ LASTXI:       rxq     FindBufferUserFlags_LiftStackS11
 ;;; **********************************************************************
 
               .name   "X<>YI"
-SWAPI:        rxq     FindBufferUserFlags
+SWAPI:        rxq     findBufferUserFlags
 
               c=b
               rcr     10
@@ -2163,8 +2163,8 @@ SWAPI:        rxq     FindBufferUserFlags
               regn=c  Y
               acex
 SWAPIExit:    regn=c  X
-PutX11:       s11=1
-              rgo     PutXnoFlags
+putX11:       s11=1
+              rgo     putXnoFlags
 
 
 ;;; **********************************************************************
@@ -2173,7 +2173,7 @@ PutX11:       s11=1
 ;;;
 ;;; **********************************************************************
 
-RollDown:     rxq     FindBufferUserFlags
+RollDown:     rxq     findBufferUserFlags
 
 RollDown1:    c=b
               rcr     10
@@ -2220,7 +2220,7 @@ RDNExit:      c=b
               b=0     xs
               c=0     x
               dadd=c
-              goto    PutX11
+              goto    putX11
 
 
 ;;; **********************************************************************
@@ -2278,7 +2278,7 @@ SL:           nop                   ; Prelude for prompting function
               rxq     Argument
               .con    Operand01
               c=0     s
-              goto    LeftShift
+              goto    leftShift
 
 ;;; ----------------------------------------
 ;;;
@@ -2293,7 +2293,7 @@ RLC:          nop                   ; Prelude for prompting function
               .con    Operand01
               pt=     13
               lc      Bit_ThroughCarry | Bit_Rotate
-              goto    LeftShift
+              goto    leftShift
 
 ;;; ----------------------------------------
 ;;;
@@ -2301,7 +2301,7 @@ RLC:          nop                   ; Prelude for prompting function
 ;;;
 ;;; ----------------------------------------
 
-RLExit:       rgo     ExitS11
+RLExit:       rgo     exitS11
 
               .name   "RL"
 RL:           nop                   ;  Prelude for prompting function
@@ -2310,10 +2310,10 @@ RL:           nop                   ;  Prelude for prompting function
               .con    Operand01
               pt=     13
               lc      Bit_Rotate
-LeftShift:    ?b#0    m             ; 00 operand?
+leftShift:    ?b#0    m             ; 00 operand?
               gonc    RLExit        ; yes, do nothing
               bcex    s             ; B.S= configuration flags
-              rxq     FindBufferGetXSaveL56
+              rxq     findBufferGetXSaveL56
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
               stk=c
@@ -2360,7 +2360,7 @@ LeftShift:    ?b#0    m             ; 00 operand?
               bcex    m             ; put in B[12:10]
               acex                  ; write out result
               regn=c  X
-              rgo     PutX
+              rgo     putX
 
 56$:          bcex    m
               c=0                   ; prepare to rotate carry in if needed
@@ -2441,7 +2441,7 @@ SR:           nop                   ; Prelude for prompting function
               rxq     Argument
               .con    Operand01
               c=0     s
-              goto    RightShift
+              goto    rightShift
 
 ;;; ----------------------------------------
 ;;;
@@ -2456,7 +2456,7 @@ ASR:          nop                   ; Prelude for prompting function
               .con    Operand01
               pt=     13
               lc      Bit_Arithmetic
-              goto    RightShift
+              goto    rightShift
 
 ;;; ----------------------------------------
 ;;;
@@ -2471,7 +2471,7 @@ RRC:          nop                   ; Prelude for prompting function
               .con    Operand01
               pt=     13
               lc      Bit_ThroughCarry | Bit_Rotate
-              goto    RightShift
+              goto    rightShift
 
 ;;; ----------------------------------------
 ;;;
@@ -2479,7 +2479,7 @@ RRC:          nop                   ; Prelude for prompting function
 ;;;
 ;;; ----------------------------------------
 
-RRExit:       rgo     ExitS11
+RRExit:       rgo     exitS11
 
               .name   "RR"
 RR:           nop                   ; Prelude for prompting function
@@ -2488,16 +2488,16 @@ RR:           nop                   ; Prelude for prompting function
               .con    Operand01
               pt=     13
               lc      Bit_Rotate
-RightShift:   ?b#0    m             ; 00 operand?
+rightShift:   ?b#0    m             ; 00 operand?
               gonc    RRExit
               bcex    s             ; B.S=configuration
-              rxq     FindBufferGetXSaveL56
+              rxq     findBufferGetXSaveL56
               c=b     s
               c=c+c   s
               c=c+c   s
               c=c+c   s             ; arithmetic shift (sign preserving)?
               gonc    90$           ; no
-              rxq     SetSignFlag
+              rxq     setSignFlag
 
 90$:          c=regn  X             ; prepare for loop, load lower part
               a=c
@@ -2592,7 +2592,7 @@ RightShift:   ?b#0    m             ; 00 operand?
               goc     11$
               acex
               regn=c  X
-              rgo     PutX
+              rgo     putX
 
 
               .section Code
@@ -2612,7 +2612,7 @@ Flag_LocalZeroFill: .equ   Flag_UpperHalf
 ;;; case we want to fetch the literal from program memory (as we
 ;;; lost it when writing it), as well as saving internal flags.
 ;;; IN: B.X-N - literal
-DisplayPrgmLiteralDE:
+displayPrgmLiteralDE:
               rxq fetchLiteral
               c=b
               rcr     10
@@ -2620,15 +2620,15 @@ DisplayPrgmLiteralDE:
               c=data
               c=st
               data=c
-              goto DisPRGM10
+              goto disPRGM10
 
 ;;; Entry point to show program literal from poll vector
 ;;; IN: B.X-N - literal
-DisplayPrgmLiteral:
+displayPrgmLiteral:
               c=m
               dadd=c                ; select buffer header
               c=data
-DisPRGM10:    st=1    Flag_PRGM
+disPRGM10:    st=1    Flag_PRGM
               pt=     7             ; set word size
               lc      4
               lc      0
@@ -2636,25 +2636,25 @@ DisPRGM10:    st=1    Flag_PRGM
               a=c
               c=0     x             ; select chip 0
               dadd=c
-              goto    Display2
+              goto    display2
 
 ;;; Entry point with buffer address in B[12:10] and a need to save internal
 ;;; flags. This is used by digit entry in run mode.
-DisplayXB10:  c=b
+displayXB10:  c=b
               rcr     10
               dadd=c
               a=c     x
               c=data
-              goto    Dis10
+              goto    dis10
 
-DisplayX:     c=data                ; get buffer header
+displayX:     c=data                ; get buffer header
               st=c                  ; bring up internal flags
-Dis10:        st=0    IF_Message
+dis10:        st=0    IF_Message
               c=st
               data=c
               n=c                   ; save header in N
-              rxq     CarryToM      ; get carry mask
-              rxq     LoadX         ; load and mask X
+              rxq     carryToM      ; get carry mask
+              rxq     loadX         ; load and mask X
               st=0    Flag_PRGM
 
 ;;; During digit entry, check for a key up after about 0.1 seconds (here),
@@ -2669,7 +2669,7 @@ Dis10:        st=0    IF_Message
               s12=1                 ; say key went up
 12$:
               ;; handle window for all bases except decimal
-Display2:     c=n                   ; check window#
+display2:     c=n                   ; check window#
               pt=     9
               lc      0
               g=c                   ; save in G[0] for '.' around base char
@@ -2864,7 +2864,7 @@ Display2:     c=n                   ; check window#
               c=st                  ; to see.
               regn=c  14
 
-              ;; Fall into TakeOverKeyboard below
+              ;; Fall into takeOverKeyboard below
 
 ;;; ************************************************************
 ;;;
@@ -2880,7 +2880,7 @@ Display2:     c=n                   ; check window#
 
 ;;; NOTE: Fall through from above! If making changes in this routine,
 ;;;       also check that it is consistent with its use from above!
-TakeOverKeyboard:
+takeOverKeyboard:
               c=stk                 ; save return address in A
               a=c     m
               c=0     x             ; Load flag register
@@ -3089,10 +3089,10 @@ clStatus:     dadd=c                ; select status register
               c=c+1   m
               gotoc                 ; return to (P+2)
 
-LoadG:        pt=     0
+loadG:        pt=     0
               c=g
               a=c     x
-Load:         gosub   GSB256        ; classify address
+load:         gosub   GSB256        ; classify address
               goto    50$           ; (P+1) nibble storage
               goto    700$          ; (P+2) stack register
               c=data                ; (P+2) (other) status register
@@ -3223,7 +3223,7 @@ maskABx_rom2: maskABx
 ;;; ----------------------------------------------------------------------
 
               .section Code
-LoadX:        c=b
+loadX:        c=b
               rcr     10
               c=c+1   x
               dadd=c                ; select trailer register
@@ -3246,10 +3246,10 @@ maskABx_rom1: maskABx
 ;;; **********************************************************************
 
               .name   "ENTERI"
-ENTERI:       rxq     FindBuffer
+ENTERI:       rxq     findBuffer
               s11=0                 ; disable stack lift
-              rxq     LiftStack
-              rgo     Exit          ; flags are not affected by ENTERI as
+              rxq     liftStack
+              rgo     exit          ; flags are not affected by ENTERI as
                                     ; we keep the same value in X
 
 
@@ -3263,14 +3263,14 @@ ENTERI:       rxq     FindBuffer
 ;;;
 ;;; ----------------------------------------------------------------------
 
-FindBufferUserFlags_LiftStackS11:
-              rxq     FindBufferUserFlags
-LiftStackS11: ?s11=1                ; push flag?
-              goc     LiftStack     ; yes
+findBufferUserFlags_liftStackS11:
+              rxq     findBufferUserFlags
+liftStackS11: ?s11=1                ; push flag?
+              goc     liftStack     ; yes
               s11=1                 ; no, set it and do not lift stack
               rtn
 
-LiftStack:    c=b                   ; get buffer address to A.X
+liftStack:    c=b                   ; get buffer address to A.X
               rcr     10
               c=c+1   x             ; point to register with upper bytes
               dadd=c
@@ -3317,12 +3317,12 @@ WSZ_DE:       golnc   ERRDE
               ldi     65
               ?a<c    x
               gonc    WSZ_DE
-              rxq     FindBuffer
+              rxq     findBuffer
               c=st                  ; restore C[1:0]
               pt=     6
               c=g
               data=c
-WSZ_OK:       rgo     Exit
+WSZ_OK:       rgo     exit
 
 
 ;;; ----------------------------------------------------------------------
@@ -3343,7 +3343,7 @@ WINDOW:       nop
               acex    x
               pt=     0
               g=c
-              rxq     FindBuffer
+              rxq     findBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -3364,7 +3364,7 @@ PWINDOW:      nop
               ldi     8             ; allow up to 7
               ?a<c    x
               gonc    WSZ_DE
-              rxq     FindBuffer
+              rxq     findBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -3390,16 +3390,16 @@ LDI:          nop
               nop
               rxq     Argument
               .con    Operand00     ; LDI 00 is default
-              rxq     FindBufferUserFlags
+              rxq     findBufferUserFlags
               switchBank 2
-              rxq     LoadG
+              rxq     loadG
               switchBank 1
               acex
               n=c                   ; save value in B
-              rxq     LiftStackS11
+              rxq     liftStackS11
               c=n
               regn=c  X
-              rgo     PutX
+              rgo     putX
 
 
 ;;; ----------------------------------------------------------------------
@@ -3432,7 +3432,7 @@ STI:          nop
 ;;;     B[2:0] : A = sum
 ;;; OUT
 ;;;     B[2:0] : A = updated sum
-`Mul8x56`:    c=0     x             ; C[1:0]= extension of M
+`mul8x56`:    c=0     x             ; C[1:0]= extension of M
               pt=     0
               goto    15$
 
@@ -3477,7 +3477,7 @@ DMUL:         s11=1                 ; want double result
 
               .name   "MUL"
 MUL:          s11=0                 ; want single result
-mulCommon:    rxq     FindBufferGetXSaveL0no11
+mulCommon:    rxq     findBufferGetXSaveL0no11
               switchBank 2
               rxq     getSignsMakePositive
               c=a-c   s             ; C.S= 0 if same sign
@@ -3693,7 +3693,7 @@ mulCommon:    rxq     FindBufferGetXSaveL0no11
               ?c#0
               gonc    55$           ; no bits outside
 54$:          st=1    Flag_Overflow
-55$:          rgo     PutXDrop_rom2
+55$:          rgo     putXDrop_rom2
 60$:          abex    x
               c=c&a
               abex    x
@@ -3792,8 +3792,8 @@ mulCommon:    rxq     FindBufferGetXSaveL0no11
 80$:          acex
               regn=c  X             ; save upper half in X
               switchBank 1
-              rxq     MaskAndSave
-              rxq     SetXFlags
+              rxq     maskAndSave
+              rxq     setXFlags
               c=regn  Y             ; set correct Z flag
               ?c#0
               goc     82$
@@ -3805,7 +3805,7 @@ mulCommon:    rxq     FindBufferGetXSaveL0no11
               ?c#0     x
               gonc    85$
 82$:          st=0    Flag_Zero
-85$:          rgo     ExitUserST
+85$:          rgo     exitUserST
 
 
               .section Code
@@ -3833,7 +3833,7 @@ divCommon:    rcr     2
               bcex    s             ; B.S= variant
 
               s0=1                  ; check for division by 0
-              rxq     FindBufferGetXSaveL0
+              rxq     findBufferGetXSaveL0
               switchBank 2
 
 ;;; We always want the low part of dividend to be in Y.
@@ -4088,7 +4088,7 @@ divCommon:    rcr     2
               c=-c-1  x
 65$:          bcex    x
 67$:          regn=c  X
-              rgo     PutXDrop_rom2
+              rgo     putXDrop_rom2
 
 69$:          bcex    x
               c=regn  Q
@@ -4281,7 +4281,7 @@ Argument:     ?s13=1                ; running?
 51$:          goto    50$           ; relay
 
 88$:          spopnd
-              rgo     NoBuf
+              rgo     noBuf
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4535,22 +4535,22 @@ pollio:       ?s3=1                 ; program mode?
               gonc    romrtn        ; no, ordinary floating point operating mode
               cstex                 ; integer mode, restore SS0
               ?s5=1                 ; message flag?
-              goc     TakeOver      ; yes, do not touch the display
-              rxq     DisplayX      ; show integer display
-              goto    ReconstructReturnRomCheck
+              goc     takeOver      ; yes, do not touch the display
+              rxq     displayX      ; show integer display
+              goto    reconstructReturnRomCheck
 
 romrtn:       gosub   LDSST0
 romrtn2:      c=n
               goto    RelayRMCK10
 
-TakeOver:     cstex
+takeOver:     cstex
               st=1    IF_Message    ; not showing X
               cstex
               data=c
-              rxq     TakeOverKeyboard
+              rxq     takeOverKeyboard
 
 ;;; We need to repair registers here for ROMCHK
-ReconstructReturnRomCheck:
+reconstructReturnRomCheck:
               gosub   LDSST0        ; put up SS0
               gosub   PCTOC         ; rtn to romcheck
                                     ; since we had no place to
@@ -4568,9 +4568,9 @@ RelayRMCK10:  golong  RMCK10
 ;;; Program mode returns here with reconstruction of C register for RMCK10, but
 ;;; first we need to plant the keyboard takeover, unless we are in alpha mode
 ProgramReturn: ?s9=1                ; in integer mode?
-              gonc    ReconstructReturnRomCheck ; no
-              rxq     TakeOverKeyboard
-              goto    ReconstructReturnRomCheck
+              gonc    reconstructReturnRomCheck ; no
+              rxq     takeOverKeyboard
+              goto    reconstructReturnRomCheck
 
 ;;; Program mode, we may need to adjust some instructions to look the way
 ;;; they should.
@@ -4741,7 +4741,7 @@ prgm:         ?s12=1                ; private?
               c=n                   ; get buffer address
               m=c
               rxq     fetchLiteralA ; fetch the literal
-              rxq     DisplayPrgmLiteral
+              rxq     displayPrgmLiteral
               goto    900$
 
 
@@ -4917,7 +4917,7 @@ Mul10:        gosub   GSB256        ; Shift1   *2
 ;;;
 ;;; ----------------------------------------------------------------------
 
-Div10:        acex                  ; save n in P[9:8]:Q
+div10:        acex                  ; save n in P[9:8]:Q
               regn=c  Q
               acex
               c=regn  P
@@ -5339,7 +5339,7 @@ decDigits:    c=regn  14
 ;;;
 ;;; ----------------------------------------------------------------------
 
-DeepWake:     n=c
+deepWake:     n=c
               rxq     chkbuf
               goto    pollret       ; (P+1) not found
               c=c+1   s             ; (P+2) reclaim it
@@ -5383,7 +5383,7 @@ rpollio:      ?s13=1                ; running?
               .con    0             ; Wake w/o key
               .con    0             ; Powoff
               goto    rpollio       ; I/O
-              goto    DeepWake      ; Deep wake-up
+              goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
               .text   "A1RP"        ; Identifier PR-1A
               .con    0             ; checksum position
