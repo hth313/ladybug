@@ -460,8 +460,6 @@ dig35:        b=0     x             ; Load X (0)
               goto    dig40
 
 digAbort:     gosub   BLINK         ; not accepted key, blink
-              ?st=1   IF_DigitEntry
-              goc     kbDoneJ1
               golong  NFRKB
 
 ;;; Ongoing digit entry, load X
