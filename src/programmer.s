@@ -125,6 +125,8 @@ FatStart:
               FAT     SB
               FAT     MASKL
               FAT     MASKR
+              FAT     LDI
+              FAT     STI
 FatEnd:       .con    0,0
 
 
@@ -214,6 +216,15 @@ Operand16:    .equ    16
 OperandX:     .equ    115
 OperandY:     .equ    114
 OperandIndX:  .equ    Indirect + OperandIND
+
+
+;;; Macro to switch to given bank on the fly.
+switchBank:   .macro  n
+              enrom\n
+10$:
+              .section Code\n
+              .shadow 10$
+              .endm
 
 
 ;;; ************************************************************
@@ -828,6 +839,16 @@ lineAndBaseLCD:
               golong  ENCP00
 
 
+              .section Code2
+              .shadow PutXDrop-1
+PutXDrop_rom2:
+              enrom1
+
+              .section Code2
+              .shadow PutX-1
+PutX_rom2:
+              enrom1
+
               .section Code
 ;;; **********************************************************************
 ;;;
@@ -1281,7 +1302,7 @@ FindBufferGetXSaveL0no11:
               dadd=c
               rtn
 
-              .section Code
+              .section Code2
 ;;; Get the signs of X and Y.
 ;;; S6 - Controls if the numbers should be made positive and masked as well.
 ;;;      This flag is the sign-flag, which will be updated by all callers
@@ -1328,9 +1349,9 @@ getSigns:     c=regn  X
               bcex    x             ; restore upper X
               rtn
 
-              .section Code
+              .section Code2
 ;;; Get the sign and maybe make positive
-signPositive: rxq     getSign       ; get the sign
+signPositive: rxq     getSign_rom2  ; get the sign
               ?c#0    s             ; positive?
               gonc    50$           ; yes
               ?s7=1                 ; make positive?
@@ -1348,7 +1369,7 @@ signPositive: rxq     getSign       ; get the sign
               bcex    x
               c=-c-1  x
               bcex    x
-15$:          rxq     maskABx
+15$:          rxq     maskABx_rom2
               c=0     s             ; C.S= negative flag
               c=c+1   s
 17$:          c=stk                 ; return to (P+2)
@@ -1364,7 +1385,7 @@ signPositive: rxq     getSign       ; get the sign
               bcex    x             ; invert B[1:0] as well
               c=-c-1  x
               bcex    x
-              rxq     maskABx
+              rxq     maskABx_rom2
               c=regn  Z             ; load lower half
               c=-c
               acex
@@ -1385,7 +1406,7 @@ signPositive: rxq     getSign       ; get the sign
               rtn nc                ; no, we are done, return to (P+1)
                                     ; yes, mask Y
               bcex    s             ; B.S= saved sign
-              rxq     maskABx
+              rxq     maskABx_rom2
               ?s6=1                 ; double divide?
               gonc    55$           ; no
 
@@ -1402,7 +1423,7 @@ signPositive: rxq     getSign       ; get the sign
               bcex    xs            ; load upper Z to B[1:0]
               rcr     -6
               n=c
-              rxq     maskABx
+              rxq     maskABx_rom2
 55$:          bcex    s             ; restore sign
               goto    17$           ; return to (P+2)
 
@@ -1469,7 +1490,7 @@ bitMask:      ldi 64
 
 MaskAndSave:  c=regn  X
               a=c
-              rxq     maskABx
+              rxq     maskABx_rom1
               acex
               regn=c  X
 
@@ -1770,7 +1791,8 @@ SUB:          s9=1
               .name   "ADD"
 ADD:          s9=0
 ADD_2:        rxq     FindBufferGetXSaveL
-              c=regn  X
+              switchBank 2
+ADD_3:        c=regn  X
               ?s9=1                 ; doing SUB?
               gonc    2$            ; no
               bcex    x             ; yes, negate X
@@ -1778,7 +1800,7 @@ ADD_2:        rxq     FindBufferGetXSaveL
               bcex    x
               c=-c
 2$:           a=c
-              rxq     maskABx
+              rxq     maskABx_rom2
               acex
               regn=c  X
               s6=0                  ; not doing DDIV
@@ -1796,7 +1818,7 @@ ADD_2:        rxq     FindBufferGetXSaveL
               bcex    x             ; B[1:0]= upper Y
               c=regn  Y
               a=c                   ; A= lower Y
-              rxq     maskABx       ; B.X/A = Y masked
+              rxq     maskABx_rom2  ; B.X/A = Y masked
               c=regn  X
               c=c+a
               gonc    10$           ; no carry
@@ -1812,7 +1834,7 @@ ADD_2:        rxq     FindBufferGetXSaveL
 
               ?st=1   Flag_Overflow ; check for overflow?
               gonc    20$           ; no
-              rxq     getSign
+              rxq     getSign_rom2
               abex    s
               ?a#c    s             ; different sign?
               goc     20$           ; yes, overflow (we have correct flag)
@@ -1831,7 +1853,7 @@ ADD_2:        rxq     FindBufferGetXSaveL
               ?c#0
               gonc    25$
 24$:          st=1    Flag_CY
-25$:          rgo     PutXDrop
+25$:          rgo     PutXDrop_rom2
 
 28$:          ?c#0
               goc     25$
@@ -2823,7 +2845,7 @@ Display2:     c=n                   ; check window#
               gonc    38$
               goto    40$           ; hex
 
-10$:          rxq     Div10LCD      ; decimal
+10$:          rxq     div10LCD      ; decimal
               goto    61$
 
 50$:          ?st=1   Flag_LocalZeroFill
@@ -2954,6 +2976,38 @@ TakeOverKeyboard:
               gotoc
 
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; maskABx - Mask a value in B.X and A
+;;;
+;;; IN:  B.X - upper part of value
+;;;      A - lower part of value
+;;;      M = carry mask
+;;;      Flag_UpperHalf valid
+;;;
+;;; Out: B.X/A - masked value
+;;;
+;;; Note: This routine exists in both
+;;;
+;;; ----------------------------------------------------------------------
+
+maskABx:      .macro
+              c=m
+              c=c-1
+              ?st=1   Flag_UpperHalf
+              goc     10$
+              c=c&a
+              a=c
+              b=0     x
+              rtn
+
+10$:          abex    x
+              c=c&a
+              abex    x
+              rtn
+              .endm
+
+
 ;;; **********************************************************************
 ;;;
 ;;; Load - Load bits pointed out by pointer and a.x
@@ -2967,9 +3021,10 @@ TakeOverKeyboard:
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code2
               .align  256
-classify:     ldi     70
+classify:     ldi     0x70
+              a=0     xs
               a=a-c   x
               goc     10$           ; nibble storage
               c=stk
@@ -2982,7 +3037,6 @@ classify:     ldi     70
               gotoc
 
 10$:          a=a+c   x             ; A= register number
-#ifdef NOT_YET
               c=b                   ; select header register
               rcr     10
               dadd=c
@@ -3001,7 +3055,8 @@ classify:     ldi     70
               rcr     3
               c=0     m             ; clear nibs above to catch register
                                     ;  overflow properly
-              c=0     s             ; first nibble starts at 0
+              pt=     13            ; nibble are offset by 2
+              lc      2
               rcr     -4            ; C[13:4]= base register for data memory
               pt=     3
               goto    18$
@@ -3016,49 +3071,35 @@ classify:     ldi     70
 15$:          rcr     1             ; step one register forward
               c=c+1   m
               rcr     -1
+              c=c+1   pt            ; offset by 2
+              c=c+1   pt
 18$:          a=a-1   x             ; decrement nibble register counter
               gonc    12$
 
               ldi     0x1ff         ; max data register address
               a=c     x             ; to A.X
-
+              c=0     x
               rcr     4             ; C.X= register number (so far)
-              a=c     s             ; A.S= nibble pointer
+              a=c     s             ; A.S= nibble pointer + 2
 
               ?c#0    m             ; overflowed register count?
-              goc     ERRNE_J1      ; yes
+              rtn nc                ; no
 
-              ;; If nibble pointer is outside current register we need to
-              ;; adjust it and bump the register.
-              ;; We also want to return it pointing 2 ahead of the nibble
-              ;; number to make it easy to use it as a counter for aligning.
-              pt=     13
-              lc      2
-              a=a+c   s             ; normalize nibble pointer to 0-13, or make
-                                    ;  it point 2 ahead, depending on
-                                    ;  the outcome
-              gonc    19$           ; it made it point 2 ahead, we are done
-              c=c+1   x             ; advance register
-              a=a+c   s             ; make nibble point 2 ahead
-19$:          ?a<c    x             ; above 1FF? (max data register)
-              rtn nc                ; no, legal data register address
-#endif // NOT_YET
-ERRNE_J1:     golong  ERRNE         ; say NONEXISTENT
+ERRNE_J1:     golong  ERRNE         ; yes
 
 clStatus:     dadd=c                ; select status register
               c=c+1   m
               gotoc                 ; return to (P+2)
 
-
+LoadG:        pt=     0
+              c=g
+              a=c     x
 Load:         gosub   GSB256        ; classify address
               goto    50$           ; (P+1) nibble storage
-              goto    70$          ; (P+2) stack register
+              goto    700$          ; (P+2) stack register
               c=data                ; (P+2) (other) status register
               b=0     x
-;;              goto    690$          ; goto maskCBx
-#ifndef NOT_YET
-              goto    maskCBx
-#endif
+              goto    690$          ; goto maskC Bx
 
 
               ;; Load from nibble storage.
@@ -3069,8 +3110,8 @@ Load:         gosub   GSB256        ; classify address
               ;; exists. We will need to load 1, 2 or 3 registers
               ;; in order to get to all nibbles
 50$:          pt=     3
-#ifdef NOT_YET
               b=a     pt            ; B[3]= nibbles to load - 1
+              rcr     4
               acex    s             ; C.S= nibble pos + 2 in first register
               c=-c    s             ; C.S= nibbles from first register
               rcr     -4            ; C[3]= nibbles from first register
@@ -3093,7 +3134,7 @@ Load:         gosub   GSB256        ; classify address
               dadd=c                ; select last register
               a=c     x             ; save register pointer
               c=data                ; read contents
-              c=-c-1  m             ; invert bits in a partion of it
+              c=-c-1  m             ; invert bits in a portion of it
               data=c                ; write back changed register
               acex                  ; A=changed patterm
               cnex                  ; N= saved A (all work pointers)
@@ -3129,37 +3170,36 @@ Load:         gosub   GSB256        ; classify address
               acex    s
               rcr     -1
               cnex
-              bcex                  ; ripple to B.X
+              bcex    s             ; ripple to B.X
+              bcex    x
               acex    s
               rcr     -1
-              acex    x
-              asl     x
-              acex    x
-              rcr     1
+              c=b     m
+              asl
               c=c-1   pt            ; decrement overall counter
               goc     65$           ; done
-              bcex                  ; restore
-              asl
+              bcex
               c=c-1   s
               gonc    60$
               c=c-1   x             ; load next lower register
               dadd=c
-              a=c                   ; save C
+              a=c                   ; save C in A
               c=data                ; load next regiser
               acex                  ; set up A, restore C
               goto    59$           ; adjust counter and start keep loading
 
 65$:          bcex                  ; restore B[12:10] and B.X= upper part
+              c=0     x
+              dadd=c                ; select chip 0
               c=n                   ; C= lower part
-69$:          goto    maskCBx
-#endif // NOT_YET
+69$:          goto    maskCBx_rom2
 
 70$:          bcex    x             ; B.X= stack reg addr
               c=b
-              rcr 10
+              rcr     10
               c=c+1   x
               dadd=c                ; select trailer register
-              data=c
+              c=data
 72$:          a=a-1   x             ; align upper part
               goc     73$
               rcr     2
@@ -3168,36 +3208,9 @@ Load:         gosub   GSB256        ; classify address
               bcex    x
               dadd=c                ; select stack register
               c=data                ; load it
-
-maskCBx:      a=c
-              ;; fall through
-
-;;; ----------------------------------------------------------------------
-;;;
-;;; maskABx - Mask a value in B.X and A
-;;;
-;;; IN:  B.X - upper part of value
-;;;      A - lower part of value
-;;;      M = carry mask
-;;;      Flag_UpperHalf valid
-;;;
-;;; Out: B.X/A - masked value
-;;;
-;;; ----------------------------------------------------------------------
-
-maskABx:      c=m
-              c=c-1
-              ?st=1   Flag_UpperHalf
-              goc     10$
-              c=c&a
+maskCBx_rom2:
               a=c
-              b=0     x
-              rtn
-
-10$:          abex    x
-              c=c&a
-              abex    x
-              rtn
+maskABx_rom2: maskABx
 
 
 ;;; ----------------------------------------------------------------------
@@ -3211,6 +3224,7 @@ maskABx:      c=m
 ;;;
 ;;; ----------------------------------------------------------------------
 
+              .section Code
 LoadX:        c=b
               rcr     10
               c=c+1   x
@@ -3222,7 +3236,8 @@ LoadX:        c=b
               c=0     x
               dadd=c
               c=regn  X             ; load low part
-              goto    maskCBx
+maskCBx:      a=c
+maskABx_rom1: maskABx
 
 
               .section Code
@@ -3366,6 +3381,47 @@ PWINDOW:      nop
 
 ;;; ----------------------------------------------------------------------
 ;;;
+;;; LDI - load integer, either from nibble memory, status register or
+;;;       stack.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "LDI"
+LDI:          nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; LDI 00 is default
+              rxq     FindBufferUserFlags
+              switchBank 2
+              rxq     LoadG
+              switchBank 1
+              acex
+              n=c                   ; save value in B
+              rxq     LiftStackS11
+              c=n
+              regn=c  X
+              rgo     PutX
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; STI - store integer, either from nibble memory, status register or
+;;;       stack.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "STI"
+STI:          nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; LDI 00 is default
+              rtn
+
+
+;;; ----------------------------------------------------------------------
+;;;
 ;;; MUL - multiply, both double and single precision
 ;;;
 ;;; ----------------------------------------------------------------------
@@ -3419,12 +3475,12 @@ PWINDOW:      nop
 
               .name   "DMUL"
 DMUL:         s11=1                 ; want double result
-              goto    MulCommon
+              goto    mulCommon
 
               .name   "MUL"
 MUL:          s11=0                 ; want single result
-MulCommon:    rxq     FindBufferGetXSaveL0no11
-
+mulCommon:    rxq     FindBufferGetXSaveL0no11
+              switchBank 2
               rxq     getSignsMakePositive
               c=a-c   s             ; C.S= 0 if same sign
               c=st
@@ -3622,7 +3678,7 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
               a=c                   ; A= lower 56 bits of result
               ?st=1   Flag_2        ; in 2-complement signed mode?
               gonc    50$           ; no, unsigned mode
-              rxq     getSign
+              rxq     getSign_rom2
               b=a     s             ; preserve A.S in B.s
               a=c     s
               c=n
@@ -3639,7 +3695,7 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
               ?c#0
               gonc    55$           ; no bits outside
 54$:          st=1    Flag_Overflow
-55$:          rgo     PutXDrop
+55$:          rgo     PutXDrop_rom2
 60$:          abex    x
               c=c&a
               abex    x
@@ -3660,7 +3716,7 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
               acex                  ; C= lower 56 bits of result
               regn=c  Q             ; Q= lower 56 bits of result (unmasked)
               acex                  ; A= lower 56 bits of result (to be masked)
-              rxq     maskABx
+              rxq     maskABx_rom2
               acex
               regn=c  Y             ; goes to Y
 
@@ -3737,6 +3793,7 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
 
 80$:          acex
               regn=c  X             ; save upper half in X
+              switchBank 1
               rxq     MaskAndSave
               rxq     SetXFlags
               c=regn  Y             ; set correct Z flag
@@ -3762,23 +3819,24 @@ MulCommon:    rxq     FindBufferGetXSaveL0no11
 
               .name   "DRMD"
 DRMD:         lc      8 + 4
-              goto    DIVCommon
+              goto    divCommon
 
               .name   "DDIV"
 DDIV:         lc      8
-              goto    DIVCommon
+              goto    divCommon
 
               .name   "RMD"
 RMD:          lc      4
-              goto    DIVCommon
+              goto    divCommon
 
               .name   "DIV"
 DIV:          lc      0
-DIVCommon:    rcr     2
+divCommon:    rcr     2
               bcex    s             ; B.S= variant
 
               s0=1                  ; check for division by 0
               rxq     FindBufferGetXSaveL0
+              switchBank 2
 
 ;;; We always want the low part of dividend to be in Y.
 ;;; For double operations that means we need to swap Y with Z.
@@ -4032,7 +4090,7 @@ DIVCommon:    rcr     2
               c=-c-1  x
 65$:          bcex    x
 67$:          regn=c  X
-              rgo     PutXDrop
+              rgo     PutXDrop_rom2
 
 69$:          bcex    x
               c=regn  Q
@@ -4051,7 +4109,7 @@ DIVCommon:    rcr     2
               c=-c-1  x
               bcex    x
 71$:          a=c
-              rxq     maskABx
+              rxq     maskABx_rom2
               c=regn  Z
               acex
               regn=c  Z             ; will be dropped to Y
@@ -4095,10 +4153,14 @@ DIVCommon:    rcr     2
 ;;;
 ;;; USES: C
 ;;;
+;;; Note: This routine is duplicated in bank 1 and 2, as it is used
+;;;       within both banks.
+;;;       (The one in bank 1 is defined together with div10LCD.)
+;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
-getSign:      ?st=1   Flag_UpperHalf
+getSign:      .macro
+              ?st=1   Flag_UpperHalf
               goc     50$
               acex                  ; sign in lower part
               cmex
@@ -4126,6 +4188,10 @@ getSign:      ?st=1   Flag_UpperHalf
               cmex                  ; C=mask, M= lower part
               acex                  ; A= mask
               goto    8$
+              .endm
+
+              .section Code2
+getSign_rom2: getSign
 
 
               .section Code
@@ -4139,7 +4205,6 @@ getSign:      ?st=1   Flag_UpperHalf
 ;;;       nop
 ;;;       rxq     Argument
 ;;;       con     DefaultOperand
-;;;       nop               ; if register arg else any nonzero word
 ;;;
 ;;; IN: SS0 UP, CHIP0 selected
 ;;; OUT: If register:
@@ -4169,17 +4234,11 @@ Argument:     ?s13=1                ; running?
 
 ;;; Entry point for executing from keyboard, in which case IF_Argument
 ;;; must be set and the argument is in A[1:0]
-50$:          c=0     s             ; flag for register/numeric argument
-              c=stk
+50$:          c=stk
               cxisa                 ; get default argument
               m=c                   ; save for possible use
               c=c+1   m             ; update return address (skip over default argument)
               stk=c
-              cxisa
-              ?c#0    x
-              goc     1$
-              c=c+1   s             ; register operand
-1$:           bcex    s             ; store register operand flag in b.s
               ?st=1   IF_Argument   ; argument already known (before coming here)?
               gonc    2$            ; no
               c=n                   ; yes, move argument to C[1:0]
@@ -4197,14 +4256,11 @@ Argument:     ?s13=1                ; running?
               gosub   PUTPC         ; store new pc (skip over Text1 instruction)
               gosub   GTBYT         ; get argument
 8$:           st=c
-              ?b#0    s             ; numerical arg?
-              golc    ADRFCH        ; yes, register argument
-              ?s7=1                 ; no, indirect?
+              ?s7=1                 ; indirect?
               gonc    97$           ; no
-              s7=0                  ; yes
-              gosub   ADRFCH
-              gosub   ADRFCH
-              gosub   BCDBIN
+              s7=0                  ; yes, clear indirect flag
+              gosub   ADRFCH        ; load register contents (assuming decimal)
+              gosub   BCDBIN        ; do BCD to BIN
               st=c
               c=stk                 ; put return address to NFRPU on
               a=c                   ; stack again
@@ -4332,7 +4388,89 @@ Argument:     ?s13=1                ; running?
               acex
               rcr     11
               gosub   PROMF2        ; prompt string
-              golong  PAR110        ; go to parse
+              gosub   NEXT2         ; prompt using 2 digits
+              goto    ABTSEQ_J1
+              ?s7=1                 ; DP?
+              goc     parseStack    ; yes
+              ?s6=1                 ; shift?
+              goc     parseIndirect ; yes
+              golong  PAR111 + 1
+
+ABTSEQ_J1:    golong  ABTSEQ
+
+parseIndirect:
+              gosub   ENCP00
+              pt=     0
+              c=g
+              cstex
+              s6=1
+              cstex
+              g=c
+              gosub   ENLCD
+              gosub   MESSL
+              .messl  "IND "
+20$:          gosub   NEXT2
+              goto    ABTSEQ_J1
+              ?s4=1                 ; A..J?
+              golc    AJ2           ;yes
+              ?s7=1                 ; DP?
+              goc     parseStack    ; yes
+              ?s3=1                 ; digit?
+              gonc    30$
+              gosub   FDIGIT
+30$:          gosub   BLINK
+              goto    20$
+
+parseStack:   gosub   MESSL
+              .messl  "ST "
+              gosub   NEXT1
+              goto    ABTSEQ_J1
+              ldi     ' '
+              srsabc
+              srsabc
+              srsabc
+              gosub   GTACOD        ; get alpha code
+              pt=     13
+              lc      4             ; set for LASTX
+              a=c                   ; A.S= reg index, A.X=char
+              ldi     76
+              ?a#c    x
+              goc     20$
+05$:          gosub   MASK
+              gosub   LEFTJ
+              gosub   ENCP00
+              pt=     0             ; get PTEMP2
+              c=g
+              st=c
+;;; Compared to the mainframe version, we do not overwrite the postfix
+;;; byte of the instructin here, as it is part of the 2 byte XROM
+;;; opcode.
+              c=regn  10
+              acex                  ; A[4:1]= current instruction
+              lc      7
+              ?s6=1                 ; indirect?
+              gonc    10$           ; no
+              pt=     0
+              lc      15            ; yes
+10$:          rcr     -1
+              bcex    x             ; B.X=  postfix code
+              golong  NLT020
+
+15$:          gosub   BLINK
+              goto    parseStack
+
+20$:          ldi     'W'
+30$:          a=a-1   s
+              ?a#0    s
+              gonc    40$
+              c=c+1   x
+              ?a#c    x
+              goc     30$
+              goto    05$
+40$:          ldi     'T'
+              ?a#c    x
+              gonc    05$
+              goto    15$
 
 
               .section Code
@@ -4659,7 +4797,7 @@ prgm:         ?s12=1                ; private?
               ;; Logical column 2
               .con    0x10c         ; SQRT  (C digit)
               KeyEntry Decimal      ; SIN
-              .con    0             ; STO
+              KeyEntry STI          ; STO
               KeyEntry NEG          ; CHS
               .con    0x108         ; 8
               .con    0x105         ; 5
@@ -4679,7 +4817,7 @@ prgm:         ?s12=1                ; private?
               ;; Logical column 3
               .con    0x10d         ; LOG   (D digit)
               KeyEntry Octal        ; COS
-              .con    0             ; RCL
+              KeyEntry LDI          ; RCL
               KeyEntry WINDOW       ; EEX
               .con    0x109         ; 9
               .con    0x106         ; 6
@@ -4933,14 +5071,16 @@ Div10:        acex                  ; save n in P[9:8]:Q
 
 
               .section Code
-Div10LCD:     c=regn  14
+              .align  256
+              getSign
+div10LCD:     c=regn  14
               rcr     12
               cstex
               ?st=1   Flag_2        ; signed mode?
               gonc    6$            ; no
               cstex
 
-              rxq     getSign
+              gosub   GSB256        ; getSign
               ?c#0    s
               gonc    7$            ; positive
               ?st=1   Flag_UpperHalf
