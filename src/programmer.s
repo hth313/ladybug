@@ -3311,7 +3311,8 @@ liftStack:    c=b                   ; get buffer address to A.X
 WSIZE:        nop
               nop
               rxq     Argument
-              .con    Operand16
+              ;; Defaults to word size 16, prevent ST input, but allow IND
+              .con    Operand16 + 0x100
               ?a#0    x
 WSZ_DE:       golnc   ERRDE
               ldi     65
@@ -3333,7 +3334,11 @@ WSZ_OK:       rgo     exit
 
 ;;; Make it non-programmable to allow it to be used in program mode
 ;;; to inspect integer literals as well. As we only allow 0-7 we
-;;; use single digit input.
+;;; use single digit input. This allows for IND, just like CAT and
+;;; that picks up an ordinary decimal number from a register.
+;;; A bit inconsistent, but there seems to be no simple way around
+;;; it, and CAT has kind of misbehaved in a similar way from the
+;;; beginning.
 
               .con    0x97, 0xf, 0x4, 0xe, 0x309, 0x117 ; WINDOW
 WINDOW:       nop
@@ -4202,20 +4207,22 @@ getSign_rom2: getSign
 ;;; XADR  nop
 ;;;       nop
 ;;;       rxq     Argument
-;;;       con     DefaultOperand
+;;;       con     DefaultOperand + modifiers
 ;;;
 ;;; IN: SS0 UP, CHIP0 selected
-;;; OUT: If register:
-;;;       c - register value (selected)
-;;;       n - its address
-;;;       m - X register
-;;;      If num argument: (0-127)
-;;;       st - numeric argument
+;;; OUT:  st - numeric argument
 ;;;       a[2:0] - numeric argument
 ;;;       b.m - numeric argument
 ;;;       g - numeric argument
 ;;;
-;;; If there is no argument, it defaults to the X register (IND X)
+;;; It is assumed here that processing of numbers to registers take
+;;; place later.
+;;;
+;;; Possible modifiers are:
+;;; 0x100 (sets S1), allow IND, but disallow ST
+;;;       (bit 9 of second char in a prompting name label)
+;;; 0x200 (sets S2), disallow IND and ST
+;;;       (bit 8 of first char in a prompting name label)
 ;;;
 ;;; ----------------------------------------------------------------------
 
@@ -4316,6 +4323,7 @@ Argument:     ?s13=1                ; running?
               dadd=c                ; select trailer register
               c=stk
               cxisa                 ; C[1:0] = default argument
+              n=c                   ; N[2:0]= modifier bits and default argument
               c=c+1   m             ; bump return address
               stk=c
               pt=     0
@@ -4368,7 +4376,16 @@ Argument:     ?s13=1                ; running?
 40$:          clrst                 ; run mode
               s5=1
 45$:          s0=1                  ; normal prompt
-              pt=     0
+              c=n                   ; get modifier bits from default prompt
+              c=c+c   xs
+              c=c+c   xs
+              c=c+c   xs
+              gonc    46$
+              s2=1
+46$:          c=c+c   xs
+              gonc    47$
+              s1=1
+47$:          pt=     0
               c=st
               g=c                   ; save PTEMP2
               gosub   OFSHFT
@@ -4386,12 +4403,35 @@ Argument:     ?s13=1                ; running?
               acex
               rcr     11
               gosub   PROMF2        ; prompt string
+
+              pt=     0             ; restore PTEMP2
+              c=g
+              st=c
+              ?s4=1                 ; program mode?
+              golc    PAR110        ; yes, use ordinary prompt handler as we
+                                    ;  are really entering a SIGMA-REG
+                                    ;  instruction.
+
+              ?s2=1                 ; prompt that does not allow IND/ST?
+              golc    PAR110        ; yes, we can use the ordinary prompt
+                                    ;  handler
+
+;;; We may need to input stack registers. The mainframe code cannot handle
+;;; this for XROM instructions, it will overwrite the second byte with the
+;;; postfix byte, ruining the XROM instruction.
+;;; To make it work, we need to provide out own prompt handler that can do
+;;; it properly for 2-byte XROM instructions. We will in the end use the
+;;; alternative way of giving the argument in B.X so everything comes
+;;; together just fine.
+
               gosub   NEXT2         ; prompt using 2 digits
               goto    ABTSEQ_J1
-              ?s7=1                 ; DP?
-              goc     parseStack    ; yes
               ?s6=1                 ; shift?
               goc     parseIndirect ; yes
+              ?s1=1
+              golc    PAR112
+              ?s7=1                 ; DP?
+              goc     parseStack    ; yes
               golong  PAR111 + 1
 
 ABTSEQ_J1:    golong  ABTSEQ
@@ -4410,7 +4450,7 @@ parseIndirect:
 20$:          gosub   NEXT2
               goto    ABTSEQ_J1
               ?s4=1                 ; A..J?
-              golc    AJ2           ;yes
+              golc    AJ2           ; yes
               ?s7=1                 ; DP?
               goc     parseStack    ; yes
               ?s3=1                 ; digit?
