@@ -553,7 +553,12 @@ backSpace:    c=regn  14
               ?st=1   IF_Message    ; showing a message?
 keyCLXIJ3:    gonc    keyCLXIJ2     ; no, do CLXI
 
-kbDone:       ?st=1   Flag_PRGM
+kbDone:       s12=0                 ; prepare for early key
+              rst kb                ; try to release key
+              chk kb
+              goc     4$            ; key still down
+              s12=1                 ; say key went up
+4$:           ?st=1   Flag_PRGM
               goc     10$
               rxq     displayXB10
 5$:           ?s12=1                ; key released?
@@ -2729,6 +2734,8 @@ dis10:        st=0    IF_Message
 ;;; to allow for two rapid key presses.
               ?st=1   IF_DigitEntry
               gonc    12$
+              ?s12=1                ; already released?
+              goc     12$           ; yes
               rst kb
               chk kb
               goc     12$           ; key still down
@@ -5322,6 +5329,8 @@ decDigits:    c=regn  14
               ldi     0x1f          ; show underscore if in digit entry
               srsabc
 
+              ?s12=1                ; key already released?
+              goc     150$          ; yes
               rst kb
               chk kb
               goc     150$          ; key still down
