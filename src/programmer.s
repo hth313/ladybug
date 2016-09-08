@@ -73,7 +73,7 @@ KeyCode:      .macro  fun
               .endm
 
 ;;; Define key code symbols we use
-              KeyCode CLIX          ; create CLIX_Code symbol
+              KeyCode CLXI          ; create CLXI_Code symbol
               KeyCode Header        ; header is used for digit entry
 
 ;;; Start of function address table (start of ROM)
@@ -93,7 +93,7 @@ FatStart:
               FAT     Hex
               FAT     WSIZE
               FAT     WINDOW
-              FAT     CLIX          ; clear IX
+              FAT     CLXI          ; clear IX
               FAT     ENTERI        ; ENTER^ on integer stack
               FAT     LASTXI
               FAT     SWAPI
@@ -405,7 +405,7 @@ shiftUser:    rxq     chkbuf
 11$:          gosub   ENCP00
               goto    PARS56_M
 
-keyCLIX:      ldi     CLIX_Code
+keyCLXI:      ldi     CLXI_Code
 KeyH20:       cmex                  ; handle XROM code in C[1:0]
               rxq     clearDigitEntry
               cmex
@@ -446,7 +446,7 @@ numEntry:     pt=     0
               acex                  ; (P+2) ongoing digit entry
               goto    dig40
 
-keyCLIXJ1:    goto    keyCLIX       ; relay
+keyCLXIJ1:    goto    keyCLXI       ; relay
 backSpaceJ1:  goto    backSpace     ; relay
 
 runMode:      st=0    Flag_PRGM
@@ -477,7 +477,7 @@ hexoct:       ?s3=1
 decDigit:     rxq     Mul10         ; prepare for a new decimal digit
               goto    dig50
 
-keyCLIXJ2:    goto    keyCLIXJ1     ; relay
+keyCLXIJ2:    goto    keyCLXIJ1     ; relay
 
 hexDigit:     acex    s             ; prepare for a new hex digit
               bcex    x
@@ -508,8 +508,8 @@ kbDoneJ1:     goto    kbDone
 ;;; Backspace is pressed, we have four cases.
 ;;; 1. In program mode, delete the current instruction
 ;;; 2. If showing a message, cancel it by showing the integer X register instead.
-;;; 3. If entering digits, rub out one (do CLIX if deleting to 0)
-;;; 4. Perform CLIX
+;;; 3. If entering digits, rub out one (do CLXI if deleting to 0)
+;;; 4. Perform CLXI
 backSpace:    c=regn  14
               rcr     -2
               c=c+c   xs            ; program mode?
@@ -534,7 +534,7 @@ backSpace:    c=regn  14
               ?st=1   IF_DigitEntry ; doing digit entry
               goc     digBSP
               ?st=1   IF_Message    ; showing a message?
-keyCLIXJ3:    gonc    keyCLIXJ2     ; no, do CLIX
+keyCLXIJ3:    gonc    keyCLXIJ2     ; no, do CLXI
 
 kbDone:       ?st=1   Flag_PRGM
               goc     10$
@@ -559,7 +559,7 @@ bspNot0:      ?st=1   Flag_PRGM
 10$:          rxq     saveLiteral
               goto    kbDone
 
-keyCLIXJ4:    goto    keyCLIXJ3     ; relay
+keyCLXIJ4:    goto    keyCLXIJ3     ; relay
 
 ;;; Back arrow in digit entry
 digBSP:       rxq     loadX
@@ -606,10 +606,10 @@ dig10:        ?a#0                  ; zero result?
               ;; Back arrow down to nothing left
 dig20:        ?st=1   Flag_PRGM     ; in program mode?
               goc     dig25         ; yes
-              s11=0                 ; clear push flag in case user NULL the CLIX !!!
+              s11=0                 ; clear push flag in case user NULL the CLXI !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-              goto    keyCLIXJ4
+              goto    keyCLXIJ4
 
 ;;; Back space doing hexadecimal input
 hexBSP:       asr                   ; delete hex digit
@@ -1868,12 +1868,12 @@ ADD_3:        c=regn  X
               .section Code
 ;;; **********************************************************************
 ;;;
-;;; CLIX - Entry point for clear integer X register, and disable stack lift.
+;;; CLXI - Entry point for clear integer X register, and disable stack lift.
 ;;;
 ;;; **********************************************************************
 
-              .name   "CLIX"
-CLIX:         rxq     findBufferUserFlags
+              .name   "CLXI"
+CLXI:         rxq     findBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
@@ -4894,7 +4894,7 @@ prgm:         ?s12=1                ; private?
               KeyEntry ASR          ; LN
               KeyEntry RRC          ; TAN
               .con    0x207         ; BST
-              KeyEntry CLIX         ; BACKARROW
+              KeyEntry CLXI         ; BACKARROW
               .con    0x30c         ; MODE ALPHA
               .con    0x20c         ; MODE PRGM
               .con    0x30c         ; MODE USER
