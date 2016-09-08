@@ -4815,8 +4815,8 @@ prgm:         ?s12=1                ; private?
               KeyEntry SWAPI        ; X<>Y
               .con    0x30e         ; SHIFT
               .con    0x200         ; CATALOG
-              KeyEntry MASKR        ; -
-              KeyEntry MASKL        ; +
+              .con    0             ; -
+              .con    0             ; +
               KeyEntry DMUL         ; *
               KeyEntry DDIV         ; /
 
@@ -4896,8 +4896,8 @@ prgm:         ?s12=1                ; private?
               .con    0x207         ; BST
               KeyEntry CLXI         ; BACKARROW
               .con    0x30c         ; MODE ALPHA
-              .con    0x20c         ; MODE PRGM
-              .con    0x30c         ; MODE USER
+              KeyEntry MASKR        ; MODE PRGM
+              KeyEntry MASKL        ; MODE USER
               .con    0             ; OFF key special
 
 
