@@ -3682,7 +3682,7 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               ?st=1   Flag_2        ; in 2-complement signed mode?
               gonc    50$           ; no, unsigned mode
               rxq     getSign_rom2
-              b=a     s             ; preserve A.S in B.s
+              b=a     s             ; preserve A.S in B.S
               a=c     s
               c=n
               ?a#c    s             ; correct result sign?
@@ -4066,9 +4066,6 @@ divCommon:    rcr     2
               ?s11=1                ; remainder?
               goc     69$           ; yes
 
-              s11=1                 ; it is the push flag we borrowed,
-                                    ;   it should be set so lets fix that
-
               st=0    Flag_CY       ; no, set carry set on remainder /= 0
               ?c#0    x
               goc     61$
@@ -4078,26 +4075,37 @@ divCommon:    rcr     2
 61$:          st=1    Flag_CY
 
 62$:          c=n
+              st=0    Flag_Overflow
               ?s6=1                 ; double operation?
               goc     70$           ; yes
 
               rcr     3
               bcex    x
               c=regn  Y
-64$:          ?st=1   Flag_2        ; signed mode?
+63$:          ?st=1   Flag_2        ; signed mode?
               gonc    67$           ; no
-              ?b#0    s             ; negative?
+              ?s11=1                ; doing remainder?
+              goc     64$           ; yes, do not check overflow
+              a=c
+              rxq     getSign_rom2  ; C.S= result sign
+              acex
+              ?a#0    s             ; sign bit set?
+              gonc    64$           ; no
+              st=1    Flag_Overflow ; yes, overflowed
+64$:          ?b#0    s             ; negative?
               gonc    67$           ; no
               c=-c                  ; negate result
               bcex    x
               c=-c-1  x
 65$:          bcex    x
-67$:          regn=c  X
+67$:          s11=1                 ; we have borroed the push flag,
+                                    ;   it should be set so lets fix that
+              regn=c  X
               rgo     putXDrop_rom2
 
-69$:          bcex    x
+69$:          bcex    x             ;  handle remainder
               c=regn  Q
-              goto    64$
+              goto    63$
 
 ;;; Result after DDIV
 70$:          rcr     3             ; load low part of quotient
