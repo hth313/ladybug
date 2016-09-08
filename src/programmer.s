@@ -478,14 +478,14 @@ hexoct:       ?s3=1
 decDigit:     rxq     Mul10         ; prepare for a new decimal digit
               goto    dig50
 
-keyCLXIJ2:    goto    keyCLXIJ1     ; relay
-
 hexDigit:     acex    s             ; prepare for a new hex digit
               bcex    x
               rcr     -1
               bcex    x
               asl
               goto    dig50
+
+keyCLXIJ2:    goto    keyCLXIJ1     ; relay
 
 octDigit:     rxq     Shift1
               rxq     Shift1
@@ -512,7 +512,12 @@ kbDoneJ1:     goto    kbDone
 ;;; 3. If entering digits, rub out one (do CLXI if deleting to 0)
 ;;; 4. Perform CLXI
 backSpace:    c=regn  14
-              rcr     -2
+              rcr     6
+              cstex
+              ?s1=1                 ; catalog flag?
+              goc     2$            ; yes
+              cstex
+              rcr     6
               c=c+c   xs            ; program mode?
               gonc    10$           ; no
               ?st=1   IF_DigitEntry ; digit entry in progress?
@@ -522,6 +527,17 @@ backSpace:    c=regn  14
               st=1    Flag_PRGM
               a=c
               goto    digBSP10
+
+;;; Showing catalog, clear catalog and message flag, then drop out of here
+;;; and let the poll vector sort it out.
+2$:           s1=0                  ; clear catalog flag
+              cstex
+              rcr     -6
+              cstex
+              s5=0                  ; clear message flag
+              cstex
+              regn=c  14
+              golong  NFRKB
 
 5$:           c=regn  14
               st=c                  ; bring up SS0 for PARS56
@@ -547,7 +563,7 @@ kbDone:       ?st=1   Flag_PRGM
 10$:          rxq     displayPrgmLiteralDE
               goto    5$
 
-;;; Back space used, not 0, as the number is smaller than before (we deleted
+;;; Back space used and not 0. As the number is smaller than before (we deleted
 ;;; a character), we can just save it without doing any range checking.
 bspNot0:      ?st=1   Flag_PRGM
               goc     10$
