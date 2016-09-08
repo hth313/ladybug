@@ -3780,12 +3780,18 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               ?a#c    s             ; correct result sign?
               gonc    50$           ; yes
               st=1    Flag_Overflow ; no, overflowed
-50$:          c=m                   ; get carry mask
+              acex    s             ; A.S= desired sign
+              abex    s             ; restore A.S, B.S= desired sign
+              rxq     forceSign     ; force right sign
+              acex                  ; X changed, write it out again
+              regn=c  X
+              goto    51$
+50$:          abex    s             ; restore A.S
+51$:          c=m                   ; get carry mask
               c=c-1
               c=-c-1                ; make unmask
               ?st=1   Flag_UpperHalf
               goc     60$
-              abex    s             ; restore A.S
               c=c&a
               ?c#0
               gonc    55$           ; no bits outside
@@ -4184,14 +4190,20 @@ divCommon:    rcr     2
               ?a#0    s             ; sign bit set?
               gonc    64$           ; no
               st=1    Flag_Overflow ; yes, overflowed
-64$:          ?b#0    s             ; negative?
-              gonc    67$           ; no
-              c=-c                  ; negate result
+64$:          ?b#0    s             ; negative result?
+              gonc    65$           ; no
+              c=-c                  ; yes, negate result
               bcex    x
               c=-c-1  x
-65$:          bcex    x
+              bcex    x
+65$:          a=c
+              ?st=1   Flag_Overflow
+              gonc    67$
+              rxq     forceSign
+
 67$:          s11=1                 ; we have borroed the push flag,
                                     ;   it should be set so lets fix that
+              acex
               regn=c  X
               rgo     putXDrop_rom2
 
@@ -4231,14 +4243,15 @@ divCommon:    rcr     2
               c=n
               rcr     6             ; load high part of quotient
               ?st=1   Flag_2
-              gonc    65$
+              gonc    72$
               ?b#0    s
-              gonc    65$
+              gonc    72$
               c=-c-1  x
               acex
               c=-c-1
               acex
-72$:          goto    65$
+72$:          bcex    x
+              goto    67$
 
 
 ;;; ----------------------------------------------------------------------
@@ -4295,6 +4308,67 @@ getSign:      .macro
 
               .section Code2
 getSign_rom2: getSign
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; forceSign - force the value to a particular sign
+;;;
+;;; IN: A - low part
+;;;     B.X - high part
+;;;     ST.Flag_UpperHalf - properly set
+;;;     M - mask
+;;;     B.S - desired sign
+;;;
+;;; OUT: A, B.X - updated value
+;;;      M, ST.Flag_UpperHalf preserved
+;;;
+;;; USES: C
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code2
+forceSign:    c=m                   ; get carry mask
+              ?c#0                  ; 56 bit value?
+              gonc    56$           ; yes
+              ?c#0    s             ; carry in highest nibble?
+              goc     40$           ; yes
+              c=c+c                 ; no, ((C << 3) >> 4)
+              c=c+c
+              c=c+c
+              csr
+2$:           ?b#0    s             ; reset sign?
+              goc     20$           ; no
+              c=-c-1                ; make unmask
+              ?st=1   Flag_UpperHalf
+              goc     5$
+              c=c&a                 ; reset sign in lower part
+3$:           a=c
+              rtn
+5$:           abex    x             ; reset sign in upper part
+              c=c&a
+7$:           acex    x
+              abex    x
+              rtn
+
+20$:          ?st=1   Flag_UpperHalf
+              goc     25$
+              c=c|a                 ; set sign in lower part
+              goto    3$
+25$:          abex    x             ; set sign in upper part
+              c=c|a
+              goto    7$
+
+40$:          rcr     1
+              c=c+c
+              c=c+c
+              c=c+c
+              goto    2$
+
+56$:          pt=     13
+              lc      8
+              goto    2$
+
 
 
               .section Code
