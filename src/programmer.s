@@ -4506,10 +4506,10 @@ Argument:     ?s13=1                ; running?
               ?s6=1                 ; shift?
               goc     parseIndirect ; yes
               ?s1=1
-              golc    PAR112
+              goc     10$
               ?s7=1                 ; DP?
               goc     parseStack    ; yes
-              golong  PAR111 + 1
+10$:          golong  PAR111 + 1
 
 ABTSEQ_J1:    golong  ABTSEQ
 
