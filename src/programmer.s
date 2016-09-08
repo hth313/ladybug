@@ -127,6 +127,7 @@ FatStart:
               FAT     MASKR
               FAT     LDI
               FAT     STI
+              FAT     TST
 FatEnd:       .con    0,0
 
 
@@ -838,14 +839,20 @@ lineAndBaseLCD:
 
 
               .section Code2
-              .shadow putXDrop-1
+              .shadow putXDrop - 1
 putXDrop_rom2:
               enrom1
 
               .section Code2
-              .shadow putX-1
+              .shadow putX - 1
 putX_rom2:
               enrom1
+
+              .section Code2
+              .shadow exitUserST - 1
+exitUserST_rom2:
+              enrom1
+
 
               .section Code
 ;;; **********************************************************************
@@ -1684,6 +1691,49 @@ setSignFlag:  st=0    Flag_Sign
               c=c&a
               ?c#0
               goc     1$
+              rtn
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; setFlagsABx - set sign/zero flags according to B.X-A
+;;;
+;;; In: B.X - upper part of value
+;;;     A - lower part of value
+;;;     S8/S9 - set according to word size
+;;;     M - carry mask
+;;;
+;;; Out: Sign flag in user flags set to higehst bit in X according to
+;;;      word size
+;;;
+;;; Uses: C, A
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code2
+setFlagsABx:  rxq     maskABx_rom2
+              st=0    Flag_Zero
+              ?b#0    x
+              goc     10$
+              ?a#0
+              goc     10$
+              st=1    Flag_Zero
+10$:           st=0    Flag_Sign
+              ?st=1   Flag_UpperHalf
+              goc     22$
+              acex
+              c=c+c
+              gonc    25$
+20$:           st=1    Flag_Sign
+              rtn
+
+22$:          c=b     x             ; upper word
+              c=c+c   x
+25$:          a=c
+              c=m
+              c=c&a
+              ?c#0
+              goc     20$
               rtn
 
 
@@ -3425,6 +3475,25 @@ STI:          nop
 
 ;;; ----------------------------------------------------------------------
 ;;;
+;;; TST - set sign and zero flags according to an integer
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "TST"
+TST:          nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; TST 00 is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              rxq     setFlagsABx
+              rgo     exitUserST_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
 ;;; MUL - multiply, both double and single precision
 ;;;
 ;;; ----------------------------------------------------------------------
@@ -4816,7 +4885,7 @@ prgm:         ?s12=1                ; private?
               .con    0x30e         ; SHIFT
               .con    0x200         ; CATALOG
               .con    0             ; -
-              .con    0             ; +
+              KeyEntry TST          ; +
               KeyEntry DMUL         ; *
               KeyEntry DDIV         ; /
 
