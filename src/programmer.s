@@ -92,6 +92,7 @@ FatStart:
               FAT     Decimal
               FAT     Hex
               FAT     WSIZE
+              FAT     WSIZE?
               FAT     WINDOW
               FAT     CLXI          ; clear IX
               FAT     ENTERI        ; ENTER^ on integer stack
@@ -3376,18 +3377,42 @@ liftStack:    c=b                   ; get buffer address to A.X
               .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
-;;; WSIZE - set word size
+;;; WSIZE? - get word size
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .name   "WSIZE"
-WSIZE:        nop
+              .name   "WSIZE?"
+`WSIZE?`:     rxq     findBufferUserFlags_liftStackS11
+              c=b
+              rcr     10
+              dadd=c
+              c=data
+              rcr     6
+              a=c     x
+              c=0
+              dadd=c
+              acex    x
+              acex    xs
+              regn=c  X
+              b=0     x
+              rgo     putX
+
+
+              .section Code
+;;; ----------------------------------------------------------------------
+;;;
               nop
               rxq     Argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
               ?a#0    x
 WSZ_DE:       golnc   ERRDE
+;;; WSIZE - set word size
+;;;
+;;; ----------------------------------------------------------------------
+
+              .name   "WSIZE"
+WSIZE:        nop
               ldi     65
               ?a<c    x
               gonc    WSZ_DE
