@@ -5470,7 +5470,9 @@ div10:        acex                  ; save n in P[9:8]:Q
               .section Code
               .align  256
               getSign
-decDigits:    c=regn  14
+decDigits:    ?st=1   Flag_PRGM     ; program mode?
+              goc     7$            ; yes, interpret as positive number
+              c=regn  14
               rcr     12
               cstex
               ?st=1   Flag_2        ; signed mode?
