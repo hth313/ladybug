@@ -128,7 +128,12 @@ FatStart:
               FAT     MASKR
               FAT     LDI
               FAT     STI
+              FAT     CMP
               FAT     TST
+              FAT     GE?
+              FAT     GT?
+              FAT     LE?
+              FAT     LT?
 FatEnd:       .con    0,0
 
 
@@ -2103,6 +2108,7 @@ CB:           nop
               goc     10$           ; yes
               c=regn  X
 5$:           c=c&a
+              s7=0
               ?c#0
               golc    NOSKP
               golong  SKP
@@ -2273,6 +2279,7 @@ RollDown1:    c=b
 
 ;;; **********************************************************************
 ;;;
+
 ;;; RDNI - Roll stack down.
 ;;;
 ;;; **********************************************************************
@@ -3401,18 +3408,18 @@ liftStack:    c=b                   ; get buffer address to A.X
               .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
-              nop
-              rxq     Argument
-              ;; Defaults to word size 16, prevent ST input, but allow IND
-              .con    Operand16 + 0x100
-              ?a#0    x
-WSZ_DE:       golnc   ERRDE
 ;;; WSIZE - set word size
 ;;;
 ;;; ----------------------------------------------------------------------
 
               .name   "WSIZE"
 WSIZE:        nop
+              nop
+              rxq     Argument
+              ;; Defaults to word size 16, prevent ST input, but allow IND
+              .con    Operand16 + 0x100
+              ?a#0    x
+WSZ_DE:       golnc   ERRDE
               ldi     65
               ?a<c    x
               gonc    WSZ_DE
@@ -3538,6 +3545,160 @@ TST:          nop
               rxq     loadG
               rxq     setFlagsABx
               rgo     exitUserST_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; CMP - compare X to another value, basically doing  X - value, setting
+;;;       flags according to the outcome
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "CMP"
+CMP:          nop
+              nop
+              rxq     Argument
+              .con    OperandY
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              st=0    Flag_CY
+              st=0    Flag_Overflow
+              rxq     getSign_rom2
+              bcex    s             ; save operand sign in B.S
+              c=regn  X             ; load X
+              acex
+              n=c                   ; N= low part of operand
+              bcex    x
+              pt=     0
+              g=c                   ; G= upper part of operand
+              c=b                   ; load upper part of X
+              rcr     10            ;  from buffer trailer
+              c=c+1   x
+              dadd=c
+              c=data
+              bcex    x
+              c=0     x
+              dadd=c
+              rxq     getSign_rom2 ; C.S= sign of X
+              abex    s
+              ?a#c    s             ; same sign?
+              gonc    2$            ; yes, cannot overflow
+              ?st=1   Flag_2        ; in signed mode?
+              gonc    2$            ; no
+              st=1    Flag_Overflow ; assume overflow/mark overflow check
+2$:           abex    s             ; B.S= sign(operand)
+
+              c=n                   ; perform X - operand
+              a=a-c
+              gonc    5$
+              bcex    x
+              c=c-1   x
+              bcex    x
+5$:           abex    x
+              c=g
+              c=0     xs
+              a=a-c   x
+              gonc    10$
+              st=1    Flag_CY
+10$:          abex    x
+              ?b#0    xs
+              gonc    12$
+              st=1    Flag_CY
+12$:          ?st=1   Flag_Overflow
+              gonc    20$           ; cannot overflow/no overflow check
+              rxq     getSign_rom2
+              abex    s
+              ?a#c    s             ; same sign?
+              gonc    15$           ; yes, overflow (already set)
+              st=0    Flag_Overflow
+15$:          abex    s             ; restore A.S
+20$:          rxq     setFlagsABx   ; set sign and zero flags
+              rgo     exitUserST_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; LT? GT? LE? GE? - relative compares after CMP or SUB
+;;;
+;;; Note: Use simple flag tests for other compares.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "LT?"
+`LT?`:        c=regn  14
+              rcr     12
+              st=c
+              ?st=1   Flag_2
+              goc     LT2
+              ?st=1   Flag_CY
+              goc     noSkip        ; CS
+skip:         s7=0
+              golong  SKP
+LT2:          ?st=1   Flag_Sign     ; N != V
+              goc     LT3
+              ?st=1   Flag_Overflow
+              gonc    skip
+noSkip:       s7=0
+              golong  NOSKP
+LT3:          ?st=1   Flag_Overflow
+              gonc    noSkip
+              goto skip
+
+
+              .name   "GE?"
+`GE?`:        c=regn  14
+              rcr     12
+              st=c
+              ?st=1   Flag_2
+              goc     GE2
+              ?st=1   Flag_CY
+              gonc    noSkip        ; CC
+              goto    skip
+
+GE2:          ?st=1   Flag_Sign     ; N == V
+              goc     GE3
+              ?st=1   Flag_Overflow
+              gonc    noSkip
+              goto    skip
+GE3:          ?st=1   Flag_Overflow
+              goc     noSkip
+              goto    skip
+
+
+              .name   "LE?"
+`LE?`:        c=regn  14
+              rcr     12
+              st=c
+              ?st=1   Flag_2
+              goc     LE2
+              ?st=1   Flag_CY       ; unsigned: CS or Z
+              goc     noSkip
+              ?st=1   Flag_Zero
+              goc     noSkip
+              goto    skip
+
+LE2:          ?st=1   Flag_Zero     ; Z==1, or (N != V)
+              goc     noSkip
+              goto    LT2
+
+
+              .name   "GT?"
+`GT?`:        c=regn  14
+              rcr     12
+              st=c
+              ?st=1   Flag_2
+              goc     GT2
+              ?st=1   Flag_Zero     ; Z==1 or CC
+              goc     skip
+              ?st=1   Flag_CY
+              gonc    noSkip
+              goto    skip
+GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
+              goc     skip
+              goto    GE2
 
 
 ;;; ----------------------------------------------------------------------
@@ -4395,7 +4556,6 @@ forceSign:    c=m                   ; get carry mask
               goto    2$
 
 
-
               .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -5006,7 +5166,7 @@ prgm:         ?s12=1                ; private?
               KeyEntry SWAPI        ; X<>Y
               .con    0x30e         ; SHIFT
               .con    0x200         ; CATALOG
-              .con    0             ; -
+              KeyEntry CMP          ; -
               KeyEntry TST          ; +
               KeyEntry DMUL         ; *
               KeyEntry DDIV         ; /
