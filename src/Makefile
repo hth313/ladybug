@@ -1,5 +1,5 @@
 
-SRCS = programmer.s bank2.s mainframe.s
+SRCS = programmer.s bank2.s mainframe.s osExtension.s
 OBJS = $(SRCS:%.s=%.o)
 MOD = programmer.mod
 

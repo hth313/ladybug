@@ -8,4 +8,8 @@
     (memory Programmer2 (position independent) (bank 2) (address (#x0 . #xFFF))
             (section (Bank2Header #x0) Code2 (Tail2 #xFF1))
             (checksum #xFFF hp41)
+            (fill 0))
+    (memory OS4 (bank 1) (address (#x4000 . #x4FFF))
+            (section (Header4 #x4000) OSCode)
+            (checksum #x4FFF hp41)
             (fill 0))))
