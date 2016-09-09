@@ -5057,28 +5057,26 @@ prgm:         ?s12=1                ; private?
 ;;; ***********************************************
 
 10$:          rxq     NXBYTP
-              b=a     wpt
-              a=c     x
-              ldi     0xa0
-              ?a<c    x
-              goc     90$           ; no xrom function
-              ldi     0xa9
-              ?a<c    x
-90$:          gonc    3$            ; no xrom function
+              b=a     wpt           ; B[3:0]= address
+              a=c     x             ; A.X= opcode
+              ldi     0xa4          ; XROM 16 (, 17, 18, or 19)
+              ?a#c    x
+              goc     90$           ; not any of my XROM functions
               abex
               gosub   INCAD
-              gosub   GTBYT
-              rcr     2
-              c=b     x
-              rcr     -2
-
-              b=a     wpt           ; B[3:0]= program pointer
-              acex    x             ; A.X= lower 1 & half of XROM fcn code
-              ldi     0x3ff         ; C.X = (A) 400
-              c=c+1   x
-              ?a#c    x             ; header function (literal wrapper)?
+              gosub   GTBYT         ; read next byte
+              c=0     xs
+              b=a     wpt           ; B[3:0]= address
+              a=c     x             ; A.X= second byte of XROM opcode
+              ldi     64
+              ?a<c
+90$:          gonc    3$            ; not XROM 16
+              ?a#0    x             ; literal?
+                                    ;  (test here keeps branches within range)
               gonc    80$           ; yes
-              acex    x             ; no, restore 1.5 function code to C.X
+              pt=     2
+              lc      4             ; C[2]= 4
+              acex    wpt           ; C[2:0]= lower 1 & half bytes of XROM code
               gosub   GTRMAD
 900$:         goto    90$           ; could not find it
               ?s3=1
