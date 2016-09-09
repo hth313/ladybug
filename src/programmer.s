@@ -2300,7 +2300,7 @@ RDNExit:      c=b
 ;;;
 ;;; **********************************************************************
 
-              .name   "IR^"
+              .name   "R^I"
 RUPI:         rxq     RollDown
               goto    RDNExit
 
