@@ -3116,7 +3116,7 @@ classify:     ldi     0x70
               gotoc
 
 10$:          a=a+c   x             ; A= register number
-              c=b                   ; select header register
+classNibble:  c=b                   ; select header register
               rcr     10
               dadd=c
               c=data
@@ -3164,22 +3164,41 @@ classify:     ldi     0x70
               ?c#0    m             ; overflowed register count?
               rtn nc                ; no
 
-ERRNE_J1:     golong  ERRNE         ; yes
-
 clStatus:     dadd=c                ; select status register
               c=c+1   m
               gotoc                 ; return to (P+2)
 
+ERRNE_J1:     golong  ERRNE         ; yes
+
 loadG:        pt=     0
               c=g
+              cstex
+              s9=0
+              ?s7=1
+              gonc    10$
+              s7=0                  ; reset indirect bit
+              s9=1                  ; S9= indirect bit
+10$:          cstex
               a=c     x
-load:         gosub   GSB256        ; classify address
+              gosub   GSB256        ; classify address
               goto    50$           ; (P+1) nibble storage
               goto    700$          ; (P+2) stack register
               c=data                ; (P+2) (other) status register
               b=0     x
-              goto    690$          ; goto maskC Bx
+              ?s9=1
+              gonc    690$          ; goto maskC Bx
 
+              ;; Handle indirection
+12$:          rxq     maskABx_rom2
+              ?b#0    x
+              goc     ERRNE_J1
+              c=0     x
+              acex    x
+              ?a#0
+              goc     ERRNE_J1
+              a=c     x
+              rxq     classNibble
+              s9=0                  ; only indirect once
 
               ;; Load from nibble storage.
               ;; C.X= first data register address
@@ -3235,6 +3254,7 @@ load:         gosub   GSB256        ; classify address
 
 700$:         goto    70$           ; relay
 690$:         goto    69$           ; relay
+120$:         goto    12$           ; relay
 
 56$:          asl                   ; left align
               c=c-1   s             ; adjust counter remaining
@@ -3271,8 +3291,9 @@ load:         gosub   GSB256        ; classify address
               c=0     x
               dadd=c                ; select chip 0
               c=n                   ; C= lower part
-69$:          goto    maskCBx_rom2
+69$:          goto    75$
 
+              ;; Load from stack register
 70$:          bcex    x             ; B.X= stack reg addr
               c=b
               rcr     10
@@ -3287,8 +3308,9 @@ load:         gosub   GSB256        ; classify address
               bcex    x
               dadd=c                ; select stack register
               c=data                ; load it
-maskCBx_rom2:
-              a=c
+75$:          a=c
+              ?s9=1
+              goc     120$
 maskABx_rom2: maskABx
 
 
@@ -4619,29 +4641,13 @@ Argument:     ?s13=1                ; running?
               gosub   INCAD
               gosub   PUTPC         ; store new pc (skip over Text1 instruction)
               gosub   GTBYT         ; get argument
-8$:           st=c
-              ?s7=1                 ; indirect?
-              gonc    97$           ; no
-              s7=0                  ; yes, clear indirect flag
-              gosub   ADRFCH        ; load register contents (assuming decimal)
-              gosub   BCDBIN        ; do BCD to BIN
-              st=c
-              c=stk                 ; put return address to NFRPU on
-              a=c                   ; stack again
-              c=0
-              pt=     4
-              lc      15
-              stk=c
-              acex
-              stk=c
-97$:          c=0
-              dadd=c                ; select chip 0
-              c=st                  ; get numeric argument
-              pt=     0
+8$:           pt=     0
               g=c                   ; put in G
               a=c                   ; and A
               rcr     -3            ; and finally to
               bcex    m             ; B.M
+              c=0
+              dadd=c                ; select chip 0
               rtn
 
 51$:          goto    50$           ; relay
