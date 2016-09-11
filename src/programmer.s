@@ -143,7 +143,7 @@ FatEnd:       .con    0,0
 ;;; layout:
 ;;;
 ;;; 10pfTTZZYYXXLL
-;;; HHSSAPWS0000II
+;;; HHSSAP0000WSII
 ;;;
 ;;;   where
 ;;;     HH - buffer number
@@ -1071,7 +1071,7 @@ createBuf:    acex    x             ; save address of first free register
               lc      BufNumber
               lc      0
               lc      BufSize
-              pt=     7
+              pt=     3
               lc      1             ; word size = 16
               pt=     1
               lc      (1 << IF_Integer - 4)
@@ -1197,7 +1197,7 @@ carryToM:     acex    x             ; (P+2)  C.X= buffer address
               pt=     8             ; clear window#
               lc      0
               data=c
-              rcr     6             ; align word size to C[1:0]
+              rcr     2             ; align word size to C[1:0]
               acex    x
               a=0     xs
               ldi     56
@@ -2708,7 +2708,7 @@ displayPrgmLiteral:
               dadd=c                ; select buffer header
               c=data
 disPRGM10:    st=1    Flag_PRGM
-              pt=     7             ; set word size
+              pt=     3             ; set word size
               lc      4
               lc      0
               cnex                  ; N= updated buffer header
@@ -2803,12 +2803,12 @@ display2:     c=n                   ; check window#
               c=c+c   x
               acex
               cnex
-              rcr     6             ; C[1:0]= word size
+              rcr     2             ; C[1:0]= word size
               acex    wpt
               c=a-c   wpt
               gonc    11$
               c=0     wpt           ; used up all quota
-11$:          rcr     -6
+11$:          rcr     -2
               cnex                  ; write back updated word size
               acex                  ; restore A
 
@@ -2863,7 +2863,7 @@ display2:     c=n                   ; check window#
 27$:          b=a     x             ; preserve A.X in B.X
               a=c     x             ; A.X= bits per digit
               c=n
-              rcr     6             ; C[1:0]= word size
+              rcr     2             ; C[1:0]= word size
               pt=     0
               c=0     xs
               c=c-1   x
@@ -3120,7 +3120,7 @@ classNibble:  c=b                   ; select header register
               rcr     10
               dadd=c
               c=data
-              rcr     6             ; C[1:0]= word size
+              rcr     2             ; C[1:0]= word size
               c=0     xs
               c=0     m
               c=c-1   x
@@ -3416,7 +3416,7 @@ liftStack:    c=b                   ; get buffer address to A.X
               rcr     10
               dadd=c
               c=data
-              rcr     6
+              rcr     2
               a=c     x
               c=0
               dadd=c
@@ -3447,7 +3447,7 @@ WSZ_DE:       golnc   ERRDE
               gonc    WSZ_DE
               rxq     findBuffer
               c=st                  ; restore C[1:0]
-              pt=     6
+              pt=     2
               c=g
               data=c
 WSZ_OK:       rgo     exit
@@ -4046,7 +4046,7 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               acex    x
               dadd=c                ; select buffer header
               c=data                ; read buffer header
-              rcr     6
+              rcr     2
               c=0     xs            ; C.X= word size
               c=a-c   x             ; C[1:0]= 111 - word size
                                     ;   which is counter for shift loop to
@@ -4211,7 +4211,7 @@ divCommon:    rcr     2
               rcr     10
               dadd=c
               c=data                ; load buffer header
-              rcr     6
+              rcr     2
               c=0     xs            ; C[2:0]= WSIZE
               ?s6=1                 ; double operation?
               gonc    10$           ; no
