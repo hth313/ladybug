@@ -128,6 +128,7 @@ FatStart:
               FAT     MASKR
               FAT     LDI
               FAT     STI
+              FAT     ALDI
               FAT     CMP
               FAT     TST
               FAT     GE?
@@ -880,6 +881,11 @@ putX_rom2:
 exitUserST_rom2:
               enrom1
 
+              .section Code2
+exitNoUserST_B10_rom2:
+              .shadow exitNoUserST_B10 - 1
+              enrom1
+
 
               .section Code
 ;;; **********************************************************************
@@ -944,6 +950,10 @@ exitUserST:   c=0
 ;;; kicks in and changes it. Going out here give a steadier result.
 ;;;
 ;;; Assume header address is in A.X
+exitNoUserST_B10:
+              c=b
+              rcr     10
+              goto    exitNoUserST1
 exitNoUserST: acex
 exitNoUserST1:
               dadd=c
@@ -3552,6 +3562,179 @@ STI:          nop
 
 ;;; ----------------------------------------------------------------------
 ;;;
+;;; ALDI - Alpha load integer, either from nibble memory, status register or
+;;;        stack. Appends the number to alpha register.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "ALDI"
+ALDI:         nop
+              nop
+              rxq     Argument
+              .con    OperandX     ; ALDI X is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              rcr     -4
+              pt=     7
+              bcex    wpt           ; B[7:6]= word size,
+                                    ; B[5:4]= internal flags
+              rxq     loadG
+
+              c=b                   ; check for decimal mode
+              rcr     5             ; C.S= base - 1
+              c=c+1   s             ; hex?
+              goc     1$            ; yes
+              c=c+c   s             ; decimal?
+              goc     6000$         ; yes
+1$:
+
+;;; Left align the number in B.X-A
+              ldi     64            ; max word size
+              acex
+              n=c                   ; N= lower part
+              c=b
+              rcr     6
+              c=0     xs
+              c=a-c   x             ; C.X= 64 - word size
+              cnex
+              a=c
+              cnex
+4$:           cstex                 ; ST= word size
+              ?s0=1                 ; multiple of 4?
+              goc     5$            ; no
+              ?s1=1
+              gonc    15$
+5$:           bcex    x             ; left shift one step
+              c=c+c   x
+              acex
+              c=c+c
+              gonc    10$
+              a=a+1   x
+10$:          acex
+              bcex    x
+
+              cstex
+              c=c-1   x
+              goto    4$
+
+6000$:        goto    600$          ; relay
+
+              ;; Multiple of 4
+15$:          cstex
+              c=0     xs
+              ?c#0    x
+              gonc    20$
+              c=c-1   x
+16$:          acex    s             ; C.S= nibble going to upper half
+              asl
+              bcex    x
+              rcr     -1
+              bcex    x
+
+              c=c-1   x
+              c=c-1   x
+              c=c-1   x
+              c=c-1   x
+              gonc    16$
+20$:
+
+;;; Based on word size and base, determine:
+;;; - bits for first character
+;;; - bits for following characters
+;;; - number of characters in total
+
+              acex
+              n=c                   ; N= lower part
+
+              c=b
+              rcr     6             ; C[1:0]= word size
+                                    ; C[12]= base
+              c=0     xs
+              a=c     x             ; A.X = word size
+
+              rcr     -1            ; C.S= base
+
+              ;; determine digit size
+              ldi     4             ; assume hex digits (4 bits)
+              c=c+c   s
+              goc     30$           ; hex - 4
+              c=c-1   x
+              c=c+c   s
+              goc     30$           ; oct - 3
+              c=c-1   x
+              c=c-1   x             ; bin - 1
+30$:          c=0     m             ; digit counter
+32$:          c=c+1   m
+              a=a-c   x
+              goc     34$
+              ?a#0    x
+              goc     32$
+34$:          a=a+c   x             ; A.X= bits for first character
+                                    ; C.X= bits for rest of characters
+                                    ; A.M= number of digits
+              c=c-1   m
+40$:          m=c                   ; M.X= bits for a character (except first)
+                                    ; M.M= digit counter-1
+
+              c=b     x             ; C[1:0]= next nibble
+              c=0     xs
+41$:          a=a-1   x             ; C.X-N << A.X
+              goc     44$
+              c=c+c   x
+              acex    x
+              cnex
+              c=c+c
+              gonc    42$
+              a=a+1   x
+42$:          cnex
+              acex    x
+              goto    41$
+
+600$:         goto    60$           ; relay
+
+44$:          b=c     x             ; B.X= updated value
+              ?st=1   Flag_ZeroFill
+              goc     45$
+              ?c#0    xs
+              gonc    55$
+              st=1    Flag_ZeroFill ; non-zero seen
+45$:          rcr     2             ; C[0]= binary digit value
+              pt=     1             ; convert to ASCII
+              lc      3
+              a=c     x
+              lc      10
+              ?a<c    x
+              goc     50$
+              ldi     7
+              a=a+c   x
+50$:          acex    x
+              pt=     0
+              g=c                   ; G= ASCII digit
+              gosub   APNDNW        ; append to alpha register
+55$:          c=m
+              a=c     x             ; next digit size
+              c=c-1   m
+              gonc    40$
+              rgo     exitNoUserST_B10_rom2
+
+;;; Display in base 10
+60$:          s1=1                  ; we are coming from ALDI
+              s0=1                  ; should have internal flags up, but we do
+                                    ;  not have that, setting S0 suffices
+              c=b     m             ; preserve buffer address on stack
+              rcr     7
+              stk=c
+              switchBank 1
+              rxq     decDigits1
+              c=stk
+              rcr     -7
+              bcex    m
+              rgo     exitNoUserST_B10
+
+
+;;; ----------------------------------------------------------------------
+;;;
 ;;; TST - set sign and zero flags according to an integer
 ;;;
 ;;; ----------------------------------------------------------------------
@@ -5250,7 +5433,7 @@ prgm:         ?s12=1                ; private?
               KeyEntry RRC          ; TAN
               .con    0x207         ; BST
               KeyEntry CLXI         ; BACKARROW
-              .con    0x30c         ; MODE ALPHA
+              KeyEntry ALDI         ; MODE ALPHA
               KeyEntry MASKR        ; MODE PRGM
               KeyEntry MASKL        ; MODE USER
               .con    0             ; OFF key special
@@ -5475,8 +5658,8 @@ div10:        acex                  ; save n in P[9:8]:Q
               .align  256
               getSign
 decDigits:    ?st=1   Flag_PRGM     ; program mode?
-              goc     7$            ; yes, interpret as positive number
-              c=regn  14
+              goc     decpos        ; yes, interpret as positive number
+decDigits1:   c=regn  14
               rcr     12
               cstex
               ?st=1   Flag_2        ; signed mode?
@@ -5485,7 +5668,7 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
 
               gosub   GSB256        ; getSign
               ?c#0    s
-              gonc    7$            ; positive
+              gonc    decpos        ; positive
               ?st=1   Flag_UpperHalf
               goc     5$
                                     ; negate with sign in low part
@@ -5497,7 +5680,7 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
               c=c&a                 ; mask
 4$:           acex
               s0=0                  ; remember negative
-              goto    7$
+              goto    decpos
 
 5$:           c=m                   ; negate with sign in upper part
               c=c-1
@@ -5513,12 +5696,14 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
               goto    4$            ;  .. but not always
 
 6$:           cstex                 ; restore flags
-7$:           b=0     xs            ; clear flag for digits above
+decpos:       b=0     xs            ; clear flag for digits above
               pt=     2             ; inspect window
               c=g
               acex
               setdec
               ?a#0    xs            ; window set?
+              goc     500$          ; yes
+              ?s1=1                 ; from ALDI?
               goc     500$          ; yes
 
 ;;; No window set, as we only need the lowest part of the result we can keep working in
@@ -5665,7 +5850,10 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
 
 150$:         goto    15$           ; relay
 
-540$:         c=g                   ; get window
+540$:         ?s1=1                 ; doing ALDI (alpha append)
+              goc     80$           ; yes
+
+              c=g                   ; get window
               c=c-1
               pt=     7
               rcr     1
@@ -5686,7 +5874,7 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
                                     ;  binary number), we will set B.XS if we
                                     ;  have digits outside below by exiting
                                     ;  to 12$ (120$ relay to it)
-              goto 120$
+              goto    120$          ; no
 
 15$:          pt=     0
               lc      7             ; show 8 (7+1) digits
@@ -5719,6 +5907,67 @@ decDigits:    ?st=1   Flag_PRGM     ; program mode?
               rtn
 27$:          frsabc                ; space for positive
               goto    26$
+
+;;; Appending digits to alpha register
+;;; M= lower part
+;;; A= upper part
+80$:          sethex
+              ?s0=1                 ; positive?
+              goc     82$           ; yes
+              ldi     '-'
+              pt=     0
+              g=c
+              gosub   APNDNW
+82$:          ldi     28-1
+              bcex    x             ; B= digit counter
+              c=m                   ; C= lower part
+              ?c#0                  ; check for zero
+              goc     84$
+              ?a#0
+              gonc    90$           ; zero
+84$:          ?a#0    s
+              goc     85$
+              a=c     s
+              acex
+              rcr     -1
+              asl
+              acex
+              bcex    x
+              c=c-1   x
+              bcex    x
+              goto    84$
+85$:          m=c                   ; M= lower part
+              pt=     13
+              lc      14-1          ; digit counter for first register
+              bcex    s             ; B.S= 13 (digit counter first reg)
+                                    ; B.X= overall digit counter
+
+86$:          acex    s             ; C.S= next digit value
+              ldi     3
+              rcr     -1
+              pt=     0
+              g=c
+              asl
+              acex                  ; save A in N
+              cnex
+              gosub   APNDNW
+              cnex
+              acex
+              c=b
+              c=c-1   x
+              rtn c                 ; done
+              c=c-1   s
+              goc     87$           ; out of digits in first register
+              bcex                  ; restore B
+              goto    86$
+87$:          bcex                  ; restore B
+              c=m                   ; get lower part
+              a=c
+              goto    86$
+
+
+90$:          ldi     '0'
+              golong  APNDNW
 
 
               .section Tail
