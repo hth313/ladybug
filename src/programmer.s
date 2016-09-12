@@ -6043,3 +6043,22 @@ rpollio:      ?s13=1                ; running?
               .con    0             ; Memory lost
               .text   "A1RP"        ; Identifier PR-1A
               .con    0             ; checksum position
+;;; ----------------------------------------------------------------------
+;;;
+;;; This NOP placed on address XCDD will allow the module to be used
+;;; in page 7.
+;;;
+;;; 7CDD is the address that is called to see if there is an HPIL
+;;; module in place.
+;;;
+;;; This is how Extended Function/HP41CX checks it, so it is assumed
+;;; it is the way to do it. By putting a NOP there, the probe call will
+;;; return and it will seem as the is no HPIL module in place in the
+;;; case we are compiled to page 7.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Legal7
+              nop
+
+
