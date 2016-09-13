@@ -987,7 +987,7 @@ exitNoUserST1:
 ;;;
 ;;; ************************************************************
 
-              .name   "BINI"
+              .name   "BINS"
 Binary:       ldi     1
 BaseHelper:   rcr     1
               bcex    s
@@ -1034,15 +1034,15 @@ exitNoUserSTR0:                     ; assume header address in A.X
 exitS11:      s11=1                 ; enable stack lift
               goto    exit
 
-              .name   "OCTI"
+              .name   "OCTS"
 Octal:        ldi   7
               goto    BaseHelper
 
-              .name   "DECI"
+              .name   "DECS"
 Decimal:      ldi     9
               goto    BaseHelper
 
-              .name   "HEXI"
+              .name   "HEXS"
 Hex:          ldi     15
               goto    BaseHelper
 
