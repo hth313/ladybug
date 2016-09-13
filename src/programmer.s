@@ -132,6 +132,7 @@ FatStart:
               FAT     DECI
               FAT     INCI
               FAT     CLRI
+              FAT     SEX
               FAT     CMP
               FAT     TST
               FAT     GE?
@@ -3816,6 +3817,60 @@ CLRI:         nop
               b=0     x
               rxq     saveG
               rgo     exitNoUserST_B10_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; SEX - Sign extend for a given word size (not bit number).
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "SEX"
+SEX:          nop
+              nop
+              rxq     Argument
+              ;; Defaults to word size 16, prevent ST input, but allow IND
+              .con    Operand16 + 0x100
+              a=a-1   x
+              golc    ERRDE         ; 0 gives DATA ERROR
+              acex    x
+              pt=     0
+              g=c
+              rxq     findBufferGetXSaveL
+              rxq     bitMask_G
+              n=c
+              ?a#0    s
+              goc     10$           ; in upper part
+              a=c
+              c=regn  X
+              acex
+              c=c&a
+              ?c#0
+              gonc    5$
+              c=n
+              c=c-1
+              c=-c-1
+              nop
+              c=c|a
+              regn=c  X
+              c=0     x
+              c=c-1   x
+              bcex    x
+5$:           rgo     putX
+
+10$:          a=c     x
+              c=b     x
+              c=c&a
+              ?c#0    x
+              gonc    5$
+              c=n
+              c=c-1   x
+              c=-c-1  x
+              abex    x
+              c=c|a
+              bcex    x
+              goto    5$
 
 
 ;;; ----------------------------------------------------------------------
