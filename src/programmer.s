@@ -3101,21 +3101,23 @@ maskABx:      .macro
 ;;;
 ;;; Load - Load bits pointed out by pointer and a.x
 ;;;
-;;; In: a.x = start address of number
-;;;     m = header register
-;;;     pt = start nibble in that register
-;;; Out: b:c = Register read, right aligned but not normalized
-;;;      a.x = end address of number
-;;;      pt = 0
+;;; In: A.X = start address of number
+;;;     M = header register
+;;;     PT = start nibble in that register
+;;; Out: B:C = Register read, right aligned but not normalized
+;;;      A.X = end address of number
+;;;      PT = 0
 ;;;
 ;;; **********************************************************************
 
               .section Code2
               .align  256
-classify:     ldi     0x70
-              a=0     xs
+classify:     cstex
+              a=c     x
+              ldi     0x70
+;              a=0     xs  (not needed as all calss are using GSB256)
               a=a-c   x
-              goc     10$           ; nibble storage
+              goc     clNib         ; nibble storage
               c=stk
               c=c+1   m             ; advance return pointer
               ldi     4
@@ -3125,7 +3127,11 @@ classify:     ldi     0x70
               a=a-c   x             ; A= shift count of trailer reg
               gotoc
 
-10$:          a=a+c   x             ; A= register number
+clStatus:     dadd=c                ; select status register
+              c=c+1   m
+              gotoc                 ; return to (P+2)
+
+clNib:        a=a+c   x             ; A= register number
 classNibble:  c=b                   ; select header register
               rcr     10
               dadd=c
@@ -3144,17 +3150,20 @@ classNibble:  c=b                   ; select header register
               rcr     3
               c=0     m             ; clear nibs above to catch register
                                     ;  overflow properly
-              pt=     13            ; nibble are offset by 2
+              pt=     13            ; nibble counter offset by 2
               lc      2
               rcr     -4            ; C[13:4]= base register for data memory
               pt=     3
-              goto    18$
 
-12$:          c=a+c   pt            ; advance nibble pointer
+12$:          rcr     3             ; B[3:0]= register address before advance
+              b=c     wpt
+              rcr     -3
+              c=a+c   pt            ; advance nibble pointer
               goc     14$           ; wrapped
               c=c+1   pt            ; no wrap, advance one more
               gonc    18$           ; still in same register
               goto    15$           ; advance register
+
 14$:          c=c+1   pt            ; advance 1 more, will not give carry
                                     ;  as we just had it
 15$:          rcr     1             ; step one register forward
@@ -3165,18 +3174,41 @@ classNibble:  c=b                   ; select header register
 18$:          a=a-1   x             ; decrement nibble register counter
               gonc    12$
 
-              ldi     0x1ff         ; max data register address
-              a=c     x             ; to A.X
+              ldi     0x1ff
+              a=c     x
               c=0     x
-              rcr     4             ; C.X= register number (so far)
-              a=c     s             ; A.S= nibble pointer + 2
-
-              ?c#0    m             ; overflowed register count?
-              rtn nc                ; no
-
-clStatus:     dadd=c                ; select status register
-              c=c+1   m
-              gotoc                 ; return to (P+2)
+              rcr     4             ; C.X= last register address
+              ?c#0    m             ; register > FFF?
+              goc     ERRNE_J1      ; yes
+              ?a<c    x             ; within range (1FF max)
+              goc     ERRNE_J1      ; no
+              dadd=c                ; select last register covered
+              a=c     x             ; A.X= last register address
+              c=b     wpt           ; C[3:1]= first register address
+              csr     wpt           ; C.X= first register address
+              c=a-c   x             ; C[0]= number of registers needed
+              rcr     1
+              bcex    s             ; B.S= number of registers needed
+              c=data                ; read memory
+              c=-c-1  m             ; invert a lot of bits, but not all
+              data=c
+              a=c
+              c=data
+              ?a#c                  ; reads back good?
+              goc     ERRNE_J1      ; no, does not exist
+              c=-c-1  m             ; invert back
+              data=c                ; restore
+              c=b     wpt
+              rcr     1             ; C.X= first register address
+                                    ; C.S= nibble offset + 2
+              c=c-1   s
+              c=c-1   s             ; C.S= nibble offset
+;;; Nibble classification returns with:
+;;;  C.X= first register address
+;;;  C.S= nibble offset in first register + 1
+;;;  B.S= number of registers needed - 1
+;;; Last register is within range and exists (also selected).
+              rtn
 
 ERRNE_J1:     golong  ERRNE         ; yes
 
@@ -3188,15 +3220,12 @@ loadG:        pt=     0
               gonc    10$
               s7=0                  ; reset indirect bit
               s9=1                  ; S9= indirect bit
-10$:          cstex
-              a=c     x
-              gosub   GSB256        ; classify address
+10$:          gosub   GSB256        ; classify
               goto    50$           ; (P+1) nibble storage
-              goto    700$          ; (P+2) stack register
-              c=data                ; (P+2) (other) status register
+              goto    70$           ; (P+2) stack register
+              c=data                ; (P+3) (other) status register
               b=0     x
-              ?s9=1
-              gonc    690$          ; goto maskC Bx
+              goto    750$
 
               ;; Handle indirection
 12$:          rxq     maskABx_rom2
@@ -3210,98 +3239,44 @@ loadG:        pt=     0
               rxq     classNibble
               s9=0                  ; only indirect once
 
-              ;; Load from nibble storage.
-              ;; C.X= first data register address
-              ;; A.S= first nibble position in that register + 2
-              ;; A.M= number of nibbles to load - 1
-              ;; We now register is in range, but not if it actually
-              ;; exists. We will need to load 1, 2 or 3 registers
-              ;; in order to get to all nibbles
-50$:          pt=     3
-              b=a     pt            ; B[3]= nibbles to load - 1
-              rcr     4
-              acex    s             ; C.S= nibble pos + 2 in first register
-              c=-c    s             ; C.S= nibbles from first register
-              rcr     -4            ; C[3]= nibbles from first register
-              a=a-c   pt
-              goc     54$           ; first register is enough
+
+;;;  C.X= first register address
+;;;  C.S= nibble offset in first register
+;;;  B.S= number of registers needed - 1
+50$:          dadd=c
+              bcex    s             ; B.S= nibble offset
+              n=c
+              c=data                ; read first register
+              cnex                  ; N= first register part
+              c=c-1   s             ; decrement register counter
+              goc     51$           ; done, one register was enough
               c=c+1   x             ; point to next register
-              lc      14
-              pt=     3
-              ?a<c    pt            ; needs a third register?
-              goc     55$           ; no
-              c=c+1   x
-              a=0     pt            ; local nibble counter
+              dadd=c                ; select next register
+              a=c                   ; A= save register address
+              c=data                ; read second part
+              goto    52$
+51$:          c=0                   ; N
+52$:                                ; C-N
+              a=c
+              c=n                   ; A-C
+              pt=     0
               goto    55$
+53$:          abex    s
+              acex    pt
+              rcr     1
+              asr
+55$:          abex    s
+              a=a-1   s
+              gonc    53$
+              abex    s
+              b=a     x             ; B[1:0]= upper part
 
-54$:          a=0     pt            ; start in first register, mark that by
-              a=a-1   pt            ;  by setting A[3] = 15
-
-55$:          ?a<c    x             ; register out of range (above 1FF)?
-              goc     ERRNE_J1      ; yes
-              dadd=c                ; select last register
-              a=c     x             ; save register pointer
-              c=data                ; read contents
-              c=-c-1  m             ; invert bits in a portion of it
-              data=c                ; write back changed register
-              acex                  ; A=changed patterm
-              cnex                  ; N= saved A (all work pointers)
-              c=data                ; read back changed register
-              ?a#c                  ; did it take?
-              goc     ERRNE_J1      ; no, assume it is not there
-              c=-c-1  m             ; invert bits back to original value
-              data=c                ; restore
-              a=c                   ; A= register contents
-              c=n                   ; C= all work pointers
-
-              c=0     s             ; counter of nibbles available
-                                    ;   initially set to 0, meaning all
-              c=c+1   pt            ; in first register?
-              goc     58$           ; yes, properly left aligned
-              c=-c-1  pt
-              c=c-1   pt
-              goto    57$
-
-700$:         goto    70$           ; relay
-690$:         goto    69$           ; relay
-120$:         goto    12$           ; relay
-
-56$:          asl                   ; left align
-              c=c-1   s             ; adjust counter remaining
-57$:          c=c-1   pt
-              gonc    56$
-
-58$:          c=c-1   s
-59$:          c=c-1   s
-              c=c-1   s
-
-60$:          cnex                  ; shift nibbles in
-              acex    s
-              rcr     -1
-              cnex
-              bcex    s             ; ripple to B.X
-              bcex    x
-              acex    s
-              rcr     -1
-              c=b     m
-              asl
-              c=c-1   pt            ; decrement overall counter
-              goc     65$           ; done
-              bcex
-              c=c-1   s
-              gonc    60$
-              c=c-1   x             ; load next lower register
-              dadd=c
-              a=c                   ; save C in A
-              c=data                ; load next regiser
-              acex                  ; set up A, restore C
-              goto    59$           ; adjust counter and start keep loading
-
-65$:          bcex                  ; restore B[12:10] and B.X= upper part
+58$:          a=c
               c=0     x
-              dadd=c                ; select chip 0
-              c=n                   ; C= lower part
-69$:          goto    75$
+              dadd=c
+750$:         goto    75$
+
+120$:         goto    12$           ; relay
 
               ;; Load from stack register
 70$:          bcex    x             ; B.X= stack reg addr
@@ -3318,10 +3293,201 @@ loadG:        pt=     0
               bcex    x
               dadd=c                ; select stack register
               c=data                ; load it
-75$:          a=c
-              ?s9=1
+              a=c
+75$:          ?s9=1
               goc     120$
 maskABx_rom2: maskABx
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; saveG - save to memory
+;;; saveMaskG - alternative entry that masks the value before saving
+;;;
+;;; IN: G - postfix operand
+;;;     M - carry mask
+;;;     B.X - upper part to save
+;;;     A - lower part to save
+;;;
+;;; A, B, C, M, N, Q destroyed
+;;; Preserves: B[12:10], ST and G
+;;;
+;;; Assume: B[12:10] = buffer header address
+;;;         Number properly masked, or call saveMaskG to have it done.
+;;;
+;;; ----------------------------------------------------------------------
+
+ERRNE_J2:     golong  ERRNE         ; yes
+
+saveMaskG:    rxq     maskABx_rom2
+saveG:        c=0     x             ; select chip 0
+              dadd=c
+              acex
+              regn=c  Q             ; save lower part in Q
+              n=c                   ; and in N (will not survive nibble
+                                    ;  indirect read)
+              c=b     x             ; get upper part
+              rcr     -3
+              stk=c                 ; save upper part on stack
+
+              pt=     0
+              c=g
+              cstex
+              ?s7=1                 ; indirect?
+              gonc    10$           ; no
+              s7=0                  ; yes, reset indirect bit
+              cstex
+              g=c                   ; G= same with reset indirect
+              rxq     loadG         ; load nibble address
+              ?b#0    x             ; range check register address
+              goc     ERRNE_J2      ; we allow 000-FFF
+              c=0     x
+              acex    x
+              ?a#0
+              goc     ERRNE_J2
+              a=c     x             ; address value OK
+              rxq     classNibble   ; we know it is nibble memory
+              goto    50$           ; handle nibble memory
+
+10$:          gosub   GSB256        ; classify
+              goto    50$           ; (P+1) nibble storage
+              goto    70$           ; (P+2) stack register
+                                    ; (P+3) (other) status register
+              spopnd                ; drop upper part
+              c=n
+              data=c
+              rtn
+
+              ;; Stack register
+70$:          bcex    x             ; B.X= stack register address
+
+              c=stk                 ; get upper part
+              pt=     3
+              g=c                   ; G= upper part
+
+              pt=     12            ; align pointer with upper part in
+72$:          inc pt
+              inc pt
+              a=a-1   x
+              gonc    72$
+
+              c=b
+              rcr     10
+              c=c+1   x
+              dadd=c                ; select trailer register
+              c=data                ; read trailer
+              c=g                   ; insert upper part
+              data=c                ; write back
+
+              bcex    x             ; C.X= address of stack register
+              dadd=c                ; select it
+              c=n                   ; C= lower part
+              data=c                ; write
+              rtn
+
+;;; Save to nibble memory
+;;;  C.X= first register address
+;;;  C.S= nibble offset in first register
+;;;  B.S= number of registers needed - 1
+50$:          bcex    s             ; B.S= nibble offset
+              c=stk                 ; C[6:3]= upper part of value to save
+              rcr     -4
+              stk=c                 ; push first register and reg count
+              rcr     4 + 3         ; C[1:0]= upper part to save
+              c=0     xs
+              c=0     m
+              c=0     s
+              n=c                   ; N= second part of value
+              c=0     x             ; select chip 0
+              dadd=c
+              c=regn  Q
+              a=c                   ; A= low part of value
+
+              pt=     0
+
+              c=0
+              cmex                  ; get carry pos
+              c=c-1                 ; convert to a mask
+              ?st=1   Flag_UpperHalf
+              gonc    54$
+              cmex                  ; partial mask is for upper part
+              c=c-1
+              goc     54$           ; always give carry here
+;;; Value in N-A
+;;; Mask in M-C  (if third register is needed, it will be one nibble, so
+;;;   we do not represent it).
+;;; B.S= nibble offset
+;;;
+;;; Now align both value and mask
+51$:          bcex    s             ; restore B.S
+              abex    x
+              asl     x             ; B.X << 4
+              abex    x
+              cnex
+              rcr     -1
+              bcex    pt            ; move nibble up to B[0]
+              rcr     1
+              acex    s             ; nibble from A[13] to N[0]
+              rcr     -1
+              asl                   ; low part << 4
+              cnex                  ; put N back, get C (mask back)
+
+              acex                  ; A= low part of mask
+              cmex                  ; C= high port of mask
+              acex    s
+              rcr     -1
+              asl
+              cmex
+              acex
+
+54$:          bcex    s
+              c=c-1   s
+              gonc    51$
+
+;;; Mask and value are new aligned with data register(s)
+              bcex    s             ; restore C
+              c=-c-1                ; make unmasks
+              cmex
+              c=-c-1
+              regn=c  Q             ; Q= high part of mask
+              c=stk
+              rcr     4
+              dadd=c                ; select low data register
+              rcr     -4
+              stk=c
+              c=data                ; read data register
+              acex                  ; A= data register value
+                                    ; C= low part of value to write
+              cmex                  ; M= low part of value to write
+                                    ; C= low part of mask
+              c=c&a                 ; mask data contents
+              a=c
+              c=m                   ; get new contents
+              c=c|a                 ; combine
+              data=c                ; write back
+
+              c=0     x             ; select chip 0
+              dadd=c
+              c=regn  Q             ; get high part of mask
+              a=c                   ; A= second  mask
+
+              c=stk
+              rcr     4             ; C.X= register address
+                                    ; C.S= register counter
+              c=c-1   s
+              goc     58$           ; done
+              c=c+1   x             ; advance to next register
+              dadd=c
+              m=c                   ; M= register pointer and counter
+
+              c=data                ; read second register
+              c=c&a                 ; mask it
+              a=c
+              c=n
+              c=c|a                 ; combine second part
+              data=c                ; write back
+
+58$:          golong  ENCP00
 
 
 ;;; ----------------------------------------------------------------------
@@ -3557,7 +3723,11 @@ STI:          nop
               nop
               rxq     Argument
               .con    Operand00     ; LDI 00 is default
-              rtn
+              rxq     findBufferUserFlags
+              rxq     loadX
+              switchBank 2
+              rxq     saveG
+              rgo     exitNoUserST_B10_rom2
 
 
 ;;; ----------------------------------------------------------------------
@@ -5970,6 +6140,25 @@ decpos:       b=0     xs            ; clear flag for digits above
               golong  APNDNW
 
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; This NOP placed on address XCDD will allow the module to be used
+;;; in page 7.
+;;;
+;;; 7CDD is the address that is called to see if there is an HPIL
+;;; module in place.
+;;;
+;;; This is how Extended Function/HP41CX checks it, so it is assumed
+;;; it is the way to do it. By putting a NOP there, the probe call will
+;;; return and it will seem as the is no HPIL module in place in the
+;;; case we are compiled to page 7.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Legal7
+              nop
+
+
               .section Tail
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -6043,22 +6232,3 @@ rpollio:      ?s13=1                ; running?
               .con    0             ; Memory lost
               .text   "A1RP"        ; Identifier PR-1A
               .con    0             ; checksum position
-;;; ----------------------------------------------------------------------
-;;;
-;;; This NOP placed on address XCDD will allow the module to be used
-;;; in page 7.
-;;;
-;;; 7CDD is the address that is called to see if there is an HPIL
-;;; module in place.
-;;;
-;;; This is how Extended Function/HP41CX checks it, so it is assumed
-;;; it is the way to do it. By putting a NOP there, the probe call will
-;;; return and it will seem as the is no HPIL module in place in the
-;;; case we are compiled to page 7.
-;;;
-;;; ----------------------------------------------------------------------
-
-              .section Legal7
-              nop
-
-
