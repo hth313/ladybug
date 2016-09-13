@@ -5824,6 +5824,28 @@ div10:        acex                  ; save n in P[9:8]:Q
               rtn
 
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; decDigits - extract decimal digits for display
+;;; decDigits - alternative entry that does not check program mode.
+;;;
+;;; IN: B.X - upper part of number
+;;;     A - lower part of number
+;;;     ST - internal flags up
+;;;          Note: Calls from ALDI cheats here, just enough setup
+;;;                is done there to make it work.
+;;;          Note: We know we are in decimal mode and borrow base flags
+;;;                for internal use here.
+;;;     G - Window set up
+;;;          Note: ALDI does not set it up, sets S1 to notify that we
+;;;                are doing ALDI (digit go to alpha instead of LCD)
+;;;
+;;; Note: When showing on behalf of a program step, no word size is
+;;;       available, so we cannot interpret it as negative as we have
+;;;       no idea where the sign bit will be when running.
+;;;
+;;; ----------------------------------------------------------------------
+
               .section Code
               .align  256
               getSign
