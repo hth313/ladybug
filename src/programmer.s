@@ -2055,7 +2055,7 @@ putX_J0:      rgo     putX
 SB:           nop
               nop
               rxq     Argument
-              .con    Operand00
+              .con    Operand00 + 0x100 ; no ST
               s9=0
 SB10:         rxq     findBufferGetXSaveL
               rxq     bitMask_G
@@ -2094,7 +2094,7 @@ SB10:         rxq     findBufferGetXSaveL
 CB:           nop
               nop
               rxq     Argument
-              .con    Operand00
+              .con    Operand00 + 0x100 ; no ST
               s9=1
               goto    SB10
 
@@ -2110,7 +2110,7 @@ CB:           nop
 `B?`:         nop
               nop
               rxq     Argument
-              .con    Operand00
+              .con    Operand00 + 0x100 ; no ST
               rxq     findBufferUserFlags
               rxq     loadX
               acex
@@ -2139,7 +2139,7 @@ CB:           nop
 MASKL:        nop
               nop
               rxq     Argument
-              .con    8
+              .con    8 + 0x100     ; no ST
               s9=1
 MASK10:       rxq     findBufferUserFlags_liftStackS11
               rxq     bitMask_G
@@ -2193,7 +2193,7 @@ MASK10:       rxq     findBufferUserFlags_liftStackS11
 MASKR:        nop
               nop
               rxq     Argument
-              .con    8
+              .con    8 + 0x100     ; no ST
               s9=0
               goto    MASK10
 
@@ -2368,7 +2368,8 @@ isThroughCarry:  .macro
 SL:           nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               c=0     s
               goto    leftShift
 
@@ -2382,7 +2383,8 @@ SL:           nop                   ; Prelude for prompting function
 RLC:          nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               pt=     13
               lc      Bit_ThroughCarry | Bit_Rotate
               goto    leftShift
@@ -2399,7 +2401,8 @@ RLExit:       rgo     exitS11
 RL:           nop                   ;  Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
 leftShift:    ?b#0    m             ; 00 operand?
@@ -2531,7 +2534,8 @@ leftShift:    ?b#0    m             ; 00 operand?
 SR:           nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               c=0     s
               goto    rightShift
 
@@ -2545,7 +2549,8 @@ SR:           nop                   ; Prelude for prompting function
 ASR:          nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Arithmetic
               goto    rightShift
@@ -2560,7 +2565,8 @@ ASR:          nop                   ; Prelude for prompting function
 RRC:          nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               pt=     13
               lc      Bit_ThroughCarry | Bit_Rotate
               goto    rightShift
@@ -2577,7 +2583,8 @@ RRExit:       rgo     exitS11
 RR:           nop                   ; Prelude for prompting function
               nop
               rxq     Argument
-              .con    Operand01
+              ;; Defaults to count 1, prevent ST input, but allow IND
+              .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
 rightShift:   ?b#0    m             ; 00 operand?
