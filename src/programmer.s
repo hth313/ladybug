@@ -131,6 +131,7 @@ FatStart:
               FAT     ALDI
               FAT     DECI
               FAT     INCI
+              FAT     CLRI
               FAT     CMP
               FAT     TST
               FAT     GE?
@@ -3788,6 +3789,26 @@ DECI00:       c=a
               a=c
               rxq     saveG
               rgo     exitUserST_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; CLRI - clear an integer register value
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "CLRI"
+CLRI:         nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; CLRI 00 is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              a=0
+              b=0     x
+              rxq     saveG
+              rgo     exitNoUserST_B10_rom2
 
 
 ;;; ----------------------------------------------------------------------
