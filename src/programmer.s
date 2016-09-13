@@ -486,7 +486,7 @@ hexoct:       ?s3=1
               goc     hexDigit      ; hex
               goto    octDigit      ; octal
 
-decDigit:     rxq     Mul10         ; prepare for a new decimal digit
+decDigit:     rxq     mul10         ; prepare for a new decimal digit
               goto    dig50
 
 hexDigit:     acex    s             ; prepare for a new hex digit
@@ -498,9 +498,9 @@ hexDigit:     acex    s             ; prepare for a new hex digit
 
 keyCLXIJ2:    goto    keyCLXIJ1     ; relay
 
-octDigit:     rxq     Shift1
-              rxq     Shift1
-binDigit:     rxq     Shift1
+octDigit:     rxq     shift1
+              rxq     shift1
+binDigit:     rxq     shift1
 
 ;;; Having made room for the new digit, add digit
 dig50:        c=0
@@ -5752,8 +5752,19 @@ prgm:         ?s12=1                ; private?
               .con    0             ; OFF key special
 
 
-              .section Code
+;;; ----------------------------------------------------------------------
+;;;
+;;; mul10 - multiply by 10
+;;; shift1 - shift number one step left
+;;;
+;;; IN: B.X - upper part
+;;;     A - lower part
+;;;
+;;; USES: N  (mul10)
+;;;
+;;; ----------------------------------------------------------------------
 
+              .section Code
               ;; Align Shift1 to allow GSB256 to be used
               ;; This is done to save one subroutine level as
               ;; RXQ uses +1 and when coming from Div10, we
@@ -5761,7 +5772,7 @@ prgm:         ?s12=1                ; private?
               ;; It also makes it run a bit faster as an
               ;; extra bonus.
               .align  256
-Shift1:       bcex                  ; shift one left
+shift1:       bcex                  ; shift one left
               c=c+c   x
               acex
               c=c+c
@@ -5771,7 +5782,7 @@ Shift1:       bcex                  ; shift one left
               bcex
               rtn
 
-Mul10:        gosub   GSB256        ; Shift1   *2
+mul10:        gosub   GSB256        ; Shift1   *2
               acex
               n=c                   ; save temp in N
               acex
@@ -5797,7 +5808,7 @@ Mul10:        gosub   GSB256        ; Shift1   *2
 
 ;;; ----------------------------------------------------------------------
 ;;;
-;;; Div10 - divide by 10 using shifts.
+;;; div10 - divide by 10 using shifts.
 ;;;
 ;;; Algorithm (from Hacker's Delight):
 ;;; http://www.hackersdelight.org/divcMore.pdf
@@ -5924,7 +5935,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               m=c                   ;  (upper part was one just above)
               acex
 
-              rxq     Mul10         ; q * 10
+              rxq     mul10         ; q * 10
               c=regn  P
               rcr     8
               abex    x
