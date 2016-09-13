@@ -139,6 +139,7 @@ FatStart:
               FAT     GT?
               FAT     LE?
               FAT     LT?
+              FAT     BITSUM
 FatEnd:       .con    0,0
 
 
@@ -3720,7 +3721,7 @@ LDI:          nop
               switchBank 2
               rxq     loadG
               switchBank 1
-              acex
+LDI10:        acex
               n=c                   ; save value in B
               rxq     liftStackS11
               c=n
@@ -3872,6 +3873,39 @@ SEX:          nop
               c=c|a
               bcex    x
               goto    5$
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; BITSUM - Count bits in register operand.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "BITSUM"
+BITSUM:       nop
+              nop
+              rxq     Argument
+              .con    OperandX
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              switchBank 1
+              c=0
+              acex
+10$:          ?c#0
+              gonc    15$
+11$:          c=c+c
+              gonc    11$
+              a=a+1
+              goto    10$
+15$:          ?b#0    x
+              gonc    20$
+              bcex    x
+              rcr     2
+              goto    11$
+20$:          rgo     LDI10
+
 
 
 ;;; ----------------------------------------------------------------------
