@@ -3111,6 +3111,12 @@ maskABx:      .macro
 ;;; **********************************************************************
 
               .section Code2
+;;; Align local subroutine so we can use GSB256
+;;; Note that for nibble memory we only need two consequtive registers.
+;;; The worst case would be 64 bits (16 nibbles), but it still only need
+;;; 2 registers no matter where we are. The reason is that it gets aligned
+;;; to an even number of nibbles. Thus, it cannot be split between three
+;;; registers, even though it in theory have enough span for that.
               .align  256
 classify:     cstex
               a=c     x
