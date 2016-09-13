@@ -129,6 +129,8 @@ FatStart:
               FAT     LDI
               FAT     STI
               FAT     ALDI
+              FAT     DECI
+              FAT     INCI
               FAT     CMP
               FAT     TST
               FAT     GE?
@@ -1192,7 +1194,7 @@ errorExit:    gosub   LEFTJ
 ;;;  B[12:10] - buffer header address
 ;;;  A[2:0] - buffer header address
 ;;;
-;;; Preserves: A.S, A.M B.S and N
+;;; Preserves: A.S, A.M B.S, B.X and N
 ;;; Uses: ST
 ;;;
 ;;; **********************************************************************
@@ -1740,8 +1742,8 @@ setSignFlag:  st=0    Flag_Sign
 ;;;     S8/S9 - set according to word size
 ;;;     M - carry mask
 ;;;
-;;; Out: Sign flag in user flags set to higehst bit in X according to
-;;;      word size
+;;; Out: Zero and sign flags in user flags set to highest bit according
+;;;      to word size
 ;;;
 ;;; Uses: C, A
 ;;;
@@ -1755,7 +1757,7 @@ setFlagsABx:  rxq     maskABx_rom2
               ?a#0
               goc     10$
               st=1    Flag_Zero
-10$:           st=0    Flag_Sign
+10$:          st=0    Flag_Sign
               ?st=1   Flag_UpperHalf
               goc     22$
               acex
@@ -3734,6 +3736,58 @@ STI:          nop
               switchBank 2
               rxq     saveG
               rgo     exitNoUserST_B10_rom2
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; INCI - increment register contents and set sign and zero flags.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "INCI"
+INCI:         nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; INCI 00 is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              a=a+1
+              gonc    10$
+              bcex    x
+              c=c+1   x
+              bcex    x
+10$:          rgo     DECI00
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; DECI - decrement register contents and set sign and zero flags.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "DECI"
+DECI:         nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; DECI 00 is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              a=a-1
+              gonc    DECI00
+              bcex    x
+              c=c-1   x
+              bcex    x
+DECI00:       c=a
+              n=c
+              rxq     setFlagsABx
+              c=n
+              a=c
+              rxq     saveG
+              rgo     exitUserST_rom2
 
 
 ;;; ----------------------------------------------------------------------
