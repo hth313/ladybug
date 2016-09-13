@@ -3103,6 +3103,7 @@ maskABx:      .macro
 
 10$:          abex    x
               c=c&a
+              acex    x
               abex    x
               rtn
               .endm
