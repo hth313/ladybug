@@ -892,7 +892,6 @@ exitNoUserST_B10_rom2:
               enrom1
 
 
-              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; PutX - Put back final X, update user flags accordingly
@@ -906,6 +905,7 @@ exitNoUserST_B10_rom2:
 ;;;
 ;;; **********************************************************************
 
+              .section Code
 putXnoFlags:  rxq     maskAndSave
               goto    exitUserST
 
@@ -1485,15 +1485,12 @@ signPositive: rxq     getSign_rom2  ; get the sign
 ;;;
 ;;; bitMask_G - alternative entry that takes the bit number from G
 bitMask_G:    pt=     0
-              c=0     x
-              c=g
-              a=c
-bitMask:      ldi 64
-              ?a<c    x
-              gonc    50$           ; out of range
               c=0
+              c=g
+              goto    bitMask10
+bitMask:      c=0
               acex    x
-              rcr     -3
+bitMask10:    rcr     -3
               a=c                   ; A.S= 0, flag for bit in upper part
                                     ; A.M= counter
               a=0     x             ; high part
@@ -1511,10 +1508,6 @@ bitMask:      ldi 64
               rtn c                 ; done
               c=c+c   x
               goto    15$
-
-50$:          a=0
-              c=0
-              rtn
 
 
               .section Code
@@ -2047,45 +2040,7 @@ NOT:          rxq     findBufferGetXSaveL
 putX_J0:      rgo     putX
 
 
-;;; **********************************************************************
-;;;
-;;; SB - Set a bit.
-;;;
-;;; **********************************************************************
-
-              .name   "SB"
-SB:           nop
-              nop
-              rxq     Argument
-              .con    Operand00 + 0x100 ; no ST
-              s9=0
-SB10:         rxq     findBufferGetXSaveL
-              rxq     bitMask_G
-              ?s9=1                 ; SB?
-              gonc    10$           ; yes
-              c=-c-1                ; no, CB - invert mask
-10$:          acex                  ; A= mask
-              ?c#0    s             ; bit affects upper part?
-              goc     20$           ; yes
-              c=regn  X
-              ?s9=1                 ; SB?
-              goc     15$           ; no
-              c=c|a                 ; yes
-              goto    17$
-15$:          c=c&a
-17$:          regn=c  X
-19$:          goto    putX_J0
-
-20$:          bcex    x
-              ?s9=1                 ; SB?
-              goc     25$           ; no
-              c=c|a                 ; yes
-              goto    30$
-25$:          c=c&a
-30$:          bcex    x
-              goto    putX_J0
-
-
+              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; CB - Clear a bit.
@@ -2101,19 +2056,59 @@ CB:           nop
               goto    SB10
 
 
-              .section Code
+;;; **********************************************************************
+;;;
+;;; SB - Set a bit.
+;;;
+;;; **********************************************************************
+
+              .name   "SB"
+SB:           nop
+              nop
+              rxq     Argument
+              .con    Operand00 + 0x100 ; no ST
+              s9=0
+SB10:         rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findBufferGetXSaveL
+              rxq     bitMask_G
+              ?s9=1                 ; SB?
+              gonc    10$           ; yes
+              c=-c-1                ; no, CB - invert mask
+10$:          acex                  ; A= mask
+              ?c#0    s             ; bit affects upper part?
+              goc     20$           ; yes
+              c=regn  X
+              ?s9=1                 ; SB?
+              goc     15$           ; no
+              c=c|a                 ; yes
+              goto    17$
+15$:          c=c&a
+17$:          regn=c  X
+19$:          goto    35$
+
+20$:          bcex    x
+              ?s9=1                 ; SB?
+              goc     25$           ; no
+              c=c|a                 ; yes
+              goto    30$
+25$:          c=c&a
+30$:          bcex    x
+35$:          rgo     putX
+
+
 ;;; **********************************************************************
 ;;;
 ;;; B? - Test a bit.
 ;;;
 ;;; **********************************************************************
 
+              .section Code
               .name   "B?"
 `B?`:         nop
               nop
               rxq     Argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags
+              rxq     findBufferUserFlags_argumentValueG_rom1
               rxq     loadX
               acex
               regn=c  X
@@ -2133,6 +2128,22 @@ CB:           nop
 
 ;;; **********************************************************************
 ;;;
+;;; MASKR - build right aligned bit mask.
+;;;
+;;; **********************************************************************
+
+              .section Code
+              .name   "MASKR"
+MASKR:        nop
+              nop
+              rxq     Argument
+              .con    8 + 0x100     ; no ST
+              s9=0
+              goto    MASK10
+
+
+;;; **********************************************************************
+;;;
 ;;; MASKL - build left aligned bit mask.
 ;;;
 ;;; **********************************************************************
@@ -2143,7 +2154,8 @@ MASKL:        nop
               rxq     Argument
               .con    8 + 0x100     ; no ST
               s9=1
-MASK10:       rxq     findBufferUserFlags_liftStackS11
+MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     liftStackS11
               rxq     bitMask_G
               b=0     x
               c=c-1                 ; convert to mask
@@ -2180,24 +2192,10 @@ MASK10:       rxq     findBufferUserFlags_liftStackS11
 17$:          c=g
               bcex    x
               c=n
-              goto    SWAPIExit
+              goto    22$
 20$:          acex
-              goto    SWAPIExit
-
-
-;;; **********************************************************************
-;;;
-;;; MASKR - build right aligned bit mask.
-;;;
-;;; **********************************************************************
-
-              .name   "MASKR"
-MASKR:        nop
-              nop
-              rxq     Argument
-              .con    8 + 0x100     ; no ST
-              s9=0
-              goto    MASK10
+22$:          regn=c  X
+              rgo     putXnoFlags
 
 
 ;;; **********************************************************************
@@ -2206,6 +2204,7 @@ MASKR:        nop
 ;;;
 ;;; **********************************************************************
 
+              .section Code
               .name   "LASTXI"
 LASTXI:       rxq     findBufferUserFlags_liftStackS11
               c=b
@@ -2407,9 +2406,16 @@ RL:           nop                   ;  Prelude for prompting function
               .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
-leftShift:    ?b#0    m             ; 00 operand?
-              gonc    RLExit        ; yes, do nothing
-              bcex    s             ; B.S= configuration flags
+leftShift:    bcex    s             ; B.S= configuration nibble
+              rxq     findBufferUserFlags
+              bcex    s
+              rcr     4
+              pt=     9
+              bcex    pt            ; B[9]= configuration nibble
+              rxq     argumentValueG_rom1
+              c=b
+              rcr     -4
+              bcex    s             ; B.S= configuration nibble
               rxq     findBufferGetXSaveL56
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
@@ -2420,6 +2426,7 @@ leftShift:    ?b#0    m             ; 00 operand?
               pt=     3
               c=g
               c=c-1   m
+              goc     RLExit
               ?st=1   Flag_56
               goc     56$
               ?st=1   Flag_UpperHalf
@@ -2453,7 +2460,7 @@ leftShift:    ?b#0    m             ; 00 operand?
               gonc    32$
 
 10$:          c=stk                 ; get buffer header address
-              rcr     - (10 - 7)
+              rcr     - (10 - 3)
               bcex    m             ; put in B[12:10]
               acex                  ; write out result
               regn=c  X
@@ -2589,10 +2596,24 @@ RR:           nop                   ; Prelude for prompting function
               .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
-rightShift:   ?b#0    m             ; 00 operand?
-              gonc    RRExit
+rightShift:
               bcex    s             ; B.S=configuration
+              rxq     findBufferUserFlags
+              bcex    s
+              rcr     4
+              pt=     9
+              bcex    pt            ; B[9]= configuration nibble
+              rxq     argumentValueG_rom1
+              c=b                   ; C[9]= configuration nibble
+              rcr     -4
+              bcex    s             ; B.S= configuration nibble
               rxq     findBufferGetXSaveL56
+              c=0     x             ; test for zero input
+              pt=     0
+              c=g
+              ?c#0    x             ; zero?
+              gonc    RRExit        ; yes, done
+
               c=b     s
               c=c+c   s
               c=c+c   s
@@ -3112,14 +3133,24 @@ maskABx:      .macro
 
 ;;; **********************************************************************
 ;;;
-;;; Load - Load bits pointed out by pointer and a.x
+;;; loadG - load register value by postfix argument
 ;;;
-;;; In: A.X = start address of number
-;;;     M = header register
-;;;     PT = start nibble in that register
-;;; Out: B:C = Register read, right aligned but not normalized
-;;;      A.X = end address of number
-;;;      PT = 0
+;;; argumentValueG - Alternative entry that loads a value, the argument
+;;;    itself is the value unless it is indirect (in which case we load it)
+;;;
+;;; In: G - start address of number
+;;;        M - carry mask
+;;;        B[12:10] - buffer address
+;;;
+;;; Out: loadG:
+;;;        B.X - upper part of argument value (register contents)
+;;;        A - lower part of argument value (register contents)
+;;;      argumentValueG:
+;;;        G - value
+;;;
+;;; NOTE: Must have called findBuffer to have B[12:10] and M properly set up!
+;;;       But should not save anything to L before coming here as we may
+;;;       report argument error!
 ;;;
 ;;; **********************************************************************
 
@@ -3134,7 +3165,7 @@ maskABx:      .macro
 classify:     cstex
               a=c     x
               ldi     0x70
-;              a=0     xs  (not needed as all calss are using GSB256)
+;              a=0     xs  (not needed as all calls are using GSB256)
               a=a-c   x
               goc     clNib         ; nibble storage
               c=stk
@@ -3229,17 +3260,44 @@ classNibble:  c=b                   ; select header register
 ;;; Last register is within range and exists (also selected).
               rtn
 
-ERRNE_J1:     golong  ERRNE         ; yes
+ERRNE_J1:     golong  ERRNE
+
+argumentValueG:
+              pt=     0
+              c=g
+              cstex
+              ?s7=1                 ; indirect?
+              goc     10$           ; yes
+              cstex
+              a=0
+              acex    x
+              acex    xs
+              goto    12$
+
+10$:          s7=0                  ; reset indirect
+              s9=0                  ; no extra indirection
+              rxq     loadST
+              ?b#0    x             ; check range
+              goc     ERRDE_J1
+              acex
+              pt=     0
+              g=c                   ; save in G
+              acex
+12$:          c=0
+              ldi     64
+              ?a<c    x
+              rtn c
+ERRDE_J1:     golong  ERRDE
 
 loadG:        pt=     0
               c=g
               cstex
               s9=0
               ?s7=1
-              gonc    10$
+              gonc    loadST
               s7=0                  ; reset indirect bit
               s9=1                  ; S9= indirect bit
-10$:          gosub   GSB256        ; classify
+loadST:       gosub   GSB256        ; classify
               goto    50$           ; (P+1) nibble storage
               goto    70$           ; (P+2) stack register
               c=data                ; (P+3) (other) status register
@@ -3509,6 +3567,22 @@ saveG:        c=0     x             ; select chip 0
 58$:          golong  ENCP00
 
 
+              .section Code
+findBufferUserFlags_argumentValueG_rom1:
+              rxq     findBufferUserFlags
+argumentValueG_rom1:
+              switchBank 2
+              rxq     argumentValueG
+              switchBank 1
+              rtn
+
+              .section Code
+loadG_rom1:   switchBank 2
+              rxq     loadG
+              switchBank 1
+              rtn
+
+
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Load X register to B.X and A
@@ -3718,9 +3792,7 @@ LDI:          nop
               rxq     Argument
               .con    Operand00     ; LDI 00 is default
               rxq     findBufferUserFlags
-              switchBank 2
-              rxq     loadG
-              switchBank 1
+              rxq     loadG_rom1
 LDI10:        acex
               n=c                   ; save value in B
               rxq     liftStackS11
@@ -3828,6 +3900,7 @@ CLRI:         nop
 ;;; ----------------------------------------------------------------------
 
               .section Code
+ERRDE_SEX:     golong  ERRDE
               .name   "SEX"
 SEX:          nop
               nop
@@ -3835,12 +3908,15 @@ SEX:          nop
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
               a=a-1   x
-              golc    ERRDE         ; 0 gives DATA ERROR
-              acex    x
-              pt=     0
-              g=c
+              goc     ERRDE_SEX     ; 0 gives DATA ERROR
+              rxq     findBufferUserFlags_argumentValueG_rom1
               rxq     findBufferGetXSaveL
-              rxq     bitMask_G
+              pt=     0             ; load argument
+              c=0     x
+              c=g
+              c=c-1   x             ; we work on word size
+              a=c     x
+              rxq     bitMask
               n=c
               ?a#0    s
               goc     10$           ; in upper part
@@ -3888,9 +3964,7 @@ BITSUM:       nop
               rxq     Argument
               .con    OperandX
               rxq     findBufferUserFlags
-              switchBank 2
-              rxq     loadG
-              switchBank 1
+              rxq     loadG_rom1
               c=0
               acex
 10$:          ?c#0
