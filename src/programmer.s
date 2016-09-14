@@ -84,6 +84,7 @@ XROMno:       .equ    16
               .con    (FatEnd - FatStart) / 2 ; number of entry points
 
 FatStart:
+              .fat    Literal
               .fat    Header        ; ROM header
               FAT     FLOAT         ; mode change
               .fat    Integer
@@ -254,7 +255,26 @@ switchBank:   .macro  n
               .section Code
 
               .name   "-PROG P001"  ; The name of the module
-Header:       ?s13=1                ; running?
+Header:       rtn
+
+
+;;; ************************************************************
+;;;
+;;; Program literal.
+;;;
+;;; This is the first entry in the FAT, to get an easy 00
+;;; when looking for it.
+;;;
+;;; The name try to be fairly short to avoid scrolling when
+;;; shown in a program before the line is changed.
+;;; Yes it is descriptive enough to give a hint when briefly
+;;; seen and not really typable.
+;;;
+;;; ************************************************************
+
+              .section Code
+              .name   "# LIT"
+Literal:      ?s13=1                ; running?
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
               rtn nc                ; no, do nothing
@@ -5679,7 +5699,7 @@ prgm:         ?s12=1                ; private?
               b=a     wpt           ; B[3:0]= address
               a=c     x             ; A.X= second byte of XROM opcode
               ldi     64
-              ?a<c
+              ?a<c    x
 90$:          gonc    3$            ; not XROM 16
               ?a#0    x             ; literal?
                                     ;  (test here keeps branches within range)
