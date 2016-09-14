@@ -3845,7 +3845,6 @@ WSZ_DE:       golnc   ERRDE         ; yes, do not allow
               dadd=c
               c=n
               data=c
-
 90$:
 WSZ_OK:       rgo     exit
 
@@ -5121,24 +5120,24 @@ divCommon:    rcr     2
               rcr     3
               bcex    x
               c=regn  Y
-63$:          ?st=1   Flag_2        ; signed mode?
+63$:          a=c
+              ?st=1   Flag_2        ; signed mode?
               gonc    67$           ; no
               ?s11=1                ; doing remainder?
               goc     64$           ; yes, do not check overflow
-              a=c
               rxq     getSign_rom2  ; C.S= result sign
-              acex
-              ?a#0    s             ; sign bit set?
+              ?c#0    s             ; sign bit set?
               gonc    64$           ; no
               st=1    Flag_Overflow ; yes, overflowed
 64$:          ?b#0    s             ; negative result?
               gonc    65$           ; no
+              acex
               c=-c                  ; yes, negate result
               bcex    x
               c=-c-1  x
               bcex    x
-65$:          a=c
-              ?st=1   Flag_Overflow
+              acex
+65$:          ?st=1   Flag_Overflow
               gonc    67$
               rxq     forceSign
 
