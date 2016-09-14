@@ -3303,7 +3303,7 @@ argumentValueG:
               g=c                   ; save in G
               acex
 12$:          c=0
-              ldi     64
+              ldi     65
               ?a<c    x
               rtn c
 ERRDE_J1:     golong  ERRDE
@@ -3728,16 +3728,125 @@ WSIZE:        nop
               rxq     Argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
-              ?a#0    x
-WSZ_DE:       golnc   ERRDE
-              ldi     65
-              ?a<c    x
-              gonc    WSZ_DE
-              rxq     findBuffer
-              c=st                  ; restore C[1:0]
-              pt=     2
+              rxq     findBufferUserFlags
+              rxq     argumentValueG_rom1 ; handle indirect, check 64 range
+              c=0
+              pt=     0
               c=g
+              ?c#0    x             ; 0?
+WSZ_DE:       golnc   ERRDE         ; yes, do not allow
+              a=c     x             ; A.X= new word size
+              c=b                   ; load buffer header
+              rcr     10
+              dadd=c
+              c=data
+              pt=     2
+              cgex                  ; insert new word size, get old
+              data=c                ; write back
+              ?st=1   Flag_2        ; signed mode?
+              gonc    9000$         ; no
+              c=0
+              pt=     0
+              c=g                   ; C.X= old buffer size
+              acex
+              ?a<c    x             ; setting a larger word size?
+9000$:        gonc    900$          ; no
+                                    ; yes, sign extend the stack
+              a=a-1   x             ; A.X= bit number for previous sign
+              rxq     bitMask
+              b=a     s             ; B.S= active part flag
+              n=c                   ; N= old sign bit mask
+              rxq findBufferUserFlags ; M= updated word mask
+
+              c=b                   ; load trailer register
+              rcr     10
+              c=c+1   x
+              dadd=c
+              c=data
+              a=c                   ; A= trailer
+              c=0     x
+              dadd=c                ; select chip 0
+              acex
+              regn=c  Q             ; Q= trailer
+              ldi     4 + 1         ; L + 1
+
+10$:          c=c-1   x
+              goc     30$
+              dadd=c                ; select next lower register
+              bcex    x
+              ?b#0    s             ; sign in upper part?
+              goc     15$           ; yes
+              c=data                ; no, read lower part
+              a=c
+              c=n
+              c=c&a
+              ?c#0                  ; positive?
+              gonc    20$           ; yes
+              c=n                   ; no, sign extend
+              c=c-1
+              c=-c-1
+              nop
+              c=c|a
+              ?st=1   Flag_UpperHalf
+              goc     11$
+              a=c                   ; new word size only in lower part
+              c=m
+              c=c-1
+              nop
+              c=c&a
+11$:          data=c                ; write back lower part
+              c=m                   ; update trailer
+              c=c-1   x
+              ?st=1   Flag_UpperHalf
+              goc     12$
+              c=0     x
+12$:          a=c     x             ; write to upper part
+              c=regn  Q
+              acex    x
+              acex    xs
+              goto    22$
+
+900$:         goto    90$           ; relay
+
+15$:          c=regn  Q             ; sign is in upper part
+              a=c     x
+              c=n
+              c=c&a
+              ?c#0                  ; positive?
+              gonc    20$           ; yes
+              c=n                   ; no, sign extend
+              c=c-1   x
+              c=-c-1  x
+              .suppress
+              c=c|a
+              acex    x
+              acex    xs
+              c=m                   ; mask it
+              c=c-1   x
+              .suppress
+              c=c&a
+              acex    xs
+              acex    m
+              acex    s
+              goto    22$
+
+20$:          c=regn  Q             ; update trailer for next position
+22$:          rcr     2
+              regn=c  Q
+              bcex    x
+              goto    10$
+
+30$:          c=regn  Q             ; write back trailer
+              rcr     4
+              n=c
+              c=b
+              rcr     10
+              c=c+1   x
+              dadd=c
+              c=n
               data=c
+
+90$:
 WSZ_OK:       rgo     exit
 
 
@@ -3759,7 +3868,7 @@ WSZ_OK:       rgo     exit
 WINDOW:       nop
               ldi     8             ; allow up to 7
               ?a<c    x
-              gonc    WSZ_DE
+              golnc   ERRDE
               acex    x
               pt=     0
               g=c
