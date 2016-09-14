@@ -2396,8 +2396,6 @@ RLC:          nop                   ; Prelude for prompting function
 ;;;
 ;;; ----------------------------------------
 
-RLExit:       rgo     exitS11
-
               .name   "RL"
 RL:           nop                   ;  Prelude for prompting function
               nop
@@ -2426,7 +2424,7 @@ leftShift:    bcex    s             ; B.S= configuration nibble
               pt=     3
               c=g
               c=c-1   m
-              goc     RLExit
+              goc     12$           ; done
               ?st=1   Flag_56
               goc     56$
               ?st=1   Flag_UpperHalf
@@ -2464,7 +2462,7 @@ leftShift:    bcex    s             ; B.S= configuration nibble
               bcex    m             ; put in B[12:10]
               acex                  ; write out result
               regn=c  X
-              rgo     putX
+12$:          rgo     putX
 
 56$:          bcex    m
               c=0                   ; prepare to rotate carry in if needed
@@ -2586,8 +2584,6 @@ RRC:          nop                   ; Prelude for prompting function
 ;;;
 ;;; ----------------------------------------
 
-RRExit:       rgo     exitS11
-
               .name   "RR"
 RR:           nop                   ; Prelude for prompting function
               nop
@@ -2612,7 +2608,7 @@ rightShift:
               pt=     0
               c=g
               ?c#0    x             ; zero?
-              gonc    RRExit        ; yes, done
+              gonc    120$          ; yes, done
 
               c=b     s
               c=c+c   s
@@ -2665,7 +2661,10 @@ rightShift:
               c=c|a                 ; carry in lower half
               acex
               goto    73$
+
 11$:          goto    1$            ; relay
+120$:         goto    12$           ; relay
+
 71$:          c=m                   ; in upper half
               abex
               c=c|a
@@ -2714,7 +2713,7 @@ rightShift:
               goc     11$
               acex
               regn=c  X
-              rgo     putX
+12$:          rgo     putX
 
 
               .section Code
