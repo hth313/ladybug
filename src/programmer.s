@@ -464,9 +464,18 @@ numEntry:     pt=     0
               c=0     xs
               ?a<c    pt            ; digit out of range?
               goc     digAbort      ; yes, blink and return via reset keyboard
-              c=regn  14            ; are we in program mode?
-              rcr     -2
+              c=regn  14
+              ;; Import data entry flag to our own to have it handy.
+              ;; We need to obey the global one which may be reset by an alarm,
+              ;; otherwise we may stay in digit entry after a control program
+              ;; have executed, changing the stack entirely!
+              st=0    IF_DigitEntry
               c=c+c   xs
+              c=c+c   xs
+              gonc    10$           ; system digit entry not set
+              st=1    IF_DigitEntry
+10$:          rcr     -2
+              c=c+c   xs            ; are we in program mode?
               gonc    runMode       ; no
               st=1    Flag_PRGM
               rxq     prgmDigent    ; yes
@@ -475,7 +484,6 @@ numEntry:     pt=     0
               goto    dig40
 
 keyCLXIJ1:    goto    keyCLXI       ; relay
-backSpaceJ1:  goto    backSpace     ; relay
 
 runMode:      st=0    Flag_PRGM
               ?st=1   IF_DigitEntry ; start digit entry?
@@ -487,7 +495,9 @@ dig35:        b=0     x             ; Load X (0)
               a=0
               goto    dig40
 
-digAbort:     gosub   BLINK         ; not accepted key, blink
+backSpaceJ1:  goto    backSpace     ; relay
+
+digAbort:     gosub   BLINK     ; not accepted key, blink
               golong  NFRKB
 
 ;;; Ongoing digit entry, load X
@@ -531,7 +541,18 @@ dig50:        c=0
 44$:          rxq     acceptAndSave ; Check if value is accepted, save it
               goto    digAbort      ; too big, blink and return
               st=1    IF_DigitEntry
+              c=0     x             ; also set system digit entry
+              dadd=c
+              c=regn  14
+              rcr     2
+              cstex
+              s2=1
+              cstex
+              rcr     -2
+              regn=c  14
 kbDoneJ1:     goto    kbDone
+
+keyCLXIJ3:    goto    keyCLXIJ2     ; relay
 
 ;;; Backspace is pressed, we have four cases.
 ;;; 1. In program mode, delete the current instruction
@@ -578,9 +599,9 @@ backSpace:    c=regn  14
               ?st=1   IF_DigitEntry ; doing digit entry
               goc     digBSP
               ?st=1   IF_Message    ; showing a message?
-keyCLXIJ3:    gonc    keyCLXIJ2     ; no, do CLXI
+keyCLXIJ4:    gonc    keyCLXIJ3     ; no, do CLXI
 
-kbDone:       s12=0                 ; prepare for early key
+kbDone:       s12=0                 ; prepare for early next key
               rst kb                ; try to release key
               chk kb
               goc     4$            ; key still down
@@ -608,7 +629,7 @@ bspNot0:      ?st=1   Flag_PRGM
 10$:          rxq     saveLiteral
               goto    kbDone
 
-keyCLXIJ4:    goto    keyCLXIJ3     ; relay
+keyCLXIJ5:    goto    keyCLXIJ4     ; relay
 
 ;;; Back arrow in digit entry
 digBSP:       rxq     loadX
@@ -658,7 +679,7 @@ dig20:        ?st=1   Flag_PRGM     ; in program mode?
               s11=0                 ; clear push flag in case user NULL the CLXI !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-              goto    keyCLXIJ4
+              goto    keyCLXIJ5
 
 ;;; Back space doing hexadecimal input
 hexBSP:       asr                   ; delete hex digit
@@ -5661,6 +5682,8 @@ pollio:       ?s3=1                 ; program mode?
                                     ; (P+2)
               cstex                 ; bring up internal flags
               st=0    IF_Argument   ; reset argument flag (not being active)
+              st=0    IF_DigitEntry ; reset digit entry, we do not come
+                                    ;   here if system digit entry is active
               cstex
               data=c                ; write back to buffer
               cstex                 ; bring up internal flags again
@@ -5739,6 +5762,8 @@ prgm:         ?s12=1                ; private?
                                     ; (P+2)
               st=c
               st=0    IF_Argument   ; reset argument flag
+              st=0    IF_DigitEntry ; reset digit entry, we do not come
+                                    ;   here if system digit entry is active
               cstex                 ; keep old argument flag in ST
               data=c                ; write back
 
