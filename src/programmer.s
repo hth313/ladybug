@@ -430,7 +430,11 @@ shiftUser:    rxq     chkbuf
               goc     11$
               flsabc                ; realign display
               goto    10$
-11$:          gosub   ENCP00
+11$:          gosub   LDSST0        ; select chip 0, load flags
+              c=c+c   xs            ; digit entry?
+              c=c+c   xs
+              gonc    PARS56_M
+              rxq     takeOverKeyboard ; yes, need to plant take over
               goto    PARS56_M
 
 keyCLXI:      ldi     CLXI_Code
@@ -495,10 +499,15 @@ dig35:        b=0     x             ; Load X (0)
               a=0
               goto    dig40
 
-backSpaceJ1:  goto    backSpace     ; relay
+digAbort:     gosub   BLINK         ; not accepted key, blink
+              gosub   LDSST0        ; check digit entry
+              c=c+c   xs
+              c=c+c   xs
+              gonc    10$
+              rxq     takeOverKeyboard ; digit entry set, need this
+10$:          golong  NFRKB
 
-digAbort:     gosub   BLINK     ; not accepted key, blink
-              golong  NFRKB
+backSpaceJ1:  goto    backSpace     ; relay
 
 ;;; Ongoing digit entry, load X
 dig37:        rxq     loadX         ; load X to B.X-A
