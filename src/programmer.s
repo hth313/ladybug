@@ -5682,7 +5682,29 @@ takeOver:     cstex
               data=c
               rxq     takeOverKeyboard
 
-;;; We need to repair registers here for ROMCHK
+;;; We need to repair registers here for ROMCHK.
+;;;
+;;; Note: Normally mainframe checks keyboard before calling the I/O poll
+;;;       vector, if a key is pressed it will skip directly to handling
+;;;       the key. As a result we do not get a chance to set up the
+;;;       environment for taking over the keyboard. To work around this
+;;;       problem we have an OS extension that always call the I/O poll
+;;;       before checking keyboard. This however, puts a different
+;;;       return address than the default one, so we cannot just return
+;;;       to the default return address 0x18a, as we actually called it
+;;;       from page 4!!!!
+;;;       If we return to 0x18a, we will actually go to sleep without
+;;;       ever handling the key down!
+;;;       Other modules may play similar games, so to make it work,
+;;;       we need to check for a key down here and then go handling
+;;;       the key instead, always, no matter if we try to reset the
+;;;       return address or not, other modules may also do it!!
+;;;
+;;;       This is safe to do as normally we would not even have called
+;;;       the I/O poll vector if a key was down. The I/O poll vector
+;;;       will be called later when there are no keys to handle, just
+;;;       as the HP-41 mainframe normally behaves.
+;;;
 reconstructReturnRomCheck:
               gosub   LDSST0        ; put up SS0
               gosub   PCTOC         ; rtn to romcheck
@@ -5696,7 +5718,9 @@ reconstructReturnRomCheck:
               lc      1
               lc      8
               lc      0xA
-RelayRMCK10:  golong  RMCK10
+RelayRMCK10:  chk     kb
+              golc    0x1a6         ; WKUP20 if key is down
+              golong  RMCK10        ; otherwise keep scanning I/O poll vectors
 
 ;;; Program mode returns here with reconstruction of C register for RMCK10, but
 ;;; first we need to plant the keyboard takeover, unless we are in alpha mode
