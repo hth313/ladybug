@@ -74,7 +74,7 @@ KeyCode:      .macro  fun
 
 ;;; Define key code symbols we use
               KeyCode CLXI          ; create CLXI_Code symbol
-              KeyCode Header        ; header is used for digit entry
+              KeyCode Literal       ; used for digit entry
 
 ;;; Start of function address table (start of ROM)
               .section FAT
@@ -84,8 +84,8 @@ XROMno:       .equ    16
               .con    (FatEnd - FatStart) / 2 ; number of entry points
 
 FatStart:
-              .fat    Literal
               .fat    Header        ; ROM header
+              FAT     Literal
               FAT     FLOAT         ; mode change
               .fat    Integer
               FAT     Binary        ; base related instructions
@@ -245,11 +245,6 @@ switchBank:   .macro  n
 ;;;
 ;;; ROM header.
 ;;;
-;;; This functions doubles as the instruction that loads
-;;; integer constants in program memory. It is to be followed
-;;; by a text literal that embeds the actual integer literal.
-;;; If it is not folled by an alpha literal, 0 is loaded.
-;;;
 ;;; ************************************************************
 
               .section Code
@@ -262,13 +257,13 @@ Header:       rtn
 ;;;
 ;;; Program literal.
 ;;;
-;;; This is the first entry in the FAT, to get an easy 00
-;;; when looking for it.
-;;;
 ;;; The name try to be fairly short to avoid scrolling when
 ;;; shown in a program before the line is changed.
 ;;; Yes it is descriptive enough to give a hint when briefly
 ;;; seen and not really typable.
+;;;
+;;; It is to be followed by a text literal that embeds the actual
+;;; integer literal, if not, 0 is loaded.
 ;;;
 ;;; ************************************************************
 
@@ -734,9 +729,10 @@ prgmDigent:   ?s12=1                ; private?
 
               gosub   INSSUB
               a=0     s             ; number of inserts so far
-              ldi     0xa4          ; XROM 16,00  - A4 00
+              ldi     0xa4          ; XROM 16,01  - A4 01
               gosub   INBYTC
-              gosub   INBYT0
+              ldi     Literal_Code
+              gosub   INBYTC
 
               gosub   INSSUB
               a=0     s
@@ -5809,7 +5805,8 @@ prgm:         ?s12=1                ; private?
               ldi     64
               ?a<c    x
 90$:          gonc    3$            ; not XROM 16
-              ?a#0    x             ; literal?
+              ldi     Literal_Code
+              ?a#c    x             ; literal?
                                     ;  (test here keeps branches within range)
               gonc    80$           ; yes
               pt=     2
