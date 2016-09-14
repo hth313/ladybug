@@ -5703,6 +5703,7 @@ takeOver:     cstex
               st=1    IF_Message    ; not showing X
               cstex
               data=c
+takeOverKeyboardReconstruct:
               rxq     takeOverKeyboard
 
 ;;; We need to repair registers here for ROMCHK.
@@ -5749,8 +5750,7 @@ RelayRMCK10:  chk     kb
 ;;; first we need to plant the keyboard takeover, unless we are in alpha mode
 ProgramReturn: ?s9=1                ; in integer mode?
               gonc    reconstructReturnRomCheck ; no
-              rxq     takeOverKeyboard
-              goto    reconstructReturnRomCheck
+              goto    takeOverKeyboardReconstruct
 
 ;;; Program mode, we may need to adjust some instructions to look the way
 ;;; they should.
