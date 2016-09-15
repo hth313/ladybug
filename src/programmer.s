@@ -76,6 +76,16 @@ KeyCode:      .macro  fun
               KeyCode CLXI          ; create CLXI_Code symbol
               KeyCode Literal       ; used for digit entry
 
+releaseKey:   .macro
+              ?s12=1                ; key already released?
+              goc     10$           ; yes
+              rst kb                ; try to release key
+              chk kb
+              goc     10$           ; key still down
+              s12=1                 ; key released
+10$:          .endm
+
+
 ;;; Start of function address table (start of ROM)
               .section FAT
 XROMno:       .equ    16
@@ -452,7 +462,8 @@ KeyH20:       cmex                  ; handle XROM code in C[1:0]
               golong  RAK70
 
 ;;; Handle numeric entry
-numEntry:     pt=     0
+numEntry:     releaseKey
+              pt=     0
               g=c                   ; save digit number in G
               rxq     findBuffer    ; buffer address to B[12:10]
               c=st                  ; restore C[1:0]
@@ -580,10 +591,11 @@ backSpace:    c=regn  14
               ?st=1   IF_DigitEntry ; digit entry in progress?
               gonc    5$            ; no, program mode delete line
 
+              releaseKey
               rxq     fetchLiteral  ; yes, pick up current number
               st=1    Flag_PRGM
               a=c
-              goto    digBSP10
+              goto    digBSP10J1
 
 ;;; Showing catalog, clear catalog and message flag, then drop out of here
 ;;; and let the poll vector sort it out.
@@ -610,20 +622,25 @@ backSpace:    c=regn  14
               ?st=1   IF_Message    ; showing a message?
 keyCLXIJ4:    gonc    keyCLXIJ3     ; no, do CLXI
 
-kbDone:       s12=0                 ; prepare for early next key
-              rst kb                ; try to release key
-              chk kb
-              goc     4$            ; key still down
-              s12=1                 ; say key went up
-4$:           ?st=1   Flag_PRGM
+kbDone:       releaseKey
+              ?st=1   Flag_PRGM
               goc     10$
               rxq     displayXB10
-5$:           ?s12=1                ; key released?
-              golnc   NFRKB         ; no, return via reset keyboard
-              s12=0                 ; clear s12 again, return without resetting
-              golong  NFRC          ;  keyboard
+5$:           ?s12=1                ; already released?
+              goc     6$            ; yes
+              rst kb                ; no, try to release key
+              chk kb
+              golnc   NFRKB         ; return via reset keyboard
+                                    ;  if not released
+6$:           s12=0                 ; reset S12
+              rxq     takeOverKeyboard ; due to shortcut below
+              chk kb
+              golc    0x1a6         ; shortcut to key handler
+              golong  NFRC          ; return without resetting keyboard
 10$:          rxq     displayPrgmLiteralDE
               goto    5$
+
+digBSP10J1:   goto    digBSP10      ; relay
 
 ;;; Back space used and not 0. As the number is smaller than before (we deleted
 ;;; a character), we can just save it without doing any range checking.
@@ -641,7 +658,8 @@ bspNot0:      ?st=1   Flag_PRGM
 keyCLXIJ5:    goto    keyCLXIJ4     ; relay
 
 ;;; Back arrow in digit entry
-digBSP:       rxq     loadX
+digBSP:       releaseKey
+              rxq     loadX
 digBSP10:     ?s1=1
               gonc    5$
               ?s3=1
@@ -2835,18 +2853,14 @@ dis10:        st=0    IF_Message
               rxq     loadX         ; load and mask X
               st=0    Flag_PRGM
 
-;;; During digit entry, check for a key up after about 0.1 seconds (here),
-;;; and handle key release by setting S12 (to be reset when digit entry
-;;; acknowledge it) and digit entry will leave without resetting the key
-;;; to allow for two rapid key presses.
+;;; During digit entry, check for a key up after about 0.1 seconds (here).
+;;; If key released, set S12 so that the key handler will not exit
+;;; via resetting keyboard, but instead allow for the next key to be
+;;; pressed while we are processing the current digit entry key.
+;;; This is to allow for two rapid key presses.
               ?st=1   IF_DigitEntry
               gonc    12$
-              ?s12=1                ; already released?
-              goc     12$           ; yes
-              rst kb
-              chk kb
-              goc     12$           ; key still down
-              s12=1                 ; say key went up
+              releaseKey
 12$:
               ;; handle window for all bases except decimal
 display2:     c=n                   ; check window#
@@ -2979,6 +2993,8 @@ display2:     c=n                   ; check window#
               gonc    31$
               ldi     0x1f          ; show we are in digit entry mode
               srsabc
+
+              releaseKey
 
 31$:          ?pt=    0             ; show digits?
               goc     61$           ; no, just an empty base
