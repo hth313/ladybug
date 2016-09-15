@@ -76,13 +76,17 @@ KeyCode:      .macro  fun
               KeyCode CLXI          ; create CLXI_Code symbol
               KeyCode Literal       ; used for digit entry
 
+;;; Macro to handle early key release during digit entry.
+;;; S13 (running flag) is borrowed here as we know we are not
+;;; executing a program at the same time as we are entering
+;;; numbers.
 releaseKey:   .macro
-              ?s12=1                ; key already released?
+              ?s13=1                ; key already released?
               goc     10$           ; yes
               rst kb                ; try to release key
               chk kb
               goc     10$           ; key still down
-              s12=1                 ; key released
+              s13=1                 ; key released
 10$:          .endm
 
 
@@ -459,6 +463,7 @@ KeyH20:       cmex                  ; handle XROM code in C[1:0]
               lc      XROMj >> 4
               lc      XROMj & 15
               c=a+c   x
+              s13=0                 ; reset borrowed key release flag
               golong  RAK70
 
 ;;; Handle numeric entry
@@ -479,11 +484,11 @@ numEntry:     releaseKey
               c=0     xs
               ?a<c    pt            ; digit out of range?
               goc     digAbort      ; yes, blink and return via reset keyboard
-              c=regn  14
               ;; Import data entry flag to our own to have it handy.
               ;; We need to obey the global one which may be reset by an alarm,
               ;; otherwise we may stay in digit entry after a control program
               ;; have executed, changing the stack entirely!
+              c=regn  14
               st=0    IF_DigitEntry
               c=c+c   xs
               c=c+c   xs
@@ -516,7 +521,8 @@ digAbort:     gosub   BLINK         ; not accepted key, blink
               c=c+c   xs
               gonc    10$
               rxq     takeOverKeyboard ; digit entry set, need this
-10$:          golong  NFRKB
+10$:          s13=0                 ; reset borrowed flag
+              golong  NFRKB
 
 backSpaceJ1:  goto    backSpace     ; relay
 
@@ -606,6 +612,7 @@ backSpace:    c=regn  14
               s5=0                  ; clear message flag
               cstex
               regn=c  14
+              s13=0                 ; reset borrowed key release flag
               golong  NFRKB
 
 5$:           c=regn  14
@@ -614,6 +621,7 @@ backSpace:    c=regn  14
               c=st
               regn=c  14
               ldi     11            ; program mode delete
+              s13=0                 ; reset borrowed key release flag
               golong  PARS56
 
 10$:          st=0    Flag_PRGM
@@ -626,13 +634,13 @@ kbDone:       releaseKey
               ?st=1   Flag_PRGM
               goc     10$
               rxq     displayXB10
-5$:           ?s12=1                ; already released?
+5$:           ?s13=1                ; already released?
               goc     6$            ; yes
               rst kb                ; no, try to release key
               chk kb
               golnc   NFRKB         ; return via reset keyboard
                                     ;  if not released
-6$:           s12=0                 ; reset S12
+6$:           s13=0                 ; reset S13
               rxq     takeOverKeyboard ; due to shortcut below
               chk kb
               golc    0x1a6         ; shortcut to key handler
@@ -749,6 +757,7 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
 15$:          gosub   GETPC         ; remove XROM literal
               gosub   DELLIN
               gosub   PUTPC
+              s13=0                 ; reset borrowed flag
               golong  ERR120        ; back up and show previous program line
 
 
@@ -782,6 +791,7 @@ prgmDigent:   ?s12=1                ; private?
               ldi     Literal_Code
               gosub   INBYTC
 
+              releaseKey
               gosub   INSSUB
               a=0     s
               ldi     0xf0          ; Text 0, to avoid gobbling up any following
@@ -6445,12 +6455,12 @@ decpos:       b=0     xs            ; clear flag for digits above
               ldi     0x1f          ; show underscore if in digit entry
               srsabc
 
-              ?s12=1                ; key already released?
+              ?s13=1                ; key already released?
               goc     150$          ; yes
               rst kb
               chk kb
               goc     150$          ; key still down
-              s12=1                 ; say key went up
+              s13=1                 ; say key went up
               goto    150$
 
 ;;; Window set, we have to use 2 registers here which makes a bit slower,
