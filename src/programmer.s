@@ -1048,15 +1048,7 @@ BaseHelper:   rcr     1
               bcex    s
               rcr     -1
               data=c
-
-              ;; Fall into Exit
-
-;;; Exit routine with X already stored properly.
-;;;
-;;; IN: B[12:10]
-exit:         c=b
-              rcr     10
-              goto    exitNoUserST1
+exit:         rgo     exitNoUserST_B10
 
 
 ;;; ************************************************************
@@ -1327,6 +1319,18 @@ findBufferUserFlags:
               rtn
 
 
+              .section Code2
+findBufferUserFlags_rom2:
+              c=regn  14            ; bring up user flags
+              rcr     12
+              st=c
+              switchBank 1
+              rxq     findBuffer
+              switchBank 2
+              cstex                 ; bring up user flags
+              rtn
+
+
               .section Code
 ;;; **********************************************************************
 ;;;
@@ -1519,6 +1523,13 @@ signPositive: rxq     getSign_rom2  ; get the sign
               rxq     maskABx_rom2
 55$:          bcex    s             ; restore sign
               goto    17$           ; return to (P+2)
+
+
+              .section Code2
+bitMask_rom2: switchBank 1
+              rxq     bitMask
+              switchBank 2
+              rtn
 
 
               .section Code
@@ -3666,7 +3677,8 @@ maskABx_rom1: maskABx
 ENTERI:       rxq     findBuffer
               s11=0                 ; disable stack lift
               rxq     liftStack
-              rgo     exit          ; flags are not affected by ENTERI as
+              rgo     exitNoUserST_B10
+                                    ; flags are not affected by ENTERI as
                                     ; we keep the same value in X
 
 
@@ -3754,8 +3766,9 @@ WSIZE:        nop
               rxq     Argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
-              rxq     findBufferUserFlags
-              rxq     argumentValueG_rom1 ; handle indirect, check 64 range
+              switchBank 2
+              rxq     findBufferUserFlags_rom2
+              rxq     argumentValueG ; handl e indirect, check 64 range
               c=0
               pt=     0
               c=g
@@ -3779,11 +3792,10 @@ WSZ_DE:       golnc   ERRDE         ; yes, do not allow
 9000$:        gonc    900$          ; no
                                     ; yes, sign extend the stack
               a=a-1   x             ; A.X= bit number for previous sign
-              rxq     bitMask
+              rxq     bitMask_rom2
               b=a     s             ; B.S= active part flag
               n=c                   ; N= old sign bit mask
-              rxq findBufferUserFlags ; M= updated word mask
-
+              rxq     findBufferUserFlags_rom2 ; M= updated word mask
               c=b                   ; load trailer register
               rcr     10
               c=c+1   x
@@ -3872,7 +3884,7 @@ WSZ_DE:       golnc   ERRDE         ; yes, do not allow
               c=n
               data=c
 90$:
-WSZ_OK:       rgo     exit
+WSZ_OK:       rgo     exitNoUserST_B10_rom2
 
 
 ;;; ----------------------------------------------------------------------
@@ -3889,6 +3901,7 @@ WSZ_OK:       rgo     exit
 ;;; it, and CAT has kind of misbehaved in a similar way from the
 ;;; beginning.
 
+              .section Code
               .con    0x97, 0xf, 0x4, 0xe, 0x309, 0x117 ; WINDOW
 WINDOW:       nop
               ldi     8             ; allow up to 7
@@ -3906,7 +3919,7 @@ WINDOW:       nop
                                     ;          after a command, here it is safe
                                     ;          to set it to 0)
               data=c
-              goto    WSZ_OK
+WINEXIT:      rgo     exitNoUserST_B10
 
 
 #if  0
@@ -3927,7 +3940,7 @@ PWINDOW:      nop
                                     ;          after a command, here it is safe
                                     ;          to set it to 0)
               data=c
-              goto    WSZ_OK
+              goto    WINEXIT
 #endif
 
 
