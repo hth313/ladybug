@@ -155,6 +155,7 @@ FatStart:
               FAT     LE?
               FAT     LT?
               FAT     BITSUM
+              FAT     PSEI
 FatEnd:       .con    0,0
 
 
@@ -163,18 +164,21 @@ FatEnd:       .con    0,0
 ;;; Buffer layout. The state is kept in a buffer with the following
 ;;; layout:
 ;;;
-;;; 10pfTTZZYYXXLL
-;;; HHSSAP0000WSII
+;;; pspfTTZZYYXXLL
+;;; HHSSAD00I2WSII
 ;;;
 ;;;   where
 ;;;     HH - buffer number
 ;;;     SS - size of buffer
 ;;;     A  - #space indentation of LCD
-;;;      P - window display
+;;;      D - window display
+;;;     I2 - secondary internal flags
 ;;;     WS - Word size (1-64)
 ;;;     II - internal flags
 ;;;
-;;;     pf - default postfix byte for current prompting instruction
+;;;     pf - Default postfix byte for current prompting instruction.
+;;;     ps - The pause timer set (must not be 00 to ensure the trailer
+;;;          register is non-zero).
 ;;;
 ;;; **********************************************************************
 
@@ -202,6 +206,11 @@ IF_Integer:   .equ    6             ; Integer mode active
 ;;; Set when displaying integer X.
 ;;; This is basically the message flag as seen but the integer mode.
 IF_Message: .equ 7
+
+
+;;; Secondary internal flags
+IF2_Pause:    .equ    3             ; Pause flag (position is very specific
+                                    ; here to make it fast in I/O poll)
 
 
 ;;; ----------------------------------------------------------------------
@@ -312,9 +321,38 @@ XROMj:        .equ    64 * (XROMno % 4)
 
               .section Code
 
+clearDigitEntryMStop:
+              c=m                   ; C.X= key
+              a=c     x
+              ldi     5
+              ?a#c    x             ; STOP key?
+              goc     clearDigitEntry ; no
+              rxq     chkbuf        ; yes
+              goto    clearDigitEntry20 ; (P+1) should not happen
+              rcr     4
+              cstex                 ; reset PSEI flag
+              ?st=1   IF2_Pause     ; pause flag?
+              goc     10$           ; yes
+              cstex                 ; no
+              rcr     -4
+              goto    clearDigitEntry10
+
+10$:          st=0    IF2_Pause     ; reset pause
+              cstex
+              rcr     -4
+              data=c                ; update buffer header
+              c=0     x             ; set system pause to get proper STOP
+              dadd=c                ;  handling
+              s1=1
+              gosub   STOST0
+              ;; Fall in to clearDigitEntry, this saves 4 words at the
+              ;; cost of some execution time. However, this only happens
+              ;; when PSEI is executing and the user press STOP, so it
+              ;; should not be any big harm.
 clearDigitEntry:
               rxq     chkbuf
-              nop
+              goto    clearDigitEntry20 ; (P+1) should not happen
+clearDigitEntry10:
               cstex
               st=0    IF_DigitEntry
               cstex
@@ -324,6 +362,7 @@ clearDigitEntry:
                                     ;   back to window 0 when leaving program
                                     ;   mode)
               data=c
+clearDigitEntry20:
               c=0                   ; select chip 0
               dadd=c
               rtn
@@ -433,7 +472,7 @@ keyHandler:   nop                   ; ignore back arrow entry (deal with it as a
               m=c                   ; no, same function as normal keyboard
               c=c-1   xs
               gonc    shiftUser     ; does not clear digit entry
-              rxq     clearDigitEntry
+              rxq     clearDigitEntryMStop
 PARS56_M:     c=m                   ;  restore keycode
               golong  PARS56
 
@@ -958,6 +997,12 @@ lineAndBaseLCD:
 
 
               .section Code2
+              .shadow putXnoFlags - 1
+putXnoFlags_rom2:
+              enrom1
+
+
+              .section Code2
               .shadow putXDrop - 1
 putXDrop_rom2:
               enrom1
@@ -1189,6 +1234,7 @@ errorMessage: gosub   ERRSUB
 ;;;
 ;;; **********************************************************************
 
+              .section Code
               .name   "FLOAT"
 FLOAT:        nop                   ; non-programmable (allow mode switch in program mode)
               rxq     chkbuf
@@ -1202,7 +1248,7 @@ FLOAT:        nop                   ; non-programmable (allow mode switch in pro
               rtn
 
 
-              .section Code
+              .section CodeF00
               .align  256
 ;;; **********************************************************************
 ;;;
@@ -1225,13 +1271,13 @@ chkbuf:       ldi     BufNumber
               dadd=c
               c=regn  c             ; find chain head .END.
               ?a<c    x             ; have we reached chainhead?
-              rtnnc                 ; yes, return to (P+1), not found
+              rtn nc                ; yes, return to (P+1), not found
               acex    x             ; no, select and load register
               dadd=c
               acex    x
               c=data                ; read next register
               ?c#0                  ; if it is empty, then we reached end
-              rtnnc                 ; of buffer area, return to not found
+              rtn nc                ; of buffer area, return to not found
                                     ; location
               c=c+1   s             ; is it a key assignment register
                                     ; (KAR)?
@@ -1256,6 +1302,7 @@ errorExit:    gosub   LEFTJ
               s8=1
               gosub   MSG105
               golong  ERR110
+
 
 ;;; **********************************************************************
 ;;;
@@ -1371,7 +1418,6 @@ findBufferUserFlags_rom2:
               rtn
 
 
-              .section Code
 ;;; **********************************************************************
 ;;;
 ;;; Find integer buffer, enable stack lift, load integer flags,
@@ -1392,15 +1438,20 @@ findBufferUserFlags_rom2:
 ;;; **********************************************************************
 
 Flag_56:      .equ    9             ; set when word size is 56
-findBufferGetXSaveL56:
+
+              .section Code2
+findBufferGetXSaveL56_rom2:
               st=0    Flag_56
+              switchBank 1
               rxq     findBufferGetXSaveL
+              switchBank 2
               c=m
               ?c#0
               rtn c
               st=1    Flag_56
               rtn
 
+              .section Code
 findBufferGetXSaveL:
               s0=0                  ; no division by 0 check
 findBufferGetXSaveL0:
@@ -1823,6 +1874,14 @@ setSignFlag:  st=0    Flag_Sign
               c=c&a
               ?c#0
               goc     1$
+              rtn
+
+
+              .section Code2
+setSignFlag_rom2:
+              switchBank 1
+              rxq     setSignFlag
+              switchBank 2
               rtn
 
 
@@ -2254,6 +2313,7 @@ MASKL:        nop
 MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
               rxq     liftStackS11
               rxq     bitMask_G
+              switchBank 2
               b=0     x
               c=c-1                 ; convert to mask
               acex
@@ -2292,7 +2352,7 @@ MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
               goto    22$
 20$:          acex
 22$:          regn=c  X
-              rgo     putXnoFlags
+              rgo     putXnoFlags_rom2
 
 
 ;;; **********************************************************************
@@ -2326,7 +2386,6 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
 
               .name   "X<>YI"
 SWAPI:        rxq     findBufferUserFlags
-
               c=b
               rcr     10
               c=c+1   x             ; point to trailer reg
@@ -2501,17 +2560,18 @@ RL:           nop                   ;  Prelude for prompting function
               .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
-leftShift:    bcex    s             ; B.S= configuration nibble
-              rxq     findBufferUserFlags
+leftShift:    switchBank 2
+              bcex    s             ; B.S= configuration nibble
+              rxq     findBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
               bcex    pt            ; B[9]= configuration nibble
-              rxq     argumentValueG_rom1
+              rxq     argumentValueG
               c=b
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56
+              rxq     findBufferGetXSaveL56_rom2
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
               stk=c
@@ -2559,7 +2619,7 @@ leftShift:    bcex    s             ; B.S= configuration nibble
               bcex    m             ; put in B[12:10]
               acex                  ; write out result
               regn=c  X
-12$:          rgo     putX
+12$:          rgo     putX_rom2
 
 56$:          bcex    m
               c=0                   ; prepare to rotate carry in if needed
@@ -2690,17 +2750,18 @@ RR:           nop                   ; Prelude for prompting function
               pt=     13
               lc      Bit_Rotate
 rightShift:
+              switchBank 2
               bcex    s             ; B.S=configuration
-              rxq     findBufferUserFlags
+              rxq     findBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
               bcex    pt            ; B[9]= configuration nibble
-              rxq     argumentValueG_rom1
+              rxq     argumentValueG
               c=b                   ; C[9]= configuration nibble
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56
+              rxq     findBufferGetXSaveL56_rom2
               c=0     x             ; test for zero input
               pt=     0
               c=g
@@ -2712,7 +2773,7 @@ rightShift:
               c=c+c   s
               c=c+c   s             ; arithmetic shift (sign preserving)?
               gonc    90$           ; no
-              rxq     setSignFlag
+              rxq     setSignFlag_rom2
 
 90$:          c=regn  X             ; prepare for loop, load lower part
               a=c
@@ -2810,7 +2871,7 @@ rightShift:
               goc     11$
               acex
               regn=c  X
-12$:          rgo     putX
+12$:          rgo     putX_rom2
 
 
               .section Code
@@ -3354,7 +3415,7 @@ classNibble:  c=b                   ; select header register
 ;;; Last register is within range and exists (also selected).
               rtn
 
-ERRNE_J1:     golong  ERRNE
+ERRNE_J1:     rgo  ERRNE_rom2
 
 argumentValueG:
               pt=     0
@@ -3381,7 +3442,7 @@ argumentValueG:
               ldi     65
               ?a<c    x
               rtn c
-ERRDE_J1:     golong  ERRDE
+ERRDE_J1:     rgo     ERRDE_rom2
 
 loadG:        pt=     0
               c=g
@@ -3488,7 +3549,7 @@ maskABx_rom2: maskABx
 ;;;
 ;;; ----------------------------------------------------------------------
 
-ERRNE_J2:     golong  ERRNE         ; yes
+ERRNE_J2:     rgo     ERRNE_rom2    ; yes
 
 saveMaskG:    rxq     maskABx_rom2
 saveG:        c=0     x             ; select chip 0
@@ -3661,6 +3722,14 @@ saveG:        c=0     x             ; select chip 0
 58$:          golong  ENCP00
 
 
+              .section Code2
+ERRNE_rom2:   switchBank 1
+              golong  ERRNE
+
+              .section Code2
+ERRDE_rom2:   switchBank 1
+              golong  ERRDE
+
               .section Code
 findBufferUserFlags_argumentValueG_rom1:
               rxq     findBufferUserFlags
@@ -3806,13 +3875,14 @@ WSIZE:        nop
               .con    Operand16 + 0x100
               switchBank 2
               rxq     findBufferUserFlags_rom2
-              rxq     argumentValueG ; handl e indirect, check 64 range
+              rxq     argumentValueG ; handle indirect, check 64 range
               c=0
               pt=     0
               c=g
               ?c#0    x             ; 0?
-WSZ_DE:       golnc   ERRDE         ; yes, do not allow
-              a=c     x             ; A.X= new word size
+              goc     1$            ; no
+              rgo     ERRDE_rom2    ; yes, do not allow
+1$:           a=c     x             ; A.X= new word size
               c=b                   ; load buffer header
               rcr     10
               dadd=c
@@ -3941,7 +4011,7 @@ WSZ_OK:       rgo     exitNoUserST_B10_rom2
 
               .section Code
               .con    0x97, 0xf, 0x4, 0xe, 0x309, 0x117 ; WINDOW
-WINDOW:       nop
+WINDOW:       nop                   ; no programmable
               ldi     8             ; allow up to 7
               ?a<c    x
               golnc   ERRDE
@@ -4104,7 +4174,6 @@ CLRI:         nop
 ;;; ----------------------------------------------------------------------
 
               .section Code
-ERRDE_SEX:     golong  ERRDE
               .name   "SEX"
 SEX:          nop
               nop
@@ -4112,7 +4181,7 @@ SEX:          nop
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
               a=a-1   x
-              goc     ERRDE_SEX     ; 0 gives DATA ERROR
+              golc     ERRDE     ; 0 gives DATA ERROR
               rxq     findBufferUserFlags_argumentValueG_rom1
               rxq     findBufferGetXSaveL
               pt=     0             ; load argument
@@ -4184,6 +4253,81 @@ BITSUM:       nop
               goto    11$
 20$:          rgo     LDI10
 
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; PSEI - Pause function similar to the built in one, but that works
+;;;        in the integer mode.
+;;;
+;;; This is needed as the internal pause handler does not give a chance
+;;; to set up the keyboard take over.
+;;;
+;;; Note: Making your own pause is not fully supported by mainframe.
+;;;       As we take over the keyboard, the built in PSE does not work
+;;;       properly as there is no way to change the keyboard routine.
+;;;       To make it work we need to do the actual pause mechanism in the
+;;;       I/O poll.
+;;;       Problems/limitations with this approach is that the system may
+;;;       want to reset the pause flag at certain times, and we do not
+;;;       know when that happens. After some studying of the mainframe,
+;;;       it seems that the following problems exists:
+;;;       - An error that happens during pause does not stop execution,
+;;;         instead it resumes after the pause as if it had not happened.
+;;;         The error is displayed for the pause time though, but is
+;;;         cleared when execution resumes. Probably not a major problem
+;;;         as it means the user keys in thngs during pause and then cause
+;;;         an error doing so.
+;;;       - STOP (R/S) will not stop execution during pause when using the
+;;;         float keyboard. We can work around this in our own key handler,
+;;;         but that is for integer mode only. For this reason, we block
+;;;         PSEI if not in integer mode.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "PSEI"
+PSEI:         nop
+              nop
+              rxq     Argument
+              ;; Default is 00 which is easy to remember. If we have 00, then
+              ;; we actually use 7, which is about 1.07 seconds
+              .con    Operand00
+              rxq     findBuffer
+              ?st=1   IF_Integer    ; integer mode?
+              goc     1$            ; yes
+              rxq     errorMessage
+              .messl  "FLOAT MODE"
+              rgo     errorExit
+1$:           switchBank 2
+              rxq     argumentValueG
+              ?s13=1                ; running?
+              gonc    10$           ; no
+              c=b
+              rcr     10            ; C.X= buffer address
+              a=c     x
+              c=c+1   x             ; point to trailer
+              dadd=c
+              c=data                ; load trailer
+              pt=     12
+              c=g                   ; C[13:12]= argument
+              ?c#0    pt            ; C[12] non zero?
+              goc     2$            ; yes
+              ?c#0    s             ; C[13] non zero?
+              goc     2$            ; yes
+              lc      7             ; C[13:12] is zero, use 7 instead
+2$:           data=c                ; write back updated trailer
+              acex    x             ; C.X= address of header
+              dadd=c                ; select it
+              c=data
+              rcr     4
+              cstex                 ; bring up secondary flags
+              st=1    IF2_Pause
+              cstex
+              rcr     -4
+              data=c
+10$:          s13=0
+              switchBank 1
+              rtn
 
 
 ;;; ----------------------------------------------------------------------
@@ -5568,13 +5712,13 @@ Argument:     ?s13=1                ; running?
               c=st
               g=c                   ; save PTEMP2
               gosub   OFSHFT
-              c=regn  15            ; display line#
+              c=regn  15            ; display line number
               bcex    x
               gosub   CLLCDE
               ?s4=1
               gonc    49$
               abex    x
-              gosub   DSPLN+8       ; display line#
+              gosub   DSPLN+8       ; display line number
 49$:          c=m
               rcr     1
               gosub   GTRMAD
@@ -5727,24 +5871,91 @@ RightJustify:
               flsabc
               rtn
 
+;;; **********************************************************************
+;;;
+;;; I/O poll vector routines. This is where we overlay the look and
+;;;  behavior on the base HP-41. Basically we adjust the LCD to look as
+;;;  we want it to look and prepare the system for the next key press
+;;;  so that the correct keyboard handler will be used based on the mode.
+;;;
+;;; There are three main cases here:
+;;;
+;;; pollio - Normal run-mode handler. Sets up display and take over
+;;;          keyboard.
+;;; prgmio - Handles program mode. Sets up display and take over
+;;;          keyboard.
+;;; pauseio - Handle the pause timer. This entry may have partial key
+;;;           set, so we need to preserve 3 return levels.
+;;;           Runs the pause timer, if a key is pressed, handle it.
+;;;           If it times out, start running the program again.
+;;;
+;;; **********************************************************************
+
               .section Code
-;;; **********************************************************************
-;;;
-;;; I/O poll vector. This is the main take over poll vector we employ.
-;;; We take advantage that this poll vector is called before we go to
-;;; light sleep. The mainframe code will have set up the state and display
-;;; at that point to have the desired look and behavior for the next key
-;;; press. We intercept it and change it to look the way we want it to,
-;;; if needed.
-;;;
-;;; **********************************************************************
+pauseio:      c=data
+              ?s3=1                 ; program mode?
+              goc     20$           ; yes
+              cstex
+              ?st=1   IF_Integer    ; in integer mode?
+              gonc    8$            ; no
+              cstex                 ; bring up SS0
+              ?s5=1                 ; message flag?
+              goc     5$            ; yes
+              rxq     displayX      ; no, show integer X
+              rxq     chkbuf
+              nop
+              goto    8$
+5$:           c=data                ; C= buffer header
+              cstex                 ; no showing X
+              st=1    IF_Message
+              cstex
+              data=c
+              rxq     takeOverKeyboard ; but take over keyboard
+8$:           c=a     x
+              c=c+1   x
+              dadd=c
+              c=data                ; load trailer
+              pt=     11            ; C[13:12]= pause counter byte
+              c=0     wpt
+              rcr     7             ; C.M= pause counter * 0x100
+              a=c     m
+              gosub   PGMAON
+10$:          chk kb
+              goc     reconstructReturnRomCheck
+              a=a-1   m
+              gonc    10$
 
-pollio:       ?s3=1                 ; program mode?
-              goc     prgm          ; yes
+              ;; Timed out, reset the pause flag
+              acex    x
+              dadd=c
+              c=data
+              rcr     4
+              cstex
+              st=0    IF2_Pause
+              cstex
+              rcr     -4
+              cstex
+              st=0    IF_Argument
+              st=0    IF_DigitEntry
+              st=0    IF_Message
+              cstex
+              data=c
 
-              rxq     chkbuf        ; locate integer buffer
-              goto    romrtn        ; (P+1) no integer buffer exists
-                                    ; (P+2)
+              c=0     x
+              dadd=c
+              gosub   RSTSEQ
+              golong  RUN
+
+;;; Pause cancelled by pressing program mode
+20$:          rcr     4
+              cstex
+              st=0    IF2_Pause
+              cstex
+              rcr     -4
+              data=c
+              goto    romrtn
+
+pollio:       c=data                ; C= buffer header
               cstex                 ; bring up internal flags
               st=0    IF_Argument   ; reset argument flag (not being active)
               st=0    IF_DigitEntry ; reset digit entry, we do not come
@@ -5754,7 +5965,7 @@ pollio:       ?s3=1                 ; program mode?
               cstex                 ; bring up internal flags again
               ?st=1   IF_Integer    ; in integer mode?
               gonc    romrtn        ; no, ordinary floating point operating mode
-              cstex                 ; integer mode, restore SS0
+              cstex                 ; bring up SS0
               ?s5=1                 ; message flag?
               goc     takeOver      ; yes, do not touch the display
               rxq     displayX      ; show integer display
@@ -5807,7 +6018,7 @@ reconstructReturnRomCheck:
               lc      1
               lc      8
               lc      0xA
-RelayRMCK10:  chk     kb
+RelayRMCK10:  chk kb
               golc    0x1a6         ; WKUP20 if key is down
               golong  RMCK10        ; otherwise keep scanning I/O poll vectors
 
@@ -5819,12 +6030,13 @@ ProgramReturn: ?s9=1                ; in integer mode?
 
 ;;; Program mode, we may need to adjust some instructions to look the way
 ;;; they should.
-prgm:         ?s12=1                ; private?
-              goc     romrtn        ; yes
-
-              rxq     chkbuf        ; locate integer buffer
-              goto    romrtn        ; (P+1) no integer buffer exists
-                                    ; (P+2)
+prgmio:       c=data                ; C= buffer header
+              rcr     4
+              cstex
+              st=0    IF2_Pause     ; always reset pause flag when entering
+                                    ;  program mode
+              cstex
+              rcr     -4
               st=c
               st=0    IF_Argument   ; reset argument flag
               st=0    IF_DigitEntry ; reset digit entry, we do not come
@@ -6714,30 +6926,58 @@ deepWake:     n=c
 
               cstex
               st=0    IF_DigitEntry ; end digit entry
-              cstex
-
-              cstex
               st=0    IF_Argument   ; not looking for argument
               cstex
 
+              rcr     4
+              cstex
+              st=0    IF2_Pause
+              cstex
+              rcr     -4
+
               data=c
-              c=0
+pollretC0:    c=0
               dadd=c
 pollret:      c=n
 RMCK10_LJ:    golong  RMCK10
 
-rpollio:      ?s13=1                ; running?
-              goc RMCK10_LJ
+rpollio:      ?s7=1                 ; alpha mode?
+              goc     RMCK10_LJ     ; yes
               n=c                   ; save C for ROMCHK
-              c=regn  d             ; get flags
+
+              c=regn  14
+              m=c                   ; M= system flags
+
+              ;; Need to check if we are doing pause, and that means we
+              ;; have to inspect buffer, and if partial key is set, we
+              ;; are only allowed to use one stack level.
+              ;; GSB256 only uses one level, despite what its comments says.
+              ;; We link so that 'chkbuf' is present at XF00, so GSB256
+              ;; will take us there.
+              gosub   GSB256        ; chkbuf
+              goto    pollretC0     ; (P+1) no integer buffer
+              pt=     4
+              c=c+c   pt            ; doing pause?
+              goc     20$           ; yes
+
+              c=m                   ; C= system flags
               c=c+c   xs
               c=c+c   xs
-              goc     pollret       ; Data entry in progress
+              goc     pollretC0     ; data entry in progress
               c=c+c   xs
-              goc     pollret       ; Partial key entry in progress
-              ?s7=1                 ;
-              goc     pollret       ; Alpha mode
+              goc     pollretC0     ; partial key entry in progress
+              ?s3=1                 ; program mode?
+              goc     10$           ; yes
               rgo     pollio
+
+              ;; Program mode. Separated here so that we know that only
+              ;; the run-mode need to hanble pausing.
+10$:          ?s12=1                ; private?
+              goc     pollretC0     ; yes
+              rgo     prgmio
+
+              ;; Handle pause timer.
+20$:          rgo     pauseio       ; the 'rgo' uses two levels!
 
 
 ;;; **********************************************************************
