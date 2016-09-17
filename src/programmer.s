@@ -552,7 +552,14 @@ runMode:      st=0    Flag_PRGM
               rxq     liftStackS11  ; check if we should lift stack
 
 ;;; Start entry with 0, clear digit cache
-dig35:        b=0     x             ; Load X (0)
+dig35:        c=regn  14
+              rcr     8             ; set flag 22
+              cstex
+              s1=1
+              cstex
+              rcr     6
+              regn=c  14
+              b=0     x             ; Load X (0)
               a=0
               goto    dig40
 
