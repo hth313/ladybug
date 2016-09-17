@@ -193,8 +193,10 @@ FatEnd:       .con    0,0
 ;;;
 ;;; Can also be used to check if a entered digit is in range.
 
-IF_Argument:  .equ    4             ; argument entry in progress
-IF_DigitEntry: .equ   5             ; Integer mode digit entry ongoing flag
+IF_DigitEntry: .equ   4             ; Integer mode digit entry ongoing flag
+IF_Argument:  .equ    5             ; argument entry in progress
+                                    ;  (must not be flag 4 due to SST flag in
+                                    ;   Argument handler using that flag)
 IF_Integer:   .equ    6             ; Integer mode active
 
 ;;; Set when displaying integer X.
@@ -847,7 +849,17 @@ fetchLiteralA:
 
               c=0                   ; select chip 0
               dadd=c
-              c=n                   ; C= lower part of the literal
+              c=regn  14
+              cstex
+              ?s4=1                 ; single stepping?
+              gonc    27$           ; no
+              cstex
+              c=regn  15            ; yes, bump line counter
+              c=c+1   x
+              regn=c  15
+              goto    28$
+27$:          cstex
+28$:          c=n                   ; C= lower part of the literal
               rtn
 
 
@@ -5437,7 +5449,12 @@ Argument:     ?s13=1                ; running?
 7$:           abex    wpt           ; argument follows in program
               gosub   INCAD
               gosub   PUTPC         ; store new pc (skip over Text1 instruction)
-              gosub   GTBYT         ; get argument
+              ?s4=1                 ; single step?
+              gonc    71$           ; no
+              c=regn  15            ; yes, bump line number
+              c=c+1   x
+              regn=c  15
+71$:          gosub   GTBYT         ; get argument
 8$:           pt=     0
               g=c                   ; put in G
               a=c                   ; and A
