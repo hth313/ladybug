@@ -6269,7 +6269,7 @@ prgmio:       c=data                ; C= buffer header
 
               ;; Logical column 2, shifted
               KeyEntry RL           ; SQRT
-              .con    0             ; SIN
+              KeyEntry RMD          ; SIN
               .con    0x2cf         ; LBL
               KeyEntry NOT          ; CHS
               .con    0x2a9         ; CF
@@ -6281,7 +6281,7 @@ prgmio:       c=data                ; C= buffer header
               .con    0x10d         ; LOG   (D digit)
               KeyEntry Octal        ; COS
               KeyEntry LDI          ; RCL
-              .con    0             ; EEX
+              KeyEntry SEX          ; EEX
               .con    0x109         ; 9
               .con    0x106         ; 6
               .con    0x103         ; 3
