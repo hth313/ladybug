@@ -14,7 +14,7 @@ This chapter covers numeric bases, word size, 2-complement and ranges.
 Numeric bases
 =============
 
-The Programmer module provides four numeric bases, binary (2), octal (8), decimal (10) and hexadecimal (16). Internally, numbers are represented as binary integers. The selected base controls the input and display of integers. The same binary number can be represented in any of the bases and it is easy to go between the bases. Thus, you can at any time during a calculation switch base to the one most suitable at that point. Any result (or partial result, thanks to RPN logic) can easily be shown in any available base.
+The Programmer's module provides four numeric bases, binary (2), octal (8), decimal (10) and hexadecimal (16). Internally, numbers are represented as binary integers. The selected base controls the input and display of integers. The same binary number can be represented in any of the bases and it is easy to go between the bases. Thus, you can at any time during a calculation switch base to the one most suitable at that point. Any result (or partial result, thanks to RPN logic) can easily be shown in any available base.
 
 Four keys (G-J) on the HP-41 keyboard represent ``HEXS``, ``DECS``, ``OCTS`` and ``BINS`` instructions that switch the base. Thus, switching base takes a single key press.
 
@@ -23,7 +23,7 @@ At any time a binary integer is displayed, it is displayed in the active base wi
 The one exception to this is the ``ALDI`` instruction which appends the digits in the active base to the alpha registers, without the active base character.
 
 
-.. index:: signed mode, 2-complement mode, mode; 2-complementm mode; signed
+.. index:: signed mode, 2-complement mode, mode; 2-complement mode; signed
 
 2-complement
 ============

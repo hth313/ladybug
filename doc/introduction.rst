@@ -3,7 +3,7 @@
 Introduction
 ************
 
-Welcome to the Programmer module for the HP-41 calculator! The Programmer module is a powerful tool, useful when you are debugging and working on low level matters related to computers.
+Welcome to the Programmer's module for the HP-41 calculator! The Programmer's module (or just Programmer for short), is a powerful tool, useful when you are debugging and working on low level matters related to computers.
 
 It provides a new mode for you HP-41 calculator to allow it to work as a customizable integer binary calculator, use different number bases, perform bitwise and logical operations in a given word size. Such operations you typically will encounter when working with computers at the lowest level.
 
@@ -13,9 +13,9 @@ The main goal with this module is to blend the majority of the capabilities of a
 Plug-in module
 ==============
 
-The Programmer module is a module image that needs to be put in some module hardware, like a Clonix module, an MLDL or some kind of ROM emulator. How you do this is beyond the scope of this manual.
+The Programmer's module is a module image that needs to be put in some module hardware, like a Clonix module, an MLDL or some kind of ROM emulator. How you do this is beyond the scope of this manual.
 
-The Programmer module image is a 3x4K module. Two banks occupies a single 4K page in the memory space together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7-F) of the HP-41 expansion space, but the page 4 must go into address page 4.
+The Programmer's module image is a 3x4K module. Two banks occupies a single 4K page in the memory space together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7-F) of the HP-41 expansion space, but the page 4 must go into address page 4.
 
 
 
@@ -66,6 +66,6 @@ Integer operations also work in program mode. You can write programs based on in
 Copyright
 =========
 
-The Programmer module and its manual is copyright by Håkan Thörngren 2016 and is provided free of charge for non-commercial usages. Contact the author if you want to use it for other purposes.
+The Programmer's module and its manual is copyright by Håkan Thörngren 2016 and is provided free of charge for non-commercial usages. Contact the author if you want to use it for other purposes.
 
 Feedback and suggestions are welcome, the author can be contacted at hth313@gmail.com

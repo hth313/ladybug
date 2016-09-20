@@ -3,7 +3,7 @@
 Instruction reference
 *********************
 
-This chapter goes through the instructions provided by the Programmer module. Instructions follow the ordinary 4-level stack convention of the HP-41, operations consume arguments and put their result on the stack.
+This chapter goes through the instructions provided by the Programmer's module. Instructions follow the ordinary 4-level stack convention of the HP-41, operations consume arguments and put their result on the stack.
 
 .. index:: mode; flags, mode; setting, operations; mode related
 
@@ -113,7 +113,7 @@ Disable zero fill mode.
 Stack operations
 ================
 
-The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. The Programmer module provides a set of instructions that duplicate already existing stack manipulation operations, but that takes the stack and the extra needed storage in account.
+The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. The Programmer's module provides a set of instructions that duplicate already existing stack manipulation operations, but that takes the stack and the extra needed storage in account.
 
 .. hint::
    If you are working with a word size of 56 and less, you can actually use the corresponding built in stack manipulation instructions intended for floating point numbers instead. This is especially useful in a program as they are one byte instructions compared to two for the integer counterparts.

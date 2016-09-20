@@ -2,7 +2,7 @@
 Differences to the HP-16C
 *************************
 
-Being inspired by the HP-16C there are a lot of similarities between the Programmer module for the HP-41 and the HP-16C. Apart from the obvious differences, such as form factor, battery life, alpha capabilities on the HP-41 and dedicated decorated keyboard on the HP-16C, there are a lot more subtle differences, which are discussed in this chapter.
+Being inspired by the HP-16C there are a lot of similarities between the Programmer's module for the HP-41 and the HP-16C. Apart from the obvious differences, such as form factor, battery life, alpha capabilities on the HP-41 and dedicated decorated keyboard on the HP-16C, there are a lot more subtle differences, which are discussed in this chapter.
 
 
 
@@ -49,7 +49,7 @@ Sign extending the stack is the only time when the Programmer go around and alte
 
 The reason that it is not always done, is that the HP-41 at any time can perform floating point operations, and keeping the stack properly masked would be a quite elaborate task that would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode.
 
-The Programmer module will mask numbers when they are used as input to operations, not because they are laying around somewhere.
+The Programmer's module will mask numbers when they are used as input to operations, not because they are laying around somewhere.
 
 
 .. index:: postfix operands, operands
@@ -115,7 +115,7 @@ The Programmer does not offer an integer square root function, which is present 
 Floating point conversions
 ==========================
 
-There are no support for floating point number conversions built in to the Programmer module. It is something that is considered for a future extension.
+There are no support for floating point number conversions built in to the Programmer's module. It is something that is considered for a future extension.
 
 
 .. index:: postfix operands, operands; postfix, prompting instructions, instructions; prompting
