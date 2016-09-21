@@ -3,7 +3,7 @@
 ;;; Just make it look empty in case the bank is left enabled.
               .section Bank2Header
               nop
-
+              nop
 
               .section Tail2
 ;;; **********************************************************************
