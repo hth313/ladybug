@@ -1,9 +1,8 @@
-
 ************
 Introduction
 ************
 
-Welcome to the Programmer's module for the HP-41 calculator! The Programmer's module (or just Programmer for short), is a powerful tool, useful when you are debugging and working on low level matters related to computers.
+Welcome to the Ladybug for the HP-41 calculator! Ladybug is a powerful tool, useful when you are debugging and working on low level matters related to computers.
 
 It provides a new mode for you HP-41 calculator to allow it to work as a customizable integer binary calculator, use different number bases, perform bitwise and logical operations in a given word size. Such operations you typically will encounter when working with computers at the lowest level.
 
@@ -13,10 +12,15 @@ The main goal with this module is to blend the majority of the capabilities of a
 Plug-in module
 ==============
 
-The Programmer's module is a module image that needs to be put in some module hardware, like a Clonix module, an MLDL or some kind of ROM emulator. How you do this is beyond the scope of this manual.
+Ladybug is a module image that needs to be put in some module hardware, like a Clonix module, an MLDL or some kind of ROM emulator. How you do this is beyond the scope of this manual.
 
-The Programmer's module image is a 3x4K module. Two banks occupies a single 4K page in the memory space together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7-F) of the HP-41 expansion space, but the page 4 must go into address page 4.
+The image configuration is a 3x4K module. Two banks occupies a single 4K page in the memory space together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7-F) of the HP-41 expansion space, but the page 4 must go into address page 4.
 
+
+This release
+============
+
+This version, 0A is a release to early adopters, in the hope to get feedback. The instruction allocation (XROM numbers) is considered preliminary and may change.
 
 
 .. index:: buffer, I/O buffer, XROM number
@@ -24,7 +28,7 @@ The Programmer's module image is a 3x4K module. Two banks occupies a single 4K p
 Resource requirements
 =====================
 
-The Programmer will allocate two registers from the pool of free memory. Apart from this, it does not impose any restrictions on the environment and will run comfortable on any HP-41C, HP-41CV or HP-41CX at standard speed.
+Ladybug allocates two registers from the pool of free memory. Apart from this, it does not impose any restrictions on the environment and will run comfortable on any HP-41C, HP-41CV or HP-41CX at standard speed.
 
 The XROM number used by this module is 16 and the private storage area is I/O buffer number 0.
 
@@ -66,6 +70,6 @@ Integer operations also work in program mode. You can write programs based on in
 Copyright
 =========
 
-The Programmer's module and its manual is copyright by Håkan Thörngren 2016 and is provided free of charge for non-commercial usages. Contact the author if you want to use it for other purposes.
+The Ladybug software and its manual is copyright by Håkan Thörngren 2016.
 
 Feedback and suggestions are welcome, the author can be contacted at hth313@gmail.com

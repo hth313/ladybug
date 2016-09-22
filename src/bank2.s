@@ -27,7 +27,7 @@
               goto    10$           ; Memory lost
                                     ; Identifier PR-1A
               .con    1             ; A
-              .con    '1'           ; 1
-              .con    0x212         ; R (bank switched)
-              .con    0x10          ; P
+              .con    '0'           ; 0
+              .con    0x202         ; B (bank switched)
+              .con    0x0c          ; L
               .con    0             ; checksum position

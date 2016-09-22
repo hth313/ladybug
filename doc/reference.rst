@@ -3,7 +3,7 @@
 Instruction reference
 *********************
 
-This chapter goes through the instructions provided by the Programmer's module. Instructions follow the ordinary 4-level stack convention of the HP-41, operations consume arguments and put their result on the stack.
+This chapter goes through the instructions provided by Ladybug. Instructions follow the ordinary 4-level stack convention of the HP-41, operations consume arguments and put their result on the stack.
 
 .. index:: mode; flags, mode; setting, operations; mode related
 
@@ -113,7 +113,7 @@ Disable zero fill mode.
 Stack operations
 ================
 
-The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. The Programmer's module provides a set of instructions that duplicate already existing stack manipulation operations, but that takes the stack and the extra needed storage in account.
+The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. Ladybug provides a set of instructions that duplicate already existing stack manipulation operations, but that takes the stack and the extra needed storage in account.
 
 .. hint::
    If you are working with a word size of 56 and less, you can actually use the corresponding built in stack manipulation instructions intended for floating point numbers instead. This is especially useful in a program as they are one byte instructions compared to two for the integer counterparts.
@@ -353,7 +353,7 @@ Count the number of bits in X and put that number in X.
 Comparisons
 ===========
 
-Comparing values with the Programmer differs from what you may be used to on an HP calculator. Instead of comparing X to Y, or X to 0, you test flags set by the previous operation. There are three variants to this:
+Comparing values with Ladybug differs from what you may be used to on an HP calculator. Instead of comparing X to Y, or X to 0, you test flags set by the previous operation. There are three variants to this:
 
 To compare two numbers, use the ``CMP`` instruction which works similar to a compare  on a microprocessor. It performs a subtraction, setting flags according to the result and discards the numerical result. The actual comparison between two numbers starts with a  ``CMP``, followed by a flag conditional operation which conditionally skips the following instruction.
 

@@ -1,11 +1,17 @@
 #if 0
 ;;; **********************************************************************
 
-              Programmer module for the HP-41 calculator series.
+              LadyBug module for the HP-41 calculator series.
 
     This module provides an integer mode for the HP-41, much like what is
     available on the HP-16C.
 
+    This module is intended for professionals working with computers at the
+    lowest level.
+
+    The name is derives from that the module is a very useful tool when
+    debugging, these are kind of friendly bugs, and the HP-41 is powered
+    by Lady sized cells.
 
     Internal HP-41 registers are 56-bits wide, but we want to provide up
     to 64-bit values. These extra bits needs to go somewhere and this
@@ -147,6 +153,7 @@ FatStart:
               FAT     DECI
               FAT     INCI
               FAT     CLRI
+              FAT     DSZI
               FAT     SEX
               FAT     CMP
               FAT     TST
@@ -274,7 +281,7 @@ switchBank:   .macro  n
 
               .section Code
 
-              .name   "-PROG P001"  ; The name of the module
+              .name   "-LADYBUG 0A"  ; The name of the module
 Header:       rtn
 
 
@@ -293,7 +300,7 @@ Header:       rtn
 ;;; ************************************************************
 
               .section Code
-              .name   "# LIT"
+              .name   "#LIT"
 Literal:      ?s13=1                ; running?
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
@@ -4156,6 +4163,41 @@ DECI00:       c=a
 
 ;;; ----------------------------------------------------------------------
 ;;;
+;;; DSZI - decrement register, skip on zero.
+;;;
+;;; ----------------------------------------------------------------------
+
+              .section Code
+              .name   "DSZI"
+DSZI:         nop
+              nop
+              rxq     Argument
+              .con    Operand00     ; DSZI 00 is default
+              rxq     findBufferUserFlags
+              switchBank 2
+              rxq     loadG
+              a=a-1                 ; decrement
+              gonc    5$
+              bcex    x
+              c=c-1   x
+              bcex    x
+5$:           rxq     maskABx_rom2  ; for proper zero test
+              s0=0                  ; assume zero
+              ?a#0
+              goc     10$
+              ?b#0    x
+              gonc    20$
+10$:          s0=1                  ; remember non-zero
+20$:          rxq     saveG         ; write back updated register
+              s7=1                  ; no YES/NO in run-mode
+              switchBank 1
+              ?s0=1                 ; non-zero?
+              golc    NOSKP         ; yes
+              golong  SKP
+
+
+;;; ----------------------------------------------------------------------
+;;;
 ;;; CLRI - clear an integer register value
 ;;;
 ;;; ----------------------------------------------------------------------
@@ -6268,7 +6310,7 @@ prgmio:       c=data                ; C= buffer header
               KeyEntry WINDOW       ; decimal point
 
               ;; Logical column 2, shifted
-              KeyEntry RL           ; SQRT
+              KeyEntry ASR          ; SQRT
               KeyEntry RMD          ; SIN
               .con    0x2cf         ; LBL
               KeyEntry NOT          ; CHS
@@ -6288,7 +6330,7 @@ prgmio:       c=data                ; C= buffer header
               .con    0x205         ; R/S
 
               ;; Logical column 3, shifted
-              KeyEntry RR           ; LOG
+              KeyEntry RL           ; LOG
               KeyEntry RLC          ; COS
               .con    0x2d0         ; GTO
               .con    0x285         ; EEX
@@ -6308,7 +6350,7 @@ prgmio:       c=data                ; C= buffer header
               .con    0             ; OFF key special
 
               ;; Logical column 4, shifted
-              KeyEntry ASR          ; LN
+              KeyEntry RR           ; LN
               KeyEntry RRC          ; TAN
               .con    0x207         ; BST
               KeyEntry CLXI         ; BACKARROW
@@ -7000,5 +7042,5 @@ rpollio:      ?s7=1                 ; alpha mode?
               goto    rpollio       ; I/O
               goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A1RP"        ; Identifier PR-1A
+              .text   "A0BL"        ; Identifier LB-0A
               .con    0             ; checksum position

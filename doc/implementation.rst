@@ -28,4 +28,28 @@ As the lower 56 bits are stored in the normal stack registers, it makes it easie
 
 In addition to the extra bits for the stack, the buffer keeps track of all other things related to the integer mode. The complete integer state is preserved when you turn your calculator off. In fact, turning the HP-41 off and on will not cause the HP-41 to leave the integer mode. Integer mode stays active until you make an explicit switch to floating point mode (just press the gold shift key and the ``PI`` (0) key to get out of integer mode).
 
-If you unplug the module with the Programmer, the next time you turn the HP-41 on, it will reclaim the buffer registers and make them available in the free memory pool.
+If you unplug Ladybug, the next time you turn the HP-41 on, it will reclaim the buffer registers and make them available in the free memory pool.
+
+
+Keboard layout
+==============
+
+The keyboard layout uses the existing similar functions on keys whenever possible. However, the stack manipulation operations ``RDN`` and ``X<>Y`` are moved to shifted keys as it was judged that digit entry is more important.
+
+The base change keys are ordered in the same way as on the HP-16C and are located after the F digit.
+
+The window key is the dot key. It was selected because the display uses dots to indicate presence of more windows. It is also very close to the 0-3 keys, so you will find the typical argument keys close to the window activation key.
+
+The bit set, clear and test instructions are located on the row below the corresponding flag operations.
+
+Negation is the same thing as ``CHS``, bitwise ``NOT`` on the same key (shifted) is closely related to negation.
+
+Shift and rotate operations are plentiful. They are arranged together on the upper part of the keyboard.
+
+Double operations are the shifted variant on the corresponding key. As these shifted keys are related to compares on the floating point keyboard and ``CMP`` actually is a subtraction, so it went to the subtraction key. ``TST`` is related to ``CMP``, so it was placed next to it.
+
+The logical operations are held together in the usual order you say them, AND, OR, XOR, which also is the alphabetic order.
+
+When you feel that you need to work with floating point numbers, you probably want to use that PI constant, so the ``FLOAT`` operation to switch to floating point mode is on the PI key.
+
+Sign extension is on the ``EEX`` key, which is almost spelled the same.
