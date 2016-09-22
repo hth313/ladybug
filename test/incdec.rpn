@@ -1,0 +1,67 @@
+;;; Test increments and decrements
+
+.import ../src/ladybug.modexport
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+
+LBL "INCDEC"
+WSIZE 12
+
+#LIT 0xffe
+INCI X      ; 0xfff
+FC? 01  ; sign should be set
+SF 99
+FS? 00
+SF 99   ; non-zero
+
+INCI X     ; 0x000
+FS? 01  ; sign should not be set
+SF 99
+FC? 00  ; should be zero
+SF 99
+
+INCI X    ; 0x001
+FS? 01  ; sign should not be set
+SF 99
+FS? 00  ; should be non-zero
+SF 99
+
+DECI X  ; 0x000
+FS? 01  ; sign should not be set
+SF 99
+FC? 00  ; should zero
+SF 99
+
+DECI X  ; 0xFFF
+FC? 01  ; sign should be set
+SF 99
+FS? 00  ; should be non-zero
+SF 99
+
+
+;; Status register M
+WSIZE 56
+0
+STO M
+
+INCI M    ; 1
+FS? 01
+SF 99
+FS? 00
+SF 99
+
+DECI M   ; 0   @@@@@ does not set Z flag
+FS? 01
+SF 99
+FC? 00
+SF 99
+
+DECI M  ; -1
+FC? 01
+SF 99
+FS? 00
+SF 99
+
+END

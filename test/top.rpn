@@ -1,0 +1,9 @@
+;;; General test runner
+
+LBL "LBTEST"
+"INCDEC"
+AVIEW
+XEQ "INCDEC"
+"ALL OK"
+AVIEW
+END

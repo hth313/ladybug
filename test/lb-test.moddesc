@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModFile FileFormat="MOD1" Title="Ladybug test" Version="A" PartNumber="" Author="Håkan Thörngren" Copyright="Håkan Thörngren" License="BSD 3" Comments="" Category="2" Hardware="0">
+  <Page Name="LB-TEST" Identity="LT1A" Page="Any" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+</ModFile>
+
