@@ -1,3 +1,4 @@
 _build
 src/*.lst
 src/*.o
+src/*.mod
