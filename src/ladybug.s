@@ -3470,6 +3470,7 @@ loadST:       gosub   GSB256        ; classify
               goto    50$           ; (P+1) nibble storage
               goto    70$           ; (P+2) stack register
               c=data                ; (P+3) (other) status register
+              a=c
               b=0     x
               goto    750$
 
