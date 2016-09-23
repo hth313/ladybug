@@ -4604,6 +4604,7 @@ CMP:          nop
               c=c+1   x
               dadd=c
               c=data
+              rcr     2
               bcex    x
               c=0     x
               dadd=c
