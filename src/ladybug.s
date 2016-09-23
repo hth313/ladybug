@@ -879,6 +879,7 @@ fetchLiteralA:
               rcr     -1
               c=c+1   xs            ; text wrapper?
               goc     10$           ; yes
+              gosub   GETPC         ; no, ensure A[3:0]= PC for #LIT
               c=0                   ; no, load 0
               n=c
               dadd=c                ; select chip 0
