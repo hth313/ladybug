@@ -2166,30 +2166,35 @@ NEG:          rxq     findBufferGetXSaveL
 NEG10:        st=0    Flag_Overflow ; assume no overflow
               ?st=1   Flag_2        ; signed mode?
               goc     5$            ; yes
-              st=1    Flag_Overflow ; no, unsigned, set overflow as a
-                                    ;  remainder that the negative number
-                                    ;  is out of range of unsigned mode
-5$:           c=regn  X
-              c=-c
-              regn=c  X
-              a=c
-              bcex    x
-              c=-c-1  x
-              bcex    x
-
+              ?a#0                  ; no, unsigned. test for zero
+              goc     2$            ; non-zero
+              ?b#0    x
+              gonc    5$            ; zero, no overflow
+2$:           st=1    Flag_Overflow ; non-zero, result is negative and
+                                    ;  out of range in unsigned mode.
+5$:           c=b
+              c=-c    x             ; negate upper part
+              acex                  ; A= buffer address and upper part
+                                    ; C= lower part
+              c=-c                  ; negate lower part
+              gonc    6$
+              a=a-1   x
+6$:           regn=c  X             ; save lower result
+              b=a                   ; B= buffer pointer and upper part
               ?st=1   Flag_UpperHalf
-              gonc    10$
-              a=b    x
-10$:          c=m
+              goc     7$
+              acex                  ; carry in lower part
+7$:           c=m
               c=c-1
               nop
               c=c&a                 ; mask result
               c=c+c                 ; left shift
+              goc     12$           ; carry means overflow (size 56)
               a=c
               c=m
               ?a#c                  ; same as carry mask?
               goc     putX_J0       ; no, did not overflow
-              st=1    Flag_Overflow ; yes, overflow
+12$:          st=1    Flag_Overflow ; yes, overflow
               goto    putX_J0
 
 
