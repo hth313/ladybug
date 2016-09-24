@@ -4613,6 +4613,7 @@ CMP:          nop
               dadd=c
               c=data
               rcr     2
+              c=0     xs
               bcex    x
               c=0     x
               dadd=c
@@ -4630,7 +4631,9 @@ CMP:          nop
               gonc    5$
               bcex    x
               c=c-1   x
-              bcex    x
+              gonc    4$
+              st=1    Flag_CY
+4$:           bcex    x
 5$:           abex    x
               c=g
               c=0     xs
