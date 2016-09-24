@@ -3445,7 +3445,9 @@ argumentValueG:
 
 10$:          s7=0                  ; reset indirect
               s9=0                  ; no extra indirection
-              rxq     loadST
+              cstex
+              g=c
+              rxq     loadG
               ?b#0    x             ; check range
               goc     ERRDE_J1
               acex
