@@ -190,11 +190,21 @@ NEG
 
 Negate X.
 
+In signed mode the smallest negative number does not have a corresponding positive counterpart. Negating that number ends up with the same number as the input. In this case the overflow flag is set to indicate that the result could not be represented. For all other signed values, the input is negated and the overflow is cleared.
+
+In unsigned mode, the number is negated, giving the same bit pattern as would result in signed mode. However, as all numbers are considered positive, a negative number can not be represented and the overflow flag will be set to indicate this. The only case you will not get an overflow flag is when the input is 0 (as 0 negated is also 0, and it is can be represented in unsigned mode).
+
 
 ABSI
 ^^^^
 
-Absolute value of X, make X positive (by negating X if it was negative).
+Absolute value of X.
+
+In signed mode, negative numbers are negated to make them positive. As negation does the same code as ``NEG``, see ``NEG`` for a discussion on how the smallest negative number behaves.
+
+In unsigned mode all numbers are considered positive, and negation is never done. The overflow flag is always cleared in this case.
+
+As signed mode uses 2-complement representation, the smallest negative number (for example, hex 80 in word size 8), has no corresponding positive number and the result is the same as the input. In this case the overflow flag is set to indicate that the real result cannot be represented. In all other cases the overflow flag will be reset.
 
 
 .. index:: operations; double precision, double precision
