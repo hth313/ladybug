@@ -2144,9 +2144,12 @@ CLXI:         rxq     findBufferUserFlags
               .name   "ABSI"
 ABSI:         rxq     findBufferGetXSaveL
               st=0    Flag_Overflow
-              ?st=1   Flag_2
-              goc     putX_J0
-              goto    NEG10
+              ?st=1   Flag_2        ; unsigned mode?
+              gonc    putX_J0       ; yes, done
+              rxq     getSign       ; signed mode, check sign
+              ?c#0    s
+              gonc    putX_J0       ; positive
+              goto    NEG10         ; negative, negate it
 
 
 ;;; **********************************************************************
@@ -6609,7 +6612,7 @@ div10:        acex                  ; save n in P[9:8]:Q
 
               .section Code
               .align  256
-              getSign
+getSign:      getSign
 decDigits:    ?st=1   Flag_PRGM     ; program mode?
               goc     decpos        ; yes, interpret as positive number
 decDigits1:   c=regn  14
