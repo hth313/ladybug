@@ -2,7 +2,7 @@
 
 .import ../src/ladybug.modexport
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE  (semi-merged-postfix)
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
 
@@ -52,7 +52,7 @@ SF 99
 FS? 00
 SF 99
 
-DECI M   ; 0   @@@@@ does not set Z flag
+DECI M   ; 0
 FS? 01
 SF 99
 FC? 00
@@ -62,6 +62,33 @@ DECI M  ; -1
 FC? 01
 SF 99
 FS? 00
+SF 99
+
+
+; DSZI to fill nibble memory
+; Push what we expect in end, pushed on stack.
+; This value on stack should survive on stack
+; even when we lower to nibble size word size
+; as we do not touch it.
+WSIZE 64
+#LIT 0xfedcba9876543210
+#LIT 0
+WSIZE 4
+LBL 01
+STI IND X
+DSZI X
+GTO 01
+
+; Now we should have FE...10 in low nibble memory
+WSIZE 64
+LDI IND X  ; X should be 0
+CMP Z
+FC? 00  ; should be equal and set zero flag
+SF 99
+X<>YI  ;  Subtract them for real as well
+RDNI
+SUB
+FC? 00  ; should be 0 and set zero flag
 SF 99
 
 END
