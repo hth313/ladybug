@@ -1442,6 +1442,7 @@ findBufferUserFlags_rom2:
 ;;;      M = Carry position
 ;;;      ST 8 & 9 set with information about carry location
 ;;;      ST - user exposed flags
+;;;      A - lower part of X (also in X)
 ;;;      B[2:0] - upper part of X
 ;;;      B[5:3] - upper part Y
 ;;;      N - High part register, with X saved to L
@@ -1486,6 +1487,7 @@ findBufferGetXSaveL0no11:
 10$:          acex
               regn=c  X             ; save masked X in X
               regn=c  L             ; save X in L
+              acex
 
               c=regn  14            ; bring up user flags
               rcr     12
@@ -1952,9 +1954,7 @@ setFlagsABx:  rxq     maskABx_rom2
 
               .name   "XOR"
 XOR:          rxq     findBufferGetXSaveL
-              c=regn  X             ; XOR lower part of X with Y
-              acex
-              c=regn  Y
+              c=regn  Y             ; XOR lower part of X with Y
               b=c
               c=c|a
               bcex
@@ -1988,9 +1988,7 @@ aoxfix_2:     rgo     putXDrop
 
               .name   "OR"
 OR:           rxq     findBufferGetXSaveL
-              c=regn  X             ; OR lower part of X with Y
-              a=c
-              c=regn  Y
+              c=regn  Y             ; OR lower part of X with Y
               c=c|a
               regn=c  X             ; write back
 
@@ -2009,9 +2007,7 @@ OR:           rxq     findBufferGetXSaveL
 
               .name   "AND"
 AND:          rxq     findBufferGetXSaveL
-              c=regn  X             ; AND lower part of X with Y
-              a=c
-              c=regn  Y
+              c=regn  Y             ; AND lower part of X with Y
               c=c&a
               regn=c  X             ; write back
 
@@ -2046,7 +2042,7 @@ SUB:          s9=1
 ADD:          s9=0
 ADD_2:        rxq     findBufferGetXSaveL
               switchBank 2
-ADD_3:        c=regn  X
+ADD_3:        acex                  ; C= lower part of X
               ?s9=1                 ; doing SUB?
               gonc    2$            ; no
               bcex    x             ; yes, negate X
@@ -2205,7 +2201,7 @@ NOT:          rxq     findBufferGetXSaveL
               bcex    x
               c=-c-1  x
               bcex    x
-              c=regn  X
+              acex
               c=-c-1
               regn=c  X
 putX_J0:      rgo     putX
