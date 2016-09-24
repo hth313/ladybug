@@ -1,0 +1,99 @@
+;;; Test ABSI and NEG
+
+.import ../src/ladybug.modexport
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "ABSNEG"
+SF 02        ; signed mode
+WSIZE 16
+#LIT  0x42
+ENTER
+NEG      ; negate
+FS? 04   ; should not overflow
+SF 99
+X<>Y
+LASTX
+X!=Y?    ; lastx = previous value?
+SF 99    ; no
+LDI Z    ; get negated value
+X=Y?
+SF 99
+ABSI
+X!=Y?
+SF 99
+
+#LIT 0x8000
+NEG
+FC? 04    ; this value should overflow
+SF 99
+ABSI
+FC? 04    ; this value should overflow
+SF 99
+
+CF 02     ; unsigned mode
+NEG
+FC? 04    ; should still overflow
+SF 99
+ABSI      ; but not for ABSI
+FS? 04
+SF 99
+
+INCI X
+NEG
+FC? 04    ; unsigned sets overflow
+SF 99
+
+; Test 0 in unsigned mode, it never cause overflow
+CLXI
+TST X
+NEG
+FS? 04
+SF 99
+FC? 00
+SF 99
+FS? 01
+SF 99
+ABSI
+FS? 04
+SF 99
+FC? 00
+SF 99
+FS? 01
+SF 99
+
+; Test overflow with single bit on all word sizes
+#LIT 64
+STI 00   ; assuming word size 16 for counter
+
+LBL 01
+
+WSIZE IND 00
+SF 02
+MASKL 1
+NEG
+FC? 04    ; should still overflow
+SF 99
+FC? 01    ; should be negative
+SF 99
+FS? 00    ; and non-zero
+SF 99
+
+MASKR 1  ; load a 1
+NEG      ; negate gives all bits set in current word size
+BITSUM X ; sum them (will fit)
+CF 02    ; unsigned mode
+WSIZE 16 ; we are working in unsigned mode, so number stays
+CMP 00   ; check that it is same as word size
+FC? 00
+SF 99    ; no
+FS? 03   ; carry should not be set
+SF 99
+FS? 01   ; neither should sign
+SF 99
+DSZI 00
+GTO 01
+
+END

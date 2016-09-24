@@ -1,6 +1,9 @@
 ;;; General test runner
 
 LBL "LBTEST"
+"ABSNEG"
+AVIEW
+XEQ "ABSNEG"
 "INCDEC"
 AVIEW
 XEQ "INCDEC"
