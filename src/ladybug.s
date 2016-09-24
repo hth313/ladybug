@@ -2345,25 +2345,27 @@ MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
               gonc    20$           ; no
 
 12$:          bcex
-              g=c
-              c=c+c   x
+              g=c                   ; G= previous high part
+              c=c+c   x             ; left shift upper part
               acex
-              n=c
-              c=c+c
+              n=c                   ; N= previous low part
+              c=c+c                 ; left shift lower part
               gonc    14$
-              a=a+1   x
-14$:          bcex
+                                    ; carry between parts
+              ?st=1   Flag_UpperHalf ; do we have upper part?
+              gonc    17$           ; no, should be 56-bit word size
+              a=a+1   x             ; carry to upper part
+14$:          bcex                  ; B= lower part, A= upper part
               ?st=1   Flag_UpperHalf
               goc     15$
-              abex
+              abex                  ; A= lower part, B= upper part
 15$:          c=m
               c=c&a
-              ?c#0
-              goc     17$
               ?st=1   Flag_UpperHalf
-              gonc    12$
+              gonc    16$
               abex
-              goto    12$
+16$:          ?c#0
+              gonc    12$           ; not done
 
 17$:          c=g
               bcex    x
