@@ -6646,22 +6646,25 @@ decDigits1:   c=regn  14
               c=-c                  ; C= negated low part
               nop
               c=c&a                 ; mask
-4$:           acex
-              s0=0                  ; remember negative
+              acex
+4$:           s0=0                  ; remember negative
               goto    decpos
 
-5$:           c=m                   ; negate with sign in upper part
-              c=c-1
-              abex
-              acex
-              c=-c-1  x             ; invert bits in upper part
-              acex
-              c=c&a                 ; mask upper part
-              abex
+5$:           c=b
+              c=-c    x             ; negate upper part
               acex
               c=-c                  ; negate lower part
-              goc     4$            ; often carry set
-              goto    4$            ;  .. but not always
+              gonc    3$
+              a=a-1   x             ; ripple to upper part
+3$:           bcex                  ; B= lower part
+              c=m
+              c=c-1                 ; make mask
+                                    ;  (no carry possible as mask is non-zero)
+              .suppress
+              c=c&a
+              a=c     x
+              abex
+              goto    4$
 
 6$:           cstex                 ; restore flags
 decpos:       b=0     xs            ; clear flag for digits above
