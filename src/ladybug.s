@@ -2465,7 +2465,7 @@ RollDown1:    c=b
               rcr     -8
               data=c                ; save updated trailer register back
 
-              golong  R_SUB         ; rotate normal stack
+              golong  RDNSUB         ; rotate normal stack
 
 
 ;;; **********************************************************************
@@ -2477,9 +2477,6 @@ RollDown1:    c=b
 
               .name   "RDNI"
 RDNI:         rxq     RollDown
-              rxq     RollDown1
-              rxq     RollDown1
-
 RDNExit:      c=b
               rcr     10
               c=c+1   x
@@ -2501,6 +2498,8 @@ RDNExit:      c=b
 
               .name   "R^I"
 RUPI:         rxq     RollDown
+              rxq     RollDown1
+              rxq     RollDown1
               goto    RDNExit
 
 
