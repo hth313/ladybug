@@ -5125,8 +5125,10 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               goc     82$
               c=b
               rcr     10
+              c=c+1   x
+              dadd=c
+              c=data
               rcr     4
-              pt=     1
               c=0     xs
               ?c#0     x
               gonc    85$
