@@ -1,5 +1,5 @@
 
-RPNS = top.rpn incdec.rpn absneg.rpn
+RPNS = top.rpn incdec.rpn absneg.rpn mul.rpn
 SRCS = lb-test.s
 OBJS = $(RPNS:%.rpn=%.o) $(SRCS:%.s=%.o)
 MOD = lb-test.mod

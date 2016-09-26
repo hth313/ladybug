@@ -1564,16 +1564,19 @@ signPositive: rxq     getSign_rom2  ; get the sign
               ?st=1   Flag_2        ; sign mode?
               gonc    50$           ; no
 
-              acex
               ?s6=1                 ; double divide?
               gonc    10$           ; no
-              ?b#0    xs            ; double divide, doing Y?
+              ?c#0    xs            ; double divide, doing Y?
               goc     20$           ; yes, need special treatment
-10$:          c=-c
+10$:          c=b
+              c=-c    x             ; negate upper part
               acex
-              bcex    x
-              c=-c-1  x
-              bcex    x
+              c=-c                  ; negate lower part
+              gonc    11$
+              a=a-1   x             ; carry to upper part
+11$:          b=a
+              a=c
+
 15$:          rxq     maskABx_rom2
               c=0     s             ; C.S= negative flag
               c=c+1   s
@@ -1582,26 +1585,40 @@ signPositive: rxq     getSign_rom2  ; get the sign
               gotoc
 
 ;;; Negating for double divide and we have Y loaded in B[1:0]-A.
-;;; This is actually the upper bits, so they should be inverted.
+;;; This is actually the upper bits.
 ;;; We then load Z (lower bits), negate it and let the caller save
 ;;; it in Y as the DDIV routine wants them swapped.
-20$:          c=-c-1                ; high bits, invert them
-              acex                  ; A= inverted high half
-              bcex    x             ; invert B[1:0] as well
-              c=-c-1  x
-              bcex    x
-              rxq     maskABx_rom2
-              c=regn  Z             ; load lower half
-              c=-c
-              acex
-              regn=c  Z             ; Z= Y (masked)
-              c=n
+20$:          s3=1                  ; use c=-c
+              c=regn  Z
+              c=-c                  ; negate lower part in low half
+              gonc    21$
+              s3=0                  ; bit-not next
+21$:          regn=c  Z
+              c=n                   ; upper part in low half
               rcr     6
               pt=     1
-              c=-c-1  wpt           ; invert upper part of lower half
-              bcex    wpt
-              rcr     -6
+              c=-c-1  wpt           ; bit-not
+              ?s3=1                 ; should have negated?
+              gonc    22$           ; no
+              c=c+1   wpt           ; yes
+              goc     22$
+              s3=0                  ; bit-not next
+22$:          rcr     -6
               n=c
+
+              acex                  ; lower part in high half
+              c=-c-1
+              ?s3=1
+              gonc    23$
+              c=c+1
+              goc     23$
+              s3=0
+23$:          bcex    x
+              c=-c-1  x
+              ?s3=1
+              gonc    24$
+              c=c+1   x
+24$:          bcex    x
               goto    15$
 
 ;;; Cases below when we do not need to negate. For stack registers
@@ -2200,7 +2217,7 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 
 ;;; **********************************************************************
 ;;;
-;;; NOT - Entry point for bit not.
+;;; NOT - Entry point for bit-not.
 ;;;
 ;;; **********************************************************************
 
@@ -4744,8 +4761,7 @@ GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
-              .align  256
+              .section Code2
 ;;; Multiply 8x56
 ;;; IN  ST= 8 bits
 ;;;     M= 56 bits
@@ -4791,6 +4807,7 @@ GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
               gonc    10$
               rtn
 
+              .section Code
               .name   "DMUL"
 DMUL:         s11=1                 ; want double result
               goto    mulCommon
@@ -4799,8 +4816,10 @@ DMUL:         s11=1                 ; want double result
 MUL:          s11=0                 ; want single result
 mulCommon:    rxq     findBufferGetXSaveL0no11
               switchBank 2
+              ?st=1   Flag_2
+              gonc    2$
               rxq     getSignsMakePositive
-              c=a-c   s             ; C.S= 0 if same sign
+2$:           c=a-c   s             ; C.S= 0 if same sign
               c=st
               rcr     -4
               stk=c
@@ -4899,19 +4918,21 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               bcex
 
               ?b#0
-              gsubc   GSB256        ; mul8x56
+              gonc    31$
+              rxq     `mul8x56`
 
-              c=regn  X
+31$:          c=regn  X
               m=c
               pt=     0
               c=g
               st=c
               c=0     xs
               ?c#0    x
-              gsubc   GSB256        ; mul8x56
+              gonc    33$
+              gsubc   `mul8x56`
 
               ;; mul 8x8
-              acex
+33$:          acex
               m=c                   ; M= second 56 bits of sum
               a=0
               abex    x             ; A= upper 16 bits
@@ -4956,21 +4977,32 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               st=0    Flag_Overflow
 
               ?st=1   Flag_2        ; are we in signed mode?
-              gonc    41$           ; no
+              gonc    44$           ; no
               ?c#0    s             ; result is calculated to be negative?
-              gonc    41$           ; no
+              gonc    44$           ; no
 
-              acex                  ; yes, negate result
-              c=-c-1
-              acex
-              cmex
-              c=-c-1
-              cmex
+              s7=1                  ; yes, negate result (borrow S7, zero flag)
               cnex
               c=-c
-              cnex
+              gonc    41$
+              s7=0                  ; bit-not next
+41$:          cnex
+              cmex
+              c=-c-1
+              ?s7=1
+              gonc    42$
+              c=c+1
+              goc     42$
+              s7=0                  ; bit-not next
+42$:          cmex
+              acex
+              c=-c-1
+              ?s7=1
+              gonc    43$
+              c=c+1
+43$:          acex
 
-41$:          cnex                  ; N.S= calculated sign
+44$:          cnex                  ; N.S= calculated sign
               regn=c  X             ; put lower result in X
 
               ?s11=1                ; doing "DMUL"?
@@ -4982,17 +5014,17 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
 
               ?a#0                  ; check uppermost 16 bits which are way out
                                     ;  of range for single precision MUL
-              gonc    44$
+              gonc    47$
               st=1    Flag_Overflow
-44$:          c=regn  Q             ; get carry mask
+47$:          c=regn  Q             ; get carry mask
               cmex                  ; get second 56 bits, M= carry mask
               b=0     x
               bcex    x             ; B.X= lower 12 bits of second 56 bits
                                     ; C= remaining bits of second 56 bits
               ?c#0                  ; any non-zero?
-              gonc    46$           ; no
+              gonc    48$           ; no
               st=1    Flag_Overflow ; yes, we overflowed
-46$:          c=regn  X
+48$:          c=regn  X
               a=c                   ; A= lower 56 bits of result
               ?st=1   Flag_2        ; in 2-complement signed mode?
               gonc    50$           ; no, unsigned mode

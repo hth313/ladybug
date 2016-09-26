@@ -1,0 +1,25 @@
+;;; Test MUL and DMUL
+
+.import ../src/ladybug.modexport
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "DMUL"
+WSIZE 64
+MASKL 4   ; F000..
+ENTERI
+SR 01     ; (F000... >> 1)
+SF 02     ; signed mode
+DMUL      ; should give  X = F8800....  and Y= 0
+TST Y     ; Y= lower part, should be 0
+FC? 00
+SF 99
+#LIT 0xf88
+SL 52
+SUB
+FC? 00
+SF 99
+
+END
