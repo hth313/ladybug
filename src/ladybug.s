@@ -2352,6 +2352,8 @@ MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
               switchBank 2
               b=0     x
               c=c-1                 ; convert to mask
+              ?c#0                  ; is it actually 0?
+              gonc    22$           ; yes, result is also 0
               acex
               ?c#0    s             ; bit affect upper part?
               gonc    10$           ; no
