@@ -1,0 +1,16 @@
+;;; Test MASKL and MASKR
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "MASK"
+WSIZE 64
+MASKL 0     ; should give 0
+MASKR 0     ; should give 0
+ADD         ; still 0, but now it sets the flag
+FC? 00
+SF 99
+END

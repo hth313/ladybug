@@ -1,0 +1,19 @@
+;;; Test ADD and SUB
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "ADDSUB"
+WSIZE 64
+#LIT 4
+MASKL IND X
+SUB
+#LIT 0x1000000000000004
+CMP Y
+FC? 00
+SF 99
+
+END
