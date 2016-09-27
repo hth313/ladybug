@@ -96,4 +96,23 @@ SF 99
 DSZI 00
 GTO 01
 
+; Test 56-bit 8000... in word sizes 56-64
+WSIZE 56
+MASKL 1
+STO M      ; 8000.. constant
+#LIT 9  STO N   ; counter
+#LIT 64 STO O   ; word size
+SF 02     ; do this is signed mode
+LBL 02
+WSIZE IND O
+RCL M
+NEG
+ABSI
+CMP M
+FC? 00
+SF 99
+DECI O
+DSZI 02
+GTO 02
+
 END
