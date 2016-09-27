@@ -2059,15 +2059,17 @@ SUB:          s9=1
 ADD:          s9=0
 ADD_2:        rxq     findBufferGetXSaveL
               switchBank 2
-ADD_3:        acex                  ; C= lower part of X
-              ?s9=1                 ; doing SUB?
+ADD_3:        ?s9=1                 ; doing SUB?
               gonc    2$            ; no
-              bcex    x             ; yes, negate X
-              c=-c-1  x
-              bcex    x
+              c=b                   ; yes, negate X
+              c=-c    x
+              acex
               c=-c
-2$:           a=c
-              rxq     maskABx_rom2
+              gonc    1$
+              a=a-1   x
+1$:           b=a
+              a=c
+2$:           rxq     maskABx_rom2
               acex
               regn=c  X
               s6=0                  ; not doing DDIV
