@@ -1,12 +1,14 @@
 ;;; Test MUL and DMUL
 
-.import ../src/ladybug.modexport
+.import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
 .postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
-LBL "DMUL"
+.local FOO
+
+LBL "TMUL"
 WSIZE 64
 MASKL 4   ; F000..
 ENTERI

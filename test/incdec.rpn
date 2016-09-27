@@ -1,6 +1,6 @@
 ;;; Test increments and decrements
 
-.import ../src/ladybug.modexport
+.import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)

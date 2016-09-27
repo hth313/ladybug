@@ -1,6 +1,6 @@
 ;;; Test ABSI and NEG
 
-.import ../src/ladybug.modexport
+.import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
 .postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
