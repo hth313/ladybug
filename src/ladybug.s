@@ -2244,6 +2244,7 @@ CB:           nop
               nop
               rxq     Argument
               .con    Operand00 + 0x100 ; no ST
+              rxq     findBufferUserFlags_argumentValueG_rom1
               s9=1
               goto    SB10
 
@@ -2259,9 +2260,9 @@ SB:           nop
               nop
               rxq     Argument
               .con    Operand00 + 0x100 ; no ST
+              rxq     findBufferUserFlags_argumentValueG_rom1
               s9=0
-SB10:         rxq     findBufferUserFlags_argumentValueG_rom1
-              rxq     findBufferGetXSaveL
+SB10:         rxq     findBufferGetXSaveL
               rxq     bitMask_G
               ?s9=1                 ; SB?
               gonc    10$           ; yes
@@ -2330,6 +2331,7 @@ MASKR:        nop
               nop
               rxq     Argument
               .con    8 + 0x100     ; no ST
+              rxq     findBufferUserFlags_argumentValueG_rom1
               s9=0
               goto    MASK10
 
@@ -2345,9 +2347,9 @@ MASKL:        nop
               nop
               rxq     Argument
               .con    8 + 0x100     ; no ST
-              s9=1
-MASK10:       rxq     findBufferUserFlags_argumentValueG_rom1
-              rxq     liftStackS11
+              rxq     findBufferUserFlags_argumentValueG_rom1
+              s9=1                  ; (S9 is affected by argumentValueG)
+MASK10:       rxq     liftStackS11
               rxq     bitMask_G
               switchBank 2
               b=0     x
