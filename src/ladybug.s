@@ -2211,6 +2211,13 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
               goc     12$           ; carry means overflow (size 56)
               a=c
               c=m
+              ?c#0                  ; size 56?
+              gonc    putX_J0       ; yes, no overflow (if yes, we got that
+                                    ;  above when doing left shift)
+                                    ; carry mask==0 for size 56 (special case)
+                                    ;  so a zero result would compare equal
+                                    ;  and accidently assume carry, so we
+                                    ;  skip doing that mistake
               ?a#c                  ; same as carry mask?
               goc     putX_J0       ; no, did not overflow
 12$:          st=1    Flag_Overflow ; yes, overflow
