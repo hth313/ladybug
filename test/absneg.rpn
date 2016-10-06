@@ -46,7 +46,12 @@ NEG
 FC? 04    ; unsigned sets overflow
 SF 99
 
-; Test 0 in unsigned mode, it never cause overflow
+; Test 0 in unsigned mode all sizes, it never cause overflow
+#LIT 64
+STI 00   ; assuming word size 16 for counter
+LBL 03
+WSIZE IND 00
+
 CLXI
 TST X
 NEG
@@ -63,6 +68,10 @@ FC? 00
 SF 99
 FS? 01
 SF 99
+
+WSIZE 16
+DSZI 00
+GTO 03
 
 ; Test overflow with single bit on all word sizes
 #LIT 64
@@ -114,5 +123,15 @@ SF 99
 DECI O
 DSZI 02
 GTO 02
+
+; Test non-zero with all low bits cleared, unsigned mode
+CF 02
+WSIZE 64
+MASKL 2
+NEG
+FS? 00
+SF 99
+FC? 04
+SF 99
 
 END
