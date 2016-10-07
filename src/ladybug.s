@@ -2059,28 +2059,19 @@ SUB:          s9=1
 ADD:          s9=0
 ADD_2:        rxq     findBufferGetXSaveL
               switchBank 2
-ADD_3:        ?s9=1                 ; doing SUB?
-              gonc    2$            ; no
-              c=b                   ; yes, negate X
-              c=-c    x
-              acex
-              c=-c
-              gonc    1$
-              a=a-1   x
-1$:           b=a
-              a=c
-2$:           rxq     maskABx_rom2
-              acex
-              regn=c  X
               s6=0                  ; not doing DDIV
               s7=0                  ; do not make the values positive
               rxq     getSigns
               st=0    Flag_Overflow ; prepare overflow flag
-              ?a#c    s             ; same sign?
+              ?s9=1                 ; doing subtract?
+              goc     2$            ; yes
+              ?a#c    s             ; same signs?
               goc     5$            ; no, will not overflow
-              st=1    Flag_Overflow ; assume overflow
-              bcex    s             ; save flag to check against
-
+1$:           st=1    Flag_Overflow ; assume overflow
+              bcex    s             ; B.S= flag to check against
+              goto    5$
+2$:           ?a#c    s             ; different signs?
+              goc     1$            ; yes, may overflow
 5$:           c=b     x
               cnex                  ; N.X= upper X
               rcr     4             ; C[1:0]= upper Y
@@ -2089,7 +2080,10 @@ ADD_3:        ?s9=1                 ; doing SUB?
               a=c                   ; A= lower Y
               rxq     maskABx_rom2  ; B.X/A = Y masked
               c=regn  X
-              c=c+a
+              ?s9=1                 ; doing subtract?
+              goc     40$           ; yes
+
+              c=c+a                 ; ADD
               gonc    10$           ; no carry
               bcex    x             ; carry to upper part
               c=c+1   x
@@ -2101,8 +2095,8 @@ ADD_3:        ?s9=1                 ; doing SUB?
               a=a+c   x             ; add them
               abex    x             ; B.X= upper part of result
 
-              ?st=1   Flag_Overflow ; check for overflow?
-              gonc    20$           ; no
+15$:          ?st=1   Flag_Overflow ; check for overflow?
+              gonc    21$           ; no
               rxq     getSign_rom2
               abex    s
               ?a#c    s             ; different sign?
@@ -2110,23 +2104,17 @@ ADD_3:        ?s9=1                 ; doing SUB?
               st=0    Flag_Overflow
 
 20$:          abex    s             ; restore A
-              st=0    Flag_CY
+21$:          st=0    Flag_CY
               c=m                   ; make unmask
               c=c-1
               c=-c-1
               ?st=1   Flag_UpperHalf
               goc     29$           ; check against upper part
               c=c&a
-22$:          ?s9=1                 ; SUB?
-              goc     28$           ; yes
-              ?c#0
+22$:          ?c#0
               gonc    25$
 24$:          st=1    Flag_CY
 25$:          rgo     putXDrop_rom2
-
-28$:          ?c#0
-              goc     25$
-              goto    24$
 
 29$:          abex    x             ; mask against upper part
               c=c&a
@@ -2134,6 +2122,24 @@ ADD_3:        ?s9=1                 ; doing SUB?
               c=0     m
               c=0     s
               goto  22$
+
+
+;;; Do not try to negate Y and use ADD for subtracting, it does not work
+;;; with the overflow flag if Y is the smallest negative number, as it
+;;; cannot be negated without overflow. Instead we actually use subtract
+;;; here.
+40$:          c=a-c                 ; SUB
+              gonc    41$
+              bcex    x
+              c=c-1   x             ; borrow from upper part
+              bcex    x
+41$:          regn=c  X             ; save lower part
+              a=c                   ; A= lower part of result
+              abex                  ; A.X = upper part of Y
+              c=n                   ; C.X = upper part of X
+              a=a-c   x
+              abex
+              goto    15$
 
 
               .section Code

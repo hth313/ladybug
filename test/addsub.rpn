@@ -16,4 +16,36 @@ CMP Y
 FC? 00
 SF 99
 
+; check overflow
+WSIZE 8
+SF 02
+#LIT 0x60
+ENTER
+ADD
+FC? 04
+SF 99
+FS? 03
+SF 99
+FS? 00
+SF 99
+FC? 01
+SF 99
+
+ENTER
+ADD     ; gives 0x80  (and carry)
+FC? 03
+SF 99
+FC? 01
+SF 99
+FS? 00
+SF 99
+MASKL 1
+SUB     ; gives 00
+FC? 00
+SF 99
+FS? 03
+SF 99
+FS? 04
+SF 99
+
 END
