@@ -2068,7 +2068,7 @@ ADD_2:        rxq     findBufferGetXSaveL
               ?a#c    s             ; same signs?
               goc     5$            ; no, will not overflow
 1$:           st=1    Flag_Overflow ; assume overflow
-              bcex    s             ; B.S= flag to check against
+              b=a     s             ; B.S= flag to check against
               goto    5$
 2$:           ?a#c    s             ; different signs?
               goc     1$            ; yes, may overflow

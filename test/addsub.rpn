@@ -71,6 +71,23 @@ SUB
 FC? 00
 GTO 01
 
+;; test 80 00 SUB in signed mode and unsigned mode, it should not set overflow
+
+
+;; In unsigned mode, overflow behaves as carry
+CF 02
+#LIT 0x80
+#LIT 0
+SUB
+FS? 04
+SF 99
+
+SF 02
+#LIT 0x80
+#LIT 0
+SUB
+FS? 04
+SF 99
 
 
 END
