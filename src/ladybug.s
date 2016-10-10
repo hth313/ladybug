@@ -693,7 +693,7 @@ kbDone:       releaseKey
               goc     6$            ; yes
               rst kb                ; no, try to release key
               chk kb
-              golnc   NFRKB         ; return via reset keyboard
+              golc    NFRKB         ; return via reset keyboard
                                     ;  if not released
 6$:           s13=0                 ; reset S13
               rxq     takeOverKeyboard ; due to shortcut below
