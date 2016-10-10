@@ -10,7 +10,7 @@ all: $(MOD)
 	../../goabby/bin/asnut -g $<
 
 %.o: %.rpn
-	../../goabby/bin/rpncomp  $<
+	../../goabby/bin/rpncomp -L $<
 
 $(MOD): $(OBJS) Plugin4K.scm lb-test.moddesc
 	../../goabby/bin/lnnut -g $(OBJS) Plugin4K.scm lb-test.moddesc

@@ -6,10 +6,10 @@ MOD = ladybug.mod
 all: $(MOD)
 
 %.o: %.s
-	../../goabby/bin/asnut -g $<
+	../../goabby/bin/asnut -g -L $<
 
 $(MOD): $(OBJS) linker.scm ladybug.moddesc
-	../../goabby/bin/lnnut -g $(OBJS) linker.scm ladybug.moddesc
+	../../goabby/bin/lnnut -g $(OBJS) -Llinker.lst linker.scm ladybug.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)
