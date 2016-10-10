@@ -7099,6 +7099,8 @@ rpollio:      ?s7=1                 ; alpha mode?
               goc     pollretC0     ; yes
               rgo     prgmio
 
+              ?s5=1                 ; message flag (perhaps showing "ROM")
+              goc     pollretC0     ; yes
               ;; Handle pause timer.
 20$:          rgo     pauseio       ; the 'rgo' uses two levels!
 
