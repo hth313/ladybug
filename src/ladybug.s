@@ -2059,10 +2059,12 @@ SUB:          s9=1
 ADD:          s9=0
 ADD_2:        rxq     findBufferGetXSaveL
               switchBank 2
+              st=0    Flag_Overflow ; prepare overflow flag
+              ?st=1   Flag_2        ; unsigned mode?
+              gonc    5$            ; yes
               s6=0                  ; not doing DDIV
               s7=0                  ; do not make the values positive
               rxq     getSigns
-              st=0    Flag_Overflow ; prepare overflow flag
               ?s9=1                 ; doing subtract?
               goc     2$            ; yes
               ?a#c    s             ; same signs?
@@ -2111,8 +2113,11 @@ ADD_2:        rxq     findBufferGetXSaveL
               ?st=1   Flag_UpperHalf
               goc     29$           ; check against upper part
               c=c&a
-22$:          ?c#0
-              gonc    25$
+22$:          ?c#0                  ; carry?
+              gonc    25$           ; no
+              ?st=1   Flag_2        ; yes, signed mode?
+              goc     24$
+              st=1    Flag_Overflow ; unsigned, also set overflow
 24$:          st=1    Flag_CY
 25$:          rgo     putXDrop_rom2
 
