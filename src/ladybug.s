@@ -1070,7 +1070,7 @@ putXDrop:     c=b                   ; select upper part register
               c=0     x
               dadd=c                ; select chip 0
               c=data                ; get T
-              cnex                  ; save in A
+              cnex                  ; save in N
 
               c=regn  Z             ; drop stack, lower part
               regn=c  Y             ; Y = Z
