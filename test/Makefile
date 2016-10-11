@@ -7,13 +7,13 @@ MOD = lb-test.mod
 all: $(MOD)
 
 %.o: %.s
-	../../goabby/bin/asnut -g $<
+	asnut -g $<
 
 %.o: %.rpn
-	../../goabby/bin/rpncomp -L $<
+	rpncomp -L $<
 
 $(MOD): $(OBJS) Plugin4K.scm lb-test.moddesc
-	../../goabby/bin/lnnut -g $(OBJS) Plugin4K.scm lb-test.moddesc
+	lnnut -g $(OBJS) Plugin4K.scm lb-test.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)
