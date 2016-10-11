@@ -2636,8 +2636,6 @@ leftShift:    switchBank 2
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
               stk=c
-              c=regn  X             ; get X
-              a=c                   ; A= X
               c=0     m             ; prepare counter
               pt=     3
               c=g
@@ -2833,11 +2831,8 @@ rightShift:
               c=c+c   s
               c=c+c   s
               c=c+c   s             ; arithmetic shift (sign preserving)?
-              gonc    90$           ; no
+              gonc    1$            ; no
               rxq     setSignFlag_rom2
-
-90$:          c=regn  X             ; prepare for loop, load lower part
-              a=c
 
 ;;; Shift loop starts here
 
