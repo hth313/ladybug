@@ -2905,11 +2905,11 @@ rightShift:
               csr     x
               bcex    x
               pt=     3             ; counter for lower part
-62$:          c=c+c                 ; low part << 3
-              gonc    63$
-              acex    s
+62$:          acex    s
               c=c+c   s
               acex    s
+              c=c+c                 ; low part << 3
+              gonc    63$
               a=a+1   s
 63$:          decpt
               ?pt=    0
