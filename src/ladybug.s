@@ -1566,8 +1566,8 @@ signPositive: rxq     getSign_rom2  ; get the sign
 
               ?s6=1                 ; double divide?
               gonc    10$           ; no
-              ?c#0    xs            ; double divide, doing Y?
-              goc     20$           ; yes, need special treatment
+              ?b#0    xs            ; double divide, doing Y?
+              goc     20$           ; yes, need special treatment @@ not executed at all
 10$:          c=b
               c=-c    x             ; negate upper part
               acex
@@ -1576,8 +1576,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
               a=a-1   x             ; carry to upper part
 11$:          b=a
               a=c
-
-15$:          rxq     maskABx_rom2
+              rxq     maskABx_rom2
               c=0     s             ; C.S= negative flag
               c=c+1   s
 17$:          c=stk                 ; return to (P+2)
@@ -1619,11 +1618,16 @@ signPositive: rxq     getSign_rom2  ; get the sign
               gonc    24$
               c=c+1   x
 24$:          bcex    x
-              goto    15$
+              a=c
+              c=0     s             ; set sign
+              c=c+1   s
+              bcex    s
+              goto    52$
+
 
 ;;; Cases below when we do not need to negate. For stack registers
 ;;; other than X we need to mask them, and double divide also
-;;; requires swpping Y and Z
+;;; requires swapping Y and Z
 50$:          ?b#0    xs            ; no need to negate, doing Y?
               rtn nc                ; no, we are done, return to (P+1)
                                     ; yes, mask Y
@@ -1636,7 +1640,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
 ;;; Currently we have loaded Y, so we save Y in Z and mask
 ;;; Z and leave it loaded and let the caller save it in Y
 ;;; (believing it was Y).
-              c=regn  Z
+52$:          c=regn  Z
               acex                  ; A= Z
               regn=c  Z             ; save Y in Z
               c=n                   ; C= upper parts
