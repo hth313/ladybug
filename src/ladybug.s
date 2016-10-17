@@ -1508,10 +1508,35 @@ findBufferGetXSaveL0no11:
               rtn
 
               .section Code2
-;;; Get the signs of X and Y.
+;;; **********************************************************************
+;;;
+;;; getSignsMakePositive - Get the signs of X and Y, make them positive
+;;;    if desired.
+;;;
+;;; getSignsMakePositiveZ - Alternative entry, call with S6=1 to inform
+;;;    that we are doing DDIV and also wants to swap Y and Z.
+;;;
+;;; getSigns - Alternative entry, set S7=0 to get the signs without
+;;;    making the numbers positive.
+;;;
 ;;; S6 - Controls if the numbers should be made positive and masked as well.
 ;;;      This flag is the sign-flag, which will be updated by all callers
 ;;;      at the end, so we can borrow it here.
+;;;
+;;; In:  B[1:0]= upper part of X
+;;;
+;;; Out: B[1:0]= upper part of X
+;;;      A.S= sign of Y (Z)
+;;;      C.S= sign of X
+;;;
+;;; Note: Y and Z are swapped when doing DDIV to ensure that Y always
+;;;       contains the low part of the divisor (Z gets the upper part).
+;;;       This is done to simplify for the DIV routine which always
+;;;       have to lower bits in Y.
+;;;
+;;; **********************************************************************
+
+
 getSignsMakePositive:
               s6=0
 getSignsMakePositiveZ:              ; potential Z register operation (DDIV)
