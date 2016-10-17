@@ -90,11 +90,29 @@ SUB
 FC? 00
 SF 99
 
-;; X should be  FFFFFFFF FFFE7D48,  16C suggests 99000
-
-;;   T and Z should be #LIT 1234
-
 ;; Signed double divide, negative result
+#LIT 1234    ; marker to check that T remains
+#LIT 100000  ; low part
+NEG
+#LIT 0       ; high part
+NOT
+#LIT 1000
+DDIV
+FS? 00
+SF 99
+TST X
+FS? 00
+SF 99
+CLXI
+#LIT 100
+ADD
+FC? 00
+SF 99
+CLXI
+#LIT 1234
+SUB
+FC? 00
+SF 99
 
 
 END

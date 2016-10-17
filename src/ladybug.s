@@ -1722,9 +1722,10 @@ dropZN10:     c=b                   ; select upper part register
               cgex                  ; write T, get old Z
               ?s9=1
               goc     10$
-              c=n                   ; take new Z from N[1:0]
+              cnex                  ; take new Z from N[1:0]
               pt=     0
               g=c
+              cnex
 10$:          pt=     4
               c=g                   ; Y= Z
               data=c
@@ -5557,7 +5558,7 @@ divCommon:    rcr     2
 71$:          ?b#0    s             ; negative result?
               gonc    75$           ; no
               c=b     x             ; negate lower half
-              c=-c    x
+              c=-c-1  x
               acex
               c=-c
               goc     72$
