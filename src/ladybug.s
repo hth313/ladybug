@@ -5216,10 +5216,8 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               cgex
               goto    71$
 
-80$:          acex
-              regn=c  X             ; save upper half in X
-              switchBank 1
-              rxq     maskAndSave
+80$:          switchBank 1
+              rxq     maskAndSave10
               rxq     setXFlags
               c=regn  Y             ; set correct Z flag
               ?c#0
@@ -5502,12 +5500,14 @@ divCommon:    rcr     2
 
 62$:          c=n
               st=0    Flag_Overflow
+
+              rcr     3             ; load low part of quotient
+              bcex    x             ; B[2:0]= upper part of low half
+              c=regn  Y
+
               ?s6=1                 ; double operation?
               goc     70$           ; yes
 
-              rcr     3
-              bcex    x
-              c=regn  Y
 63$:          a=c
               ?st=1   Flag_2        ; signed mode?
               gonc    67$           ; no
@@ -5547,10 +5547,7 @@ divCommon:    rcr     2
 ;;;
 ;;;  S11 is known to be 0 and should end being set, we borrow
 ;;;     it to implement negation (when needed)
-70$:          rcr     3             ; load low part of quotient
-              bcex    x             ; B[2:0]= upper part of low half
-              c=regn  Y
-              a=c                   ; A= lower part of low half
+70$:          a=c                   ; A= lower part of low half
               rxq     maskABx_rom2
 
               ?st=1   Flag_2        ; signed mode?
