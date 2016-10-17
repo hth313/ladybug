@@ -10,7 +10,7 @@ all: $(MOD)
 	asnut -g $<
 
 %.o: %.rpn
-	rpncomp -L $<
+	rpncomp -l $<
 
 $(MOD): $(OBJS) Plugin4K.scm lb-test.moddesc
 	lnnut -g $(OBJS) Plugin4K.scm lb-test.moddesc
