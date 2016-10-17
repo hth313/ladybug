@@ -1055,27 +1055,7 @@ exitNoUserST_B10_rom2:
 putXnoFlags:  rxq     maskAndSave
               goto    exitUserST
 
-putXDrop:     c=b                   ; select upper part register
-              rcr     10
-              c=c+1   x
-              dadd=c
-              c=data                ; drop stack, upper part
-              pt=     8
-              g=c
-              pt= 6
-              cgex
-              pt= 4
-              c=g
-              data=c
-              c=0     x
-              dadd=c                ; select chip 0
-              c=data                ; get T
-              cnex                  ; save in N
-
-              c=regn  Z             ; drop stack, lower part
-              regn=c  Y             ; Y = Z
-              cnex                  ; get T
-              regn=c  Z             ; Z = T
+putXDrop:     rxq     drop
 
 putX:         rxq     maskAndSave
               rxq     setXFlags
@@ -1719,9 +1699,54 @@ bitMask10:    rcr     -3
               .section Code
 ;;; ----------------------------------------------------------------------
 ;;;
+;;; drop - drop stack, by copying T to Z and Z to Y
+;;;        Assume that Y should be lost and X is written elsewhere.
+;;; dropZN10 - alterntive entry where upper part of Z is held un N[1:0],
+;;;            call with S9=0
+;;;
+;;; In: B[12:10] - buffer header address
+;;;
+;;; Out: Chip 0 selected
+;;;
+;;; ----------------------------------------------------------------------
+
+drop:         s9=1
+dropZN10:     c=b                   ; select upper part register
+              rcr     10
+              c=c+1   x
+              dadd=c
+              c=data                ; drop stack, upper parts
+              pt=     8
+              g=c                   ; G=upper part of T
+              pt= 6
+              cgex                  ; write T, get old Z
+              ?s9=1
+              goc     10$
+              c=n                   ; take new Z from N[1:0]
+              pt=     0
+              g=c
+10$:          pt=     4
+              c=g                   ; Y= Z
+              data=c
+              c=0     x
+              dadd=c                ; select chip 0
+              c=data                ; get T
+              cnex                  ; save in N
+
+              c=regn  Z             ; drop stack, lower part
+              regn=c  Y             ; Y = Z
+              cnex                  ; get T
+              regn=c  Z             ; Z = T
+              rtn
+
+
+              .section Code
+;;; ----------------------------------------------------------------------
+;;;
 ;;; maskAndSave - finalize result in X by masking it, update zero/sign
 ;;;               flags depending on value in X, and finally save the
 ;;;               upper part to buffer
+;;; maskAndSave10 - alternative entry with X in A
 ;;;
 ;;; In: B[12:10] - buffer header address
 ;;;     X - lower part of X
@@ -1736,6 +1761,7 @@ bitMask10:    rcr     -3
 
 maskAndSave:  c=regn  X
               a=c
+maskAndSave10:
               rxq     maskABx_rom1
               acex
               regn=c  X
@@ -5492,13 +5518,15 @@ divCommon:    rcr     2
               gonc    64$           ; no
               st=1    Flag_Overflow ; yes, overflowed
 64$:          ?b#0    s             ; negative result?
-              gonc    65$           ; no
+              gonc    65$           ; no @@ conditional not taken
+              c=b                   ; yes, negate result
+              c=-c    x
               acex
-              c=-c                  ; yes, negate result
-              bcex    x
-              c=-c-1  x
-              bcex    x
-              acex
+              c=-c
+              gonc    68$           ; @@ fall through not covered
+              a=a-1   x
+68$:          b=a
+              a=c
 65$:          ?st=1   Flag_Overflow
               gonc    67$
               rxq     forceSign
@@ -5514,46 +5542,76 @@ divCommon:    rcr     2
               goto    63$
 
 ;;; Result after DDIV
+;;;  N[8:6]-Z= upper half, bit need no masking
+;;;  N[5:3]-Y= lower half, these bits need masking
+;;;
+;;;  S11 is known to be 0 and should end being set, we borrow
+;;;     it to implement negation (when needed)
 70$:          rcr     3             ; load low part of quotient
-              bcex    x
+              bcex    x             ; B[2:0]= upper part of low half
               c=regn  Y
-              ?st=1   Flag_2        ; signed mode?
-              gonc    71$           ; no
-              ?b#0    s             ; negative result?
-              gonc    71$           ; no
-              c=-c                  ; yes, negate result
-              bcex    x
-              c=-c-1  x
-              bcex    x
-71$:          a=c
+              a=c                   ; A= lower part of low half
               rxq     maskABx_rom2
-              c=regn  Z
+
+              ?st=1   Flag_2        ; signed mode?
+              goc     71$           ; yes
+              b=0     s             ; clear result sign
+              goto    75$
+71$:          ?b#0    s             ; negative result?
+              gonc    75$           ; no
+              c=b     x             ; negate lower half
+              c=-c    x
               acex
-              regn=c  Z             ; will be dropped to Y
-              c=b                   ; write upper part of Y to trailer
-              rcr     10
-              c=c+1   x
-              dadd=c
-              c=data
-              rcr     6
-              bcex    x
-              bcex    xs
-              rcr     -6
-              data=c
-              c=0     x             ; select chip 0
-              dadd=c
+              c=-c
+              goc     72$
+              a=a+1   x
+              gonc    73$
+72$:          s11=1                 ; just bit not the rest
+73$:          b=a     x
+              a=c
+              rxq     maskABx_rom2  ; mask again
+
+75$:          s7=1                  ; assume zero
+              ?b#0    x
+              goc     76$
+              ?a#0
+              gonc    77$
+76$:          s7=0                  ; non-zero
+77$:          c=regn  Z             ; load upper half
+              acex
+              regn=c  Z             ; lower half to Z (will be dropped to Y)
               c=n
-              rcr     6             ; load high part of quotient
-              ?st=1   Flag_2
-              gonc    72$
-              ?b#0    s
-              gonc    72$
+              rcr     6
+              bcex    x             ; B[2:0]= upper part, upper half
+              n=c                   ; N[2:0]= upper part, lower half
+
+              ?b#0    s             ; negate result?
+              gonc    80$           ; no
+              c=b     x             ; yes, propagate negation to upper half
               c=-c-1  x
               acex
               c=-c-1
-              acex
-72$:          bcex    x
-              goto    67$
+              ?s11=1
+              gonc    79$
+              c=c+1
+              gonc    79$
+              a=a+1   x
+79$:          s11=1
+              b=a     x
+              a=c
+80$:          ?a#0
+              goc     81$
+              ?b#0    x
+              gonc    82$
+81$:          s7=0                  ; non-zero
+
+;;; Drop the stack and save upper part of X.
+82$:          switchBank 1
+              rxq     maskAndSave10 ; save X
+              s9=0
+              rxq     dropZN10
+              rxq     setSignFlag
+              rgo     exitUserST
 
 
 ;;; ----------------------------------------------------------------------
