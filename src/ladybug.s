@@ -1601,7 +1601,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
               a=a-1   x             ; carry to upper part
 11$:          b=a
               a=c
-              rxq     maskABx_rom2
+15$:          rxq     maskABx_rom2
               c=0     s             ; C.S= negative flag
               c=c+1   s
 17$:          c=stk                 ; return to (P+2)
@@ -1613,12 +1613,12 @@ signPositive: rxq     getSign_rom2  ; get the sign
 ;;; We then load Z (lower bits), negate it and let the caller save
 ;;; it in Y as the DDIV routine wants them swapped.
 20$:          s3=1                  ; use c=-c
-              c=regn  Z
+              c=regn  Z             ; C= low part of lower half
               c=-c                  ; negate lower part in low half
               gonc    21$
               s3=0                  ; bit-not next
-21$:          regn=c  Z
-              c=n                   ; upper part in low half
+21$:          acex
+              cnex
               rcr     6
               pt=     1
               c=-c-1  wpt           ; bit-not
@@ -1627,28 +1627,23 @@ signPositive: rxq     getSign_rom2  ; get the sign
               c=c+1   wpt           ; yes
               goc     22$
               s3=0                  ; bit-not next
-22$:          rcr     -6
-              n=c
-
-              acex                  ; lower part in high half
+22$:          cnex                  ; lower part in high half
               c=-c-1
               ?s3=1
               gonc    23$
               c=c+1
               goc     23$
               s3=0
-23$:          bcex    x
-              c=-c-1  x
-              ?s3=1
-              gonc    24$
-              c=c+1   x
-24$:          bcex    x
-              a=c
-              c=0     s             ; set sign
-              c=c+1   s
-              bcex    s
-              goto    52$
-
+23$:          regn=c  Z             ; write out high part to Z
+              cnex                  ; C[1:0]= upper part of high half
+              bcex    wpt           ; C[1:0]= upper part of low half
+              c=-c-1  wpt           ; bit-not it
+              ?s3=1                 ; should be negated?
+              gonc    24$           ; no
+              c=c+1   wpt           ; yes
+24$:          rcr     -6            ; realign trailer register
+              cnex
+              goto    15$
 
 ;;; Cases below when we do not need to negate. For stack registers
 ;;; other than X we need to mask them, and double divide also
@@ -1665,7 +1660,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
 ;;; Currently we have loaded Y, so we save Y in Z and mask
 ;;; Z and leave it loaded and let the caller save it in Y
 ;;; (believing it was Y).
-52$:          c=regn  Z
+              c=regn  Z
               acex                  ; A= Z
               regn=c  Z             ; save Y in Z
               c=n                   ; C= upper parts
