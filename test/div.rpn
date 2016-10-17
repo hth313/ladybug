@@ -1,0 +1,100 @@
+;;; Test DIV, DDIV, RMD and DRMD
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TDIV"
+WSIZE 64
+SF 02
+#LIT 0xfc
+SL 56
+MASKL 4   ; F000..
+#LIT 4
+DIV
+SUB
+FC? 00
+SF 99
+
+;; Signed remainder
+CF 03     ; RMD does not affect carry
+CF 04     ; RMD does not affect overflow
+MASKL 12
+MASKL 4
+ENTERI
+SR 08
+RMD
+FS? 00
+SF 99
+FC? 01
+SF 99
+FS? 03
+SF 99
+FS? 04
+SF 99
+SUB     ; subtract to get 0
+FC? 00
+SF 99
+FS? 01
+SF 99
+
+;; unsigned remainder
+CF 02
+#LIT 14
+#LIT 2
+NEG
+#LIT 56
+CF 03     ; RMD does not affect carry
+CF 04     ; RMD does not affect overflow
+RMD
+FS? 00
+SF 99
+FS? 01
+SF 99
+FS? 03
+SF 99
+FS? 04
+SF 99
+SUB
+FC? 00
+SF 99
+FS? 01
+SF 99
+
+
+;; Signed double divide, negative operands in, result is positive
+SF 02
+#LIT 1234    ; marker to check that T remains
+#LIT 100000  ; low part
+NEG
+#LIT 0       ; high part
+NOT
+#LIT 1000
+NEG
+DDIV
+FS? 00
+SF 99       ; upper part is 0, but whole result is non-zero
+TST X
+FC? 00
+SF 99
+CLXI
+#LIT 100
+SUB
+FC? 00
+SF 99
+CLXI
+#LIT 1234
+SUB
+FC? 00
+SF 99
+
+;; X should be  FFFFFFFF FFFE7D48,  16C suggests 99000
+
+;;   T and Z should be #LIT 1234
+
+;; Signed double divide, negative result
+
+
+END

@@ -1,6 +1,11 @@
 ;;; General test runner
 
 LBL "LBTEST"
+
+"DIV"
+AVIEW
+XEQ "TDIV"
+
 "ADDSUB"
 AVIEW
 XEQ "ADDSUB"
@@ -12,10 +17,6 @@ XEQ "MASK"
 "MUL"
 AVIEW
 XEQ "TMUL"
-
-"DIV"
-AVIEW
-XEQ "TDIV"
 
 "ABSNEG"
 AVIEW
