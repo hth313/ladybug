@@ -5297,6 +5297,7 @@ divCommon:    rcr     2
               acex    x             ; hi(Y)
               rcr     -3
               acex    s             ; get sign
+              c=0     x             ; clear upper part of remainder
               n=c
 
               c=b
