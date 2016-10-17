@@ -2957,7 +2957,7 @@ rightShift:
               .section Code
 ;;; **********************************************************************
 ;;;
-;;; DisplayX - Display the X register
+;;; displayX - Display the X register
 ;;;
 ;;; In: As after chkbuf, we know the integer buffer exists.
 ;;;     A[2:0] buffer header address (CarryToM will move it to B[12:10])
@@ -5284,17 +5284,17 @@ divCommon:    rcr     2
               c=n
               rcr     4
               a=c     x
-              a=0     xs            ; A[2:0]= Y (lo part)
+              a=0     xs            ; A[2:0]= Y (low half)
               ?s6=1                 ; double operation?
-              gonc    8$            ; no
-              rcr     2             ; C[2:0]= Z (hi part)
+              gonc    8$            ; no @@ fall through not covered
+              rcr     2             ; C[2:0]= Z (high half)
               c=0     xs
-              rcr     3
+              rcr     3             ; C[13:11]= Z (high half)
               goto    9$
 8$:           c=0
-9$:           c=b     x             ; C[2:0]= X (hi part)
+9$:           c=b     x             ; C[2:0]= X (upper part)
               rcr     -6
-              acex    x             ; hi(Y)
+              acex    x             ; upper part of Y
               rcr     -3
               acex    s             ; get sign
               c=0     x             ; clear upper part of remainder
@@ -5459,6 +5459,7 @@ divCommon:    rcr     2
               c=c-1   x             ; decrement loop counter
               gonc    2000$
 
+;;; Done with shift loop
               c=n
               bcex    s             ; B.S= final sign
 
