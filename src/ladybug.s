@@ -2022,6 +2022,9 @@ setFlagsABx:  rxq     maskABx_rom2
 
               .name   "XOR"
 XOR:          rxq     findBufferGetXSaveL
+              c=b                   ; save buf ptr on stack
+              rcr     6
+              stk=c
               c=regn  Y             ; XOR lower part of X with Y
               b=c
               c=c|a
@@ -2033,18 +2036,19 @@ XOR:          rxq     findBufferGetXSaveL
               regn=c  X
 
               c=n                   ;  do upper part
-              rcr     4
-              a=c     x
               rcr     2
-              b=c     x
+              a=c     x
+              rcr     2 + 6
+              c=stk
+              rcr     -6
+              b=c
               c=c|a
               bcex    x
               c=c&a
               c=-c-1  x
 aoxfix_0:     abex    x             ; A[1:0] - upper part of X
               c=c&a
-aoxfix:       bcex    x
-              b=0     xs            ; B[2:0] - upper result
+aoxfix:       bcex    x             ; B[1:0] - upper result
 aoxfix_2:     rgo     putXDrop
 
 
