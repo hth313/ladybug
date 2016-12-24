@@ -4999,7 +4999,7 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
               c=0     xs
               ?c#0    x
               gonc    33$
-              gsubc   `mul8x56`
+              rxq     `mul8x56`
 
               ;; mul 8x8
 33$:          acex
