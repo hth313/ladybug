@@ -6,8 +6,6 @@
 .postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
-.local FOO
-
 LBL "TMUL"
 WSIZE 64
 MASKL 4   ; F000..
@@ -24,4 +22,43 @@ SUB
 FC? 00
 SF 99
 
+CF 02  ; unsigned, multiply 2 by 1,2,4...
+#LIT 1
+STI 00    ; 1,2,4,8,...
+STI 01    ; 1,2,3,...
+
+LBL 01
+LDI 00
+#LIT 2
+MUL
+#LIT 1
+SL IND 01
+SUB
+FC? 00
+SF 99
+LDI 00
+SL 01
+FS? 03   ; got carry?
+GTO 09   ; yes
+STI 00
+INCI 01
+GTO 01
+
+LBL 09
+
+MASKL 7
+ENTERI
+DMUL
+FS? 00
+SF 99
+#LIT 0xfc04
+SL 48
+SUB
+FC? 00
+SF 99
+ADD
+FS? 03
+SF 99
+FC? 00
+SF 99
 END
