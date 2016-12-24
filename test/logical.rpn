@@ -1,0 +1,59 @@
+;;; Logical operations tests
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TLOG"
+WSIZE 64
+MASKL 40
+MASKR 40
+AND
+FS? 01   ; should be positive
+SF 99
+FS? 00
+SF 99
+MASKR  16
+SL 24
+SUB
+FC? 00
+SF 99
+
+
+MASKL 20
+MASKR 20
+OR
+FC? 01   ; should be negative
+SF 99
+FS? 00
+SF 99
+NOT
+MASKR 24
+SL 20
+SUB
+FC? 00
+SF 99
+
+
+MASKL 40
+MASKR 40
+XOR
+FC? 01   ; should be negative
+SF 99
+FS? 00
+SF 99
+
+#LIT 0        ; perform XOR using formula
+NOT
+MASKL 40
+MASKR 40
+AND
+NOT
+AND
+CMP Y        ; compare with previous XOR calculation
+FC? 00
+SF 99
+
+END
