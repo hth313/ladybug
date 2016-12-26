@@ -1,6 +1,6 @@
 
 RPNS = top.rpn incdec.rpn absneg.rpn div.rpn mul.rpn addsub.rpn mask.rpn \
-       logical.rpn bit.rpn
+       logical.rpn bit.rpn shift.rpn
 SRCS = lb-test.s
 OBJS = $(RPNS:%.rpn=%.o) $(SRCS:%.s=%.o)
 MOD = lb-test.mod

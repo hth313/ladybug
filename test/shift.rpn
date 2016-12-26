@@ -1,0 +1,171 @@
+;;; Bit set, clear and test tests
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix RR, RL, RRC, RLC, ASR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TSHIFT"
+CF 02
+
+WSIZE 64    ;  full size
+
+MASKR 23
+SL 35
+MASKL 23
+SR 6
+SUB
+FC? 00
+SF 99
+
+MASKL 7
+ASR 12
+FC? 01
+SF 99
+NEG
+#LIT 2
+SL 44
+SUB
+FC? 00
+SF 99
+
+MASKL 5
+SR 01
+ASR 03
+FS? 01
+SF 99
+#LIT 0xf8
+SL 52
+SUB
+FC? 00
+SF 99
+
+XEQ 04
+
+WSIZE 56      ; register size
+MASKR 17
+SL 40
+MASKL 16
+SUB
+FC? 00
+SF 99
+
+MASKL 7
+ASR 14
+#LIT 0xfffff800000000
+SUB
+FC? 00
+SF 99
+
+XEQ 04
+
+WSIZE 32       ; smaller size
+MASKR 2
+SL 10
+MASKL 2
+SR 20
+SUB
+FC? 00
+SF 99
+
+MASKL 7
+ASR 3
+#LIT 0xffc00000
+SUB
+FC? 00
+SF 99
+
+LBL 04
+XEQ 05
+XEQ 06
+XEQ 07
+RTN
+
+LBL 05        ; RL / RR
+MASKL 18
+RL 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 12
+MASKR 6
+OR
+SUB
+FC? 00
+SF 99
+
+MASKR 18
+RR 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 6
+MASKR 12
+OR
+SUB
+FC? 00
+SF 99
+RTN
+
+LBL 06        ; RLC
+SF 03
+MASKL 18
+RLC 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 12
+MASKR 6
+OR
+SUB    ; clears carry
+FC? 00
+SF 99
+
+MASKL 18
+RLC 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 12
+MASKR 5
+OR
+SUB
+FC? 00
+SF 99
+RTN
+
+LBL 07          ; RRC
+SF 03
+MASKR 18
+RRC 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 6
+MASKR 12
+OR
+SUB    ; clears carry
+FC? 00
+SF 99
+
+MASKR 18
+RRC 6
+FC? 03
+SF 99
+FC? 01
+SF 99
+MASKL 5
+MASKR 12
+OR
+SUB
+FC? 00
+SF 99
+
+END
