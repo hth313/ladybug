@@ -1,0 +1,79 @@
+;;; Bit set, clear and test tests
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TBIT"
+WSIZE 16
+#LIT 64
+STI M
+XEQ 00
+#LIT 57
+STI M
+XEQ 00
+DECI M
+
+LBL 00
+RCL M
+STO N
+
+#LIT 0      ; push a zero, we accumulate bits here
+GTO 09
+LBL 01
+WSIZE IND M
+B? IND N    ; bit should not be set yet
+SF 99
+#LIT 0
+SB IND N    ; set a bit
+FS? 00
+SF 99
+#LIT 1
+SL IND N    ; set same bit using shift
+LDI Y
+SUB
+FC? 00      ; should be zero
+SF 99
+RDNI        ; drop
+OR          ; combine bits
+B? IND N    ; now bit is set
+GTO 10
+SF 99       ; was not set
+LBL 10
+ENTERI      ; dup
+CB IND N    ; clear bit again
+LDI Z       ; get previous accumulator back
+SUB         ; subtract to get 0
+FC? 00
+SF 99
+
+; number of bits set in two ways
+LDI M
+LDI N
+SUB
+BITSUM T
+SUB
+FC? 00      ; same?
+SF 99       ; no
+
+R^I         ; yes, restore sum to X
+
+LBL 09
+WSIZE 16
+DSZI N
+GTO 01
+WSIZE IND M
+SB 00      ; set lowest bit too
+FC? 01
+SF 99      ; should be negative
+INCI X      ; add 1 to make 0
+FC? 00
+SF 99
+
+WSIZE 16
+; DSZI M
+; GTO 00
+
+END
