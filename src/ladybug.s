@@ -2888,6 +2888,8 @@ rightShift:
               c=c+c   s             ; arithmetic shift (sign preserving)?
               gonc    1$            ; no
               rxq     setSignFlag_rom2
+              c=regn  X             ; restore A= lower part of X
+              a=c
 
 ;;; Shift loop starts here
 
