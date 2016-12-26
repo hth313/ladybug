@@ -2659,7 +2659,7 @@ RLC:          nop                   ; Prelude for prompting function
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
-              lc      Bit_ThroughCarry | Bit_Rotate
+              lc      Bit_ThroughCarry
               goto    leftShift
 
 ;;; ----------------------------------------
@@ -2846,7 +2846,7 @@ RRC:          nop                   ; Prelude for prompting function
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
-              lc      Bit_ThroughCarry | Bit_Rotate
+              lc      Bit_ThroughCarry
               goto    rightShift
 
 ;;; ----------------------------------------
@@ -2911,10 +2911,10 @@ rightShift:
               c=c+1   x
               goto    72$
 
-4$:           isRotate
-              gonc    66$           ; no rotate, so no carry in
-              isThroughCarry
+4$:           isThroughCarry
               goc     67$           ; through carry
+              isRotate
+              gonc    66$           ; no rotate, so no carry in
               ?c#0    x             ; inspect lowest bit (which will wrap in at the top)
               goc     69$           ; carry enters
               goto    66$
