@@ -1,0 +1,83 @@
+; Sign extend test
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix RR, RL, RRC, RLC, ASR, SEX  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TSEX"
+WSIZE 16   ; set a small word size
+MASKL 1    ; load -32768
+SF 02      ; signed mode
+ENTERI     ; copy up to Z (we will soon lift to T)
+ENTERI
+CF 01      ; reset sign flag
+WSIZE 32   ; sign extend
+FS? 01     ; implicit sign extend should not set sign flag
+SF 99
+XEQ 00
+ADD        ; drop stack keeping T
+WSIZE 56
+XEQ 00
+ADD
+WSIZE 64
+
+WSIZE 16
+#LIT 12   ; small positive
+WSIZE 64  ; implicit extend
+#LIT 12
+SUB
+FC? 00
+SF 99
+
+CF 02     ; unsigned
+WSIZE 16
+MASKL 1
+ENTERI
+ENTERI
+WSIZE 32
+XEQ 01
+ADD
+WSIZE 56
+XEQ 01
+ADD
+WSIZE 64
+XEQ 01
+
+   ; Test the SEX instruction
+#LIT 0x100
+ENTERI
+SEX 8
+FS? 01
+SF 99
+CMP Y
+FC? 00
+SF 99
+SEX 9
+FC? 01
+SF 99
+FS? 00
+SF 99
+MASKR 8
+NOT
+SUB
+FC? 00
+SF 99
+
+RTN
+
+LBL 01
+#LIT 32768
+GTO 02
+
+LBL 00
+#LIT 32768
+NEG
+LBL 02
+SUB
+FC? 00
+SF 99
+
+END

@@ -52,13 +52,10 @@ In word size 8, numbers range from 0-255 (decimal).
 Word size
 ---------
 
-You can specify word sizes from 1 to 64 bits using the ``WSIZE`` instruction. This controls the limit of numbers in the same way as is done on computers. You will often find that computers use 64, 32, 16 or even 8 bit values. If you are very familiar with the internals of the HP-41, you have encountered many other word sizes as well.
+You can specify word sizes from 1 to 64 bits using the ``WSIZE`` instruction. This controls the limit of numbers in the same way as is done on computers. You will often find that computers use 64, 32, 16 or even 8 bit values. If you are very familiar with the internals of the HP-41, you may have encountered other word sizes as well.
 
 .. note::
-   In most cases when you change the word size, bit patterns on the stack are not changed. The new word size affects displayed numbers. Numbers being used as input to calculations are truncated as needed. As long as you do not do anything with a number (apart from having it displayed), its bit pattern is preserved.
-
-.. note::
-   The exception to this rule is when you increase the word size in signed mode. In such case all values on the stack are sign extended, preserving the numerical values.
+   In most situations bit pattern of values on the stack are not changed by just being there. Values are adjusted as integer operations are applied on them.  This allows for floating point numbers and alpha data to be kept on the stack. The exception to this rule is that when you increase the word size, all values on the stack are affected by either a sign or zero extension depending on the sign mode. This is done to preserve the numerical meaning of integer values.
 
 
 .. index:: windows, display windows
@@ -68,4 +65,4 @@ Windows
 
 Depending on the number base and word size, the display may not be able to display the full number. In such cases the base letter will have a dot next to it indicating that there are more digits outside what is shown. To display such numbers you can use the window feature which is available on the dot key.
 
-Pressing window (dot) gives a prompt for the window. The permitted range is 0-7, with 0 being the least significant part which is what is shown by default. Simply press the desired window number to show the other parts of the number. The dots beside the base character gives feedback to whether there are more digits to the left and to the right of what is currently shown.
+Pressing window (dot) gives a prompt for the window. The permitted range is 0-7, with 0 being the least significant part, which is what is shown by default. Simply press the desired window number to show the other parts of the number. The dots beside the base character gives feedback to whether there are more digits to the left and to the right of what is currently shown.

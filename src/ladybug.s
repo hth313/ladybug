@@ -4006,15 +4006,14 @@ WSIZE:        nop
               pt=     2
               cgex                  ; insert new word size, get old
               data=c                ; write back
-              ?st=1   Flag_2        ; signed mode?
-              gonc    9000$         ; no
               c=0
+              dadd=c
               pt=     0
               c=g                   ; C.X= old buffer size
               acex
               ?a<c    x             ; setting a larger word size?
-9000$:        gonc    900$          ; no
-                                    ; yes, sign extend the stack
+              gonc    900$          ; no
+                                    ; yes, extending the stack
               a=a-1   x             ; A.X= bit number for previous sign
               rxq     bitMask_rom2
               b=a     s             ; B.S= active part flag
@@ -4040,38 +4039,38 @@ WSIZE:        nop
               goc     15$           ; yes
               c=data                ; no, read lower part
               a=c
+              ?st=1   Flag_2        ; unsigned mode?
+              gonc    16$           ; yes, just mask
               c=n
               c=c&a
               ?c#0                  ; positive?
-              gonc    20$           ; yes
+              gonc    16$           ; yes
               c=n                   ; no, sign extend
               c=c-1
               c=-c-1
               nop
               c=c|a
-              ?st=1   Flag_UpperHalf
+              data=c
+              a=0                   ; A= FF
+              a=a-1
               goc     11$
-              a=c                   ; new word size only in lower part
-              c=m
-              c=c-1
+16$:          c=n                   ; unsigned or positive, clear bits outside
+              c=c+c                 ; set first bit outside
+              c=c-1                 ; make it a mask
               nop
               c=c&a
-11$:          data=c                ; write back lower part
-              c=m                   ; update trailer
-              c=c-1   x
-              ?st=1   Flag_UpperHalf
-              goc     12$
-              c=0     x
-12$:          a=c     x             ; write to upper part
-              c=regn  Q
+              data=c
+              a=0                   ; A= 00
+11$:          c=regn  Q             ; write A[1:0]to upper part
               acex    x
-              acex    xs
               goto    22$
 
 900$:         goto    90$           ; relay
 
 15$:          c=regn  Q             ; sign is in upper part
-              a=c     x
+              a=c
+              ?st=1   Flag_2        ; unsigned mode?
+              gonc    20$           ; yes, zero extend
               c=n
               c=c&a
               ?c#0                  ; positive?
@@ -4081,19 +4080,17 @@ WSIZE:        nop
               c=-c-1  x
               .suppress
               c=c|a
-              acex    x
-              acex    xs
-              c=m                   ; mask it
-              c=c-1   x
+              goto    21$
+
+20$:          c=n                   ; zero extend
+              c=c+c   x             ; first bit outside
+              c=c-1   x             ; make it a mask
               .suppress
               c=c&a
-              acex    xs
-              acex    m
+21$:          acex    m
               acex    s
-              goto    22$
-
-20$:          c=regn  Q             ; update trailer for next position
-22$:          rcr     2
+22$:          acex    xs
+              rcr     2
               regn=c  Q
               bcex    x
               goto    10$

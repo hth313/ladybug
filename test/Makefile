@@ -1,6 +1,6 @@
 
 RPNS = top.rpn incdec.rpn absneg.rpn div.rpn mul.rpn addsub.rpn mask.rpn \
-       logical.rpn bit.rpn shift.rpn
+       logical.rpn bit.rpn shift.rpn sex.rpn
 SRCS = lb-test.s
 OBJS = $(RPNS:%.rpn=%.o) $(SRCS:%.s=%.o)
 MOD = lb-test.mod
@@ -14,7 +14,7 @@ all: $(MOD)
 	rpncomp -l $<
 
 $(MOD): $(OBJS) Plugin4K.scm lb-test.moddesc
-	lnnut -g $(OBJS) Plugin4K.scm lb-test.moddesc
+	lnnut -llinker.lst -g $(OBJS) Plugin4K.scm lb-test.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)

@@ -41,13 +41,13 @@ As a result, the mode separation is not as strict and stack register values are 
 Word size change affecting stack
 ================================
 
-The HP-16C truncates values on the stack according to the active word size. Changing a word size to a smaller one and then back will not preserve all value bits. Ladybug preserves value bits on the stack.
+The HP-16C truncates values on the stack according to the active word size. Changing a word size to a smaller one and then back will not preserve all value bits. Ladybug only affect value bits on the stack when going to a *larger* word size. Reducing to a smaller word size will not affect value bits on the stack.
 
-Increasing the word size in signed mode will cause a sign extension of all registers on the stack with Ladybug. The HP-16C does not perform sign extensions.
+Increasing the word size will affect all registers on the stack with Ladybug. In signed mode, values are sign extended and in unsigned mode, values are zero extended. This is done to preserve numerical values.
 
-Sign extending the stack is the only time when Ladybug goes around and alter all the values on the stack. This is because sign extending tends to be a natural thing to do, as it preserves the numeric value.
+It is possible to keep 56-bit floating point values on the stack, allowing sharing between integer and floating point values provides that the word size is not increased. This allows for mixing floating point operations with integer mode, provided a little bit of care is exercised.
 
-The reason that it is not always done, is that the HP-41 at any time can perform floating point operations, and keeping the stack properly masked would be a quite elaborate task that would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode.
+The reason for this, is that the HP-41 at any time can perform floating point operations. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode.
 
 In Ladybug, numbers are masked as needed when they are used as input to operations, not because they are laying around somewhere.
 

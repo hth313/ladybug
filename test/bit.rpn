@@ -7,7 +7,7 @@
 .postfix #LIT (semi-merged-integer-literal)
 
 LBL "TBIT"
-WSIZE 16
+WSIZE 56
 #LIT 64
 STI M
 XEQ 00
@@ -36,7 +36,7 @@ LDI Y
 SUB
 FC? 00      ; should be zero
 SF 99
-RDNI        ; drop
+ADD         ; drop
 OR          ; combine bits
 B? IND N    ; now bit is set
 GTO 10
@@ -61,7 +61,7 @@ SF 99       ; no
 R^I         ; yes, restore sum to X
 
 LBL 09
-WSIZE 16
+WSIZE 64
 DSZI N
 GTO 01
 WSIZE IND M
@@ -71,9 +71,5 @@ SF 99      ; should be negative
 INCI X      ; add 1 to make 0
 FC? 00
 SF 99
-
-WSIZE 16
-; DSZI M
-; GTO 00
 
 END

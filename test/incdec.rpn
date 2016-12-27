@@ -66,14 +66,8 @@ SF 99
 
 
 ; DSZI to fill nibble memory
-; Push what we expect in end, pushed on stack.
-; This value on stack should survive on stack
-; even when we lower to nibble size word size
-; as we do not touch it.
-WSIZE 64
-#LIT 0xfedcba9876543210
-#LIT 0
 WSIZE 4
+#LIT 0
 LBL 01
 STI IND X
 DSZI X
@@ -81,13 +75,12 @@ GTO 01
 
 ; Now we should have FE...10 in low nibble memory
 WSIZE 64
-LDI IND X  ; X should be 0
-CMP Z
+#LIT 0xfedcba9876543210
+LDI IND Y  ; Y should be 0
+CMP Y
 FC? 00  ; should be equal and set zero flag
 SF 99
-X<>YI  ;  Subtract them for real as well
-RDNI
-SUB
+SUB     ;  Subtract them for real as well
 FC? 00  ; should be 0 and set zero flag
 SF 99
 
