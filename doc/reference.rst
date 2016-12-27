@@ -431,6 +431,11 @@ DECI _ _
 
 Subtract one from the register specified in the argument, update sign and zero flags according to the new value.
 
+DSZI _ _
+^^^^^^^^^
+
+Subtract one from the register specified in the argument, skip next instruction if the result is zero. This is useful for implementing loops counting down.
+
 
 INCI _ _
 ^^^^^^^^
