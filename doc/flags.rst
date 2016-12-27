@@ -54,7 +54,7 @@ The zero flag is represented by flag 0 and is set when the last operation result
 
 The sign flag is the most significant bit of the result. In signed mode this is the actual sign of the result. For decimal numbers, such numbers are displayed with a leading minus sign.
 
-Flag 1 is used for sign, because it is a bit just copied from the result and it signals negative sign when this bit is 1.
+Flag 1 is used for sign, because it is a bit just copied from the result and it signals negative result when this bit is 1.
 
 .. note::
-   The zero flag is set to indicate that the representable part of the result is zero. If you add two numbers so that they produce a carry out, but the lower parts consists of only 0 bits, the zero flag is set. Mathematically, the result is not zero, but this is how micro processors work, numbers wrap. You also have the carry flag and the overflag to inspect in order to interpret a result properly.
+   The zero flag is set to indicate that the representable part of the result is zero. If you add two numbers so that they produce a carry out, but the lower parts consists of only 0 bits, the zero flag is set. Mathematically, the result is not zero, but this is how micro processors work, numbers wrap. You also have the carry flag and the overflag to inspect in order to interpret a result.

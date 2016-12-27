@@ -2,7 +2,7 @@
 Introduction
 ************
 
-Welcome to the Ladybug for the HP-41 calculator! Ladybug is a powerful tool, useful when you are debugging and working on low level matters related to computers.
+Welcome to the Ladybug for the HP-41 calculator! Ladybug is a powerful tool, useful when you are debugging and working with low level matters related to computers.
 
 It provides a new mode for you HP-41 calculator to allow it to work as a customizable integer binary calculator, use different number bases, perform bitwise and logical operations in a given word size. Such operations you typically will encounter when working with computers at the lowest level.
 
@@ -60,7 +60,7 @@ As always, learning by doing tends to work best. Put fresh batteries into your H
 Integer mode
 ============
 
-Providing the HP-41 with an integer mode similar to the way it works on the HP-16C was the main design goal of this module. This means that it provides a true integer mode, both the keyboard and the display change behavior when you enter integer mode. Instead of showing floating point numbers, you will see binary integers in the number base and word size chosen.
+Providing the HP-41 with an integer mode similar to the way it works on the HP-16C was the main design goal of this module. It provides a true integer mode, where both the keyboard and the display change behavior when you enter integer mode. Instead of showing floating point numbers, you will see binary integers in the number base and word size chosen.
 
 In integer mode, your HP-41 behaves the same way as you are used to, except that the default behavior of many keys no longer perform their floating point related operations, instead they will perform integer operations. This transformation takes place both inside, as well as outside user mode. As usual, you can make key assignments in user mode to override the default behavior.
 

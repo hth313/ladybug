@@ -26,7 +26,7 @@ A printer, especially in trace mode, does not work well with integer mode.
 Pause
 =====
 
-If the built in ``PSE`` (pause) instruction is used, the calculator switch to floating point mode while it is executing. To get a pause that works in integer mode, use the supplied ``PSEI`` instruction. It has one limitation compared to the original ``PSE`` instruction. If you key in something that causes an error, execution will resume after the pause expires, instead of stopping the program.
+If the built in ``PSE`` (pause) instruction is used, the calculator switches to floating point mode while it is executing. To get a pause that works in integer mode, use the supplied ``PSEI`` instruction. It has one limitation compared to the original ``PSE`` instruction. If you key in something that causes an error, execution will resume after the pause expires, instead of stopping the program.
 
 
 .. index:: auto assigned keys, keys; auto assigned

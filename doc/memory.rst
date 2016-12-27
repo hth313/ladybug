@@ -5,9 +5,7 @@ Memory and storage
 
 Instructions that manipulate memory work in many ways similar to its floating point counterparts, with a few key differences.
 
-Accessing memory locations on the HP-41 breaks down to two categories. Numbered data storage registers and stack registers.
-
-Using synthetic programming, there is actually a third category, status registers which allows access to the internal state of the HP-41.
+Accessing memory locations on the HP-41 breaks down to two categories. Numbered data storage registers and stack registers. Using synthetic programming, there is actually a third category, status registers, which allows access to the internal state of the HP-41.
 
 In addition to this, you can also perform indirection on any of these locations to refer to a numbered storage register.
 
@@ -29,7 +27,7 @@ With word size 32, nibble register 0 is inside floating point register 0, nibble
 
 Changing the word size effectively changes the boundaries used in the storage register area, but will not alter the contents of the memory in any way. It just changes the interpretation of the data memory area.
 
-Mixing floating point registers operations and nibble register operations in the same program is possible, but will require some planning.
+Mixing floating point registers operations and nibble register operations in the same program is possible, but will require some care.
 
 
 .. index:: stack registers, registers; stack
@@ -45,7 +43,7 @@ Accessing stack registers in integer mode takes the extension part of the stack 
 Status registers
 ================
 
-These are only available using synthetic programming and are treated as fixed 56-bit storage registers. Using them with integer mode makes most sense with word size 56, but they can be accessed in any word size. For larger word sizes, values are truncated to 56 bits. For smaller word sizes, values are truncated to the selected word size.
+These are only available using synthetic programming and are treated as fixed 56-bit storage registers. Using them with integer mode makes most sense in word size 56, but they can be accessed in any word size. For larger word sizes, values are truncated to 56 bits. For smaller word sizes, values are truncated to the selected word size.
 
 
 .. index:: register indirection, indirection; register
@@ -62,3 +60,4 @@ Memory manipulation
 ===================
 
 In addition to ``LDI`` and ``STI`` to load and store integers, the ``DECI`` and ``INCI`` operations make it easy to add or subtract one to a register. As these operations also set zero and sign flags, it is simple to implement loops based on an integer counter.
+Loops may also be implemented using the ``DSZI`` which does both decrement and skip next instruction on zero.

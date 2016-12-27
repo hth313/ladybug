@@ -15,9 +15,9 @@ Executing a prompting instruction will cause it to ask for its argument. Outside
 Postfix operands
 ================
 
-The postfix operand is a byte that cannot be safely stored directly in the program memory. The reason is that it can be any byte, even the first byte of a multi-byte instruction which would consume innocent bytes following it, potentially making a total mess of program memory.
+The postfix operand is a byte that cannot be safely stored directly in the program memory. The reason is that it can be any byte, even the first byte of a multi-byte instruction which would consume innocent bytes following it, potentially making a total mess of the program memory.
 
-The solution used here is to wrap the operand byte in a wrapper that makes it safe. The wrapper used here the same as is used for alpha literals. Thus, an instruction such as ``SL`` (shift left) consists of two visible instructions in program memory:
+The solution used here is to wrap the operand byte in a wrapper that makes it safe. The wrapper used is the alpha literal wrapper. Thus, an instruction such as ``SL`` (shift left) consists of two visible instructions in program memory:
 
 .. code-block:: ca65
 
@@ -58,14 +58,14 @@ If the postfix operand is missing, the instruction reverts to a default behavior
    11 SL 01
    12 ...        ; not a single letter text literal
 
-Such instruction costs two bytes (the XROM itself without any postfix operand). It executes as a single shift as shown. As it is a single instruction, it works well following a test instruction.
+Such instruction costs two bytes (the XROM itself without any postfix operand). It executes as a single shift as shown. As it is a single instruction, it also works well following a test instruction.
 
 If you enter the ``SL 01`` instruction, it takes advantage of the default and does not store a postfix byte in program memory.
 
 If you delete the postfix operand from program memory, the instruction that used it will change to its default behavior, which can be seen when the instruction is shown.
 
 .. note::
-   Some care is needed when using default behavior with prompting instructions. It will still look for its argument and if you have a single character alpha constant that you intended to be an alpha constant, then it will become part of the previous instruction. In most cases you can avoid this by rearranging instructions.
+   Some care is needed when using default behavior with prompting instructions. It will still look for its argument and if you have a single character alpha constant that you intended to be an alpha constant, then it will become part of the previous instruction. This should seldom happen, but if it does, the easiest way to deal with it is probably by rearranging instructions.
 
 
 .. index:: single stepping
