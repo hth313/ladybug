@@ -309,7 +309,7 @@ Literal:      ?s13=1                ; running?
               rxq     fetchLiteral
               regn=c  X
               gosub   PUTPCA        ; we already have chip 0 selected
-              rgo     putX
+              rgo     putXnoFlags
 
 
 ;;; **********************************************************************
