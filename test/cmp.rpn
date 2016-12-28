@@ -1,0 +1,180 @@
+;;; Compares
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TCMP"
+WSIZE 64
+XEQ 10
+WSIZE 57
+XEQ 10
+WSIZE 56
+XEQ 10
+WSIZE 16
+
+LBL 10
+
+CF 02          ; unsigned compare
+XEQ 11
+
+XEQ 03
+CMP Y
+GE?
+SF 99
+GT?
+SF 99
+LT?
+GTO 09
+SF 99
+LBL 09
+LE?
+GTO 09
+SF 99
+LBL 09
+
+XEQ 02
+CMP Y
+GE?
+GTO 09
+SF 99
+LBL 09
+GT?
+GTO 09
+SF 99
+LBL 09
+LT?
+SF 99
+LE?
+SF 99
+
+XEQ 04
+CMP Y
+GE?
+SF 99
+GT?
+SF 99
+LT?
+GTO 09
+SF 99
+LBL 09
+LE?
+GTO 09
+SF 99
+LBL 09
+
+SF 02    ; signed compare
+XEQ 11
+
+XEQ 03
+CMP Y
+GE?
+SF 99
+GT?
+SF 99
+LT?
+GTO 09
+SF 99
+LBL 09
+LE?
+GTO 09
+SF 99
+LBL 09
+
+XEQ 02
+CMP Y
+GE?
+SF 99
+GT?
+SF 99
+LT?
+GTO 09
+SF 99
+LBL 09
+LE?
+GTO 09
+SF 99
+LBL 09
+
+XEQ 04
+CMP Y
+GE?
+GTO 09
+SF 99
+LBL 09
+GT?
+GTO 09
+SF 99
+LBL 09
+LT?
+SF 99
+LE?
+SF 99
+
+
+RTN
+
+
+LBL 01          ; 4 5
+#LIT  4
+#LIT  5
+RTN
+
+LBL 03         ; -4 -5
+XEQ 01
+X<>YI
+NEG
+X<>YI
+NEG
+RTN
+
+LBL 02          ; 4 -5
+XEQ 01
+NEG
+RTN
+
+LBL 04          ; -4 5
+XEQ 01
+X<>YI
+NEG
+X<>YI
+RTN
+
+; Positive numbers behave same in both signed and unsigned,
+; so we use this common code for them.
+LBL 11
+XEQ 01
+CMP Y
+GE?
+GTO 09
+SF 99
+LBL 09
+GT?
+GTO 09
+SF 99
+LBL 09
+LT?
+SF 99
+LE?
+SF 99
+
+DECI X        ; make both 4
+CMP Y
+GE?
+GTO 09
+SF 99
+LBL 09
+LE?
+GTO 09
+SF 99
+LBL 09
+
+
+FC? 00       ; unsigned equal (and plus) using zero/sign flags
+SF 99
+FS? 01
+SF 99
+
+END
