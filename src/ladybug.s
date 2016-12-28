@@ -4001,13 +4001,17 @@ WSIZE:        nop
 1$:           a=c     x             ; A.X= new word size
               c=b                   ; load buffer header
               rcr     10
+              n=c                   ; N.X = buffer header address
+              c=c+1   x             ; point to trailer
               dadd=c
               c=data
+              cnex                  ; N= trailer
+              dadd=c
+              c=data                ; load header
               pt=     2
               cgex                  ; insert new word size, get old
               data=c                ; write back
               c=0
-              dadd=c
               pt=     0
               c=g                   ; C.X= old buffer size
               acex
@@ -4017,18 +4021,7 @@ WSIZE:        nop
               a=a-1   x             ; A.X= bit number for previous sign
               rxq     bitMask_rom2
               b=a     s             ; B.S= active part flag
-              n=c                   ; N= old sign bit mask
-              rxq     findBufferUserFlags_rom2 ; M= updated word mask
-              c=b                   ; load trailer register
-              rcr     10
-              c=c+1   x
-              dadd=c
-              c=data
-              a=c                   ; A= trailer
-              c=0     x
-              dadd=c                ; select chip 0
-              acex
-              regn=c  Q             ; Q= trailer
+              m=c                   ; M= (old) sign bit mask
               ldi     4 + 1         ; L + 1
 
 10$:          c=c-1   x
@@ -4041,11 +4034,11 @@ WSIZE:        nop
               a=c
               ?st=1   Flag_2        ; unsigned mode?
               gonc    16$           ; yes, just mask
-              c=n
+              c=m
               c=c&a
               ?c#0                  ; positive?
               gonc    16$           ; yes
-              c=n                   ; no, sign extend
+              c=m                   ; no, sign extend
               c=c-1
               c=-c-1
               nop
@@ -4054,35 +4047,35 @@ WSIZE:        nop
               a=0                   ; A= FF
               a=a-1
               goc     11$
-16$:          c=n                   ; unsigned or positive, clear bits outside
+16$:          c=m                   ; unsigned or positive, clear bits outside
               c=c+c                 ; set first bit outside
               c=c-1                 ; make it a mask
               nop
               c=c&a
               data=c
               a=0                   ; A= 00
-11$:          c=regn  Q             ; write A[1:0]to upper part
+11$:          c=n                   ; write A[1:0]to upper part
               acex    x
               goto    22$
 
 900$:         goto    90$           ; relay
 
-15$:          c=regn  Q             ; sign is in upper part
+15$:          c=n                   ; sign is in upper part
               a=c
               ?st=1   Flag_2        ; unsigned mode?
               gonc    20$           ; yes, zero extend
-              c=n
+              c=m
               c=c&a
               ?c#0                  ; positive?
               gonc    20$           ; yes
-              c=n                   ; no, sign extend
+              c=m                   ; no, sign extend
               c=c-1   x
               c=-c-1  x
               .suppress
               c=c|a
               goto    21$
 
-20$:          c=n                   ; zero extend
+20$:          c=m                   ; zero extend
               c=c+c   x             ; first bit outside
               c=c-1   x             ; make it a mask
               .suppress
@@ -4091,18 +4084,16 @@ WSIZE:        nop
               acex    s
 22$:          acex    xs
               rcr     2
-              regn=c  Q
+              n=c
               bcex    x
               goto    10$
 
-30$:          c=regn  Q             ; write back trailer
-              rcr     4
-              n=c
-              c=b
+30$:          c=b                   ; write back trailer
               rcr     10
               c=c+1   x
               dadd=c
               c=n
+              rcr     4
               data=c
 90$:
 WSZ_OK:       rgo     exitNoUserST_B10_rom2
