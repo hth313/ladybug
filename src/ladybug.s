@@ -4494,6 +4494,7 @@ ALDI:         nop
               rcr     5             ; C.S= base - 1
               c=c+1   s             ; hex?
               goc     1$            ; yes
+              c=c-1   s
               c=c+c   s             ; decimal?
               goc     6000$         ; yes
 1$:
