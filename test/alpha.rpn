@@ -1,0 +1,68 @@
+;;; ALDI, alpha load numbers
+;;; As we do not have any easy way to convert numbers back at the moment
+;;; we just look at the length of numbers.
+
+.import ../src/ladybug
+.import 41cx
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR, ALDI  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TALDI"
+CF 05
+HEXS
+WSIZE 64
+
+8
+#LIT 0xdeadbeaf
+CLA
+ALDI X
+XEQ 16
+
+SF 05
+16
+#LIT 23
+CLA
+ALDI X
+XEQ 16
+
+WSIZE 16
+4
+0
+CLA
+ALDI X
+XEQ 16
+
+DECS
+3
+#LIT 100
+CLA
+ALDI X
+XEQ 16
+
+OCTS
+6
+0
+CLA
+ALDI X
+XEQ 16
+
+BINS
+16
+0
+CLA
+ALDI X
+XEQ 16
+HEXS
+RTN
+
+LBL 16
+STI 01
+RDN
+ALENG
+X!=Y?
+SF 99
+RTN
+
+END
