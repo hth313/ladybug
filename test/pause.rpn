@@ -1,0 +1,36 @@
+;;; Pause test
+
+.import ../src/ladybug
+.import 41cx
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR, ALDI  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TPSEI"
+INTEGER
+0
+SETSW
+RUNSW
+PSEI 00
+RCLSW
+PSEI 14
+RCLSW
+.00025
+X>Y?
+SF 99
+RDN
+.0004
+X<=Y?
+SF 99
+
+RCL Z
+.00009
+X>Y?
+SF 99
+RDN
+.00015
+X<=Y?
+SF 99
+
+END
