@@ -4409,12 +4409,12 @@ BITSUM:       nop
 ;;;       Problems/limitations with this approach is that the system may
 ;;;       want to reset the pause flag at certain times, and we do not
 ;;;       know when that happens. After some studying of the mainframe,
-;;;       it seems that the following problems exists:
+;;;       it seems that the following problems exist:
 ;;;       - An error that happens during pause does not stop execution,
 ;;;         instead it resumes after the pause as if it had not happened.
 ;;;         The error is displayed for the pause time though, but is
 ;;;         cleared when execution resumes. Probably not a major problem
-;;;         as it means the user keys in thngs during pause and then cause
+;;;         as it means the user keys in things during pause and then cause
 ;;;         an error doing so.
 ;;;       - STOP (R/S) will not stop execution during pause when using the
 ;;;         float keyboard. We can work around this in our own key handler,
