@@ -21,100 +21,25 @@ CF 02          ; unsigned compare
 XEQ 11
 
 XEQ 03
-CMP Y
-GE?
-SF 99
-GT?
-SF 99
-LT?
-GTO 09
-SF 99
-LBL 09
-LE?
-GTO 09
-SF 99
-LBL 09
+XEQ 12
 
 XEQ 02
-CMP Y
-GE?
-GTO 09
-SF 99
-LBL 09
-GT?
-GTO 09
-SF 99
-LBL 09
-LT?
-SF 99
-LE?
-SF 99
+XEQ 13
 
 XEQ 04
-CMP Y
-GE?
-SF 99
-GT?
-SF 99
-LT?
-GTO 09
-SF 99
-LBL 09
-LE?
-GTO 09
-SF 99
-LBL 09
+XEQ 12
 
 SF 02    ; signed compare
 XEQ 11
 
 XEQ 03
-CMP Y
-GE?
-SF 99
-GT?
-SF 99
-LT?
-GTO 09
-SF 99
-LBL 09
-LE?
-GTO 09
-SF 99
-LBL 09
+XEQ 12
 
 XEQ 02
-CMP Y
-GE?
-SF 99
-GT?
-SF 99
-LT?
-GTO 09
-SF 99
-LBL 09
-LE?
-GTO 09
-SF 99
-LBL 09
+XEQ 12
 
 XEQ 04
-CMP Y
-GE?
-GTO 09
-SF 99
-LBL 09
-GT?
-GTO 09
-SF 99
-LBL 09
-LT?
-SF 99
-LE?
-SF 99
-
-
-RTN
+GTO 13
 
 
 LBL 01          ; 4 5
@@ -140,6 +65,37 @@ XEQ 01
 X<>YI
 NEG
 X<>YI
+RTN
+
+
+LBL 12
+CMP Y
+GE?
+SF 99
+GT?
+SF 99
+LT?
+GTO 09
+SF 99
+LBL 09
+LE?
+RTN
+SF 99
+
+LBL 13
+CMP Y
+GE?
+GTO 09
+SF 99
+LBL 09
+GT?
+GTO 09
+SF 99
+LBL 09
+LT?
+SF 99
+LE?
+SF 99
 RTN
 
 ; Positive numbers behave same in both signed and unsigned,
@@ -170,7 +126,6 @@ LE?
 GTO 09
 SF 99
 LBL 09
-
 
 FC? 00       ; unsigned equal (and plus) using zero/sign flags
 SF 99
