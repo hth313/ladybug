@@ -81,6 +81,8 @@ LBL 04
 XEQ 05
 XEQ 06
 XEQ 07
+XEQ 08
+XEQ 10
 RTN
 
 LBL 05        ; RL / RR
@@ -106,6 +108,16 @@ SF 99
 MASKL 6
 MASKR 12
 OR
+SUB
+FC? 00
+SF 99
+
+MASKR 2
+RR 3
+FS? 03
+SF 99
+MASKL 2
+SR 1
 SUB
 FC? 00
 SF 99
@@ -164,6 +176,28 @@ SF 99
 MASKL 5
 MASKR 12
 OR
+SUB
+FC? 00
+SF 99
+RTN
+
+LBL 10   ; test left shift 0 steps, which should at least put
+#LIT 1   ; the value in L
+#LIT 0
+#LIT 3
+RR IND Y
+GTO 09
+
+LBL 08   ; test left shift 0 steps, which should at least put
+#LIT 1   ; the value in L
+#LIT 0
+#LIT 3
+SL IND Y
+LBL 09
+LASTXI
+SUB
+FC? 00
+SF 99
 SUB
 FC? 00
 SF 99
