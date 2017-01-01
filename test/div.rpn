@@ -146,4 +146,18 @@ SUB
 FC? 00
 SF 99
 
+
+;;; Tests regarding division by 0
+MASKL 4
+ENTERI
+RMD      ; only high bits set
+FC? 00
+SF 99
+
+SF 25    ; now for a real div by 0
+MASKL 4
+#LIT 0
+RMD
+FS? 25
+SF 99
 END
