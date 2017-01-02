@@ -13,4 +13,14 @@ MASKR 0     ; should give 0
 ADD         ; still 0, but now it sets the flag
 FC? 00
 SF 99
+
+MASKL 64
+INCI X
+FC? 00
+SF 99
+
+MASKR 64
+INCI X
+FC? 00
+SF 99
 END

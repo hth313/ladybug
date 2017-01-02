@@ -2434,7 +2434,7 @@ MASK10:       rxq     liftStackS11
               acex
               ?c#0    s             ; bit affect upper part?
               gonc    10$           ; no
-              bcex    x
+              abex    x
               a=0
               a=a-1
 10$:          ?s9=1                 ; MASKL?
