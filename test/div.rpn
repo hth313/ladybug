@@ -160,4 +160,18 @@ MASKL 4
 RMD
 FS? 25
 SF 99
+
+
+;  DDIV with Z = 0x10:000000 (lower part, low half 0)
+SF 02
+MASKL 1
+MASKL 64
+#LIT 256
+DDIV
+RDNI
+MASKL 9
+SUB
+FC? 00
+SF 99
+
 END
