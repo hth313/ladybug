@@ -174,4 +174,26 @@ SUB
 FC? 00
 SF 99
 
+;  DDIV with Z = 00 (lower part), FFF in upper part
+MASKL 64
+#LIT 256
+DDIV
+RDNI
+MASKL 8
+SUB
+FC? 00
+SF 99
+
+
+; DDIV with Z = 00 (lower part), 0xfe:000000 (upper part)
+MASKL 7
+MASKL 1
+SR 1
+DDIV
+RDNI
+MASKL 5
+SUB
+FC? 00
+SF 99
+
 END
