@@ -1145,8 +1145,6 @@ Integer:      nop                   ; non-programmable
               rxq     chkbuf
               goto    createBuf     ; create buffer
               cstex
-              ?st=1   IF_Integer
-              goc     exitNoUserSTR0 ; already in integer mode
               st=1    IF_Integer    ; enter integer mode
               cstex                 ; updated internal flags
               data=c
@@ -1235,8 +1233,6 @@ FLOAT:        nop                   ; non-programmable (allow mode switch in pro
               rxq     chkbuf
               rtn                   ; (P+1) no buffer
               cstex                 ; (P+2)
-              ?st=1   IF_Integer
-              rtn nc                ; already in float mode, do nothing
               st=0    IF_Integer    ; clear integer flag
               cstex
               data=c
