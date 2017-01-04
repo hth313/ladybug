@@ -2425,9 +2425,13 @@ MASK10:       rxq     liftStackS11
               switchBank 2
               b=0     x
               c=c-1                 ; convert to mask
-              ?c#0                  ; is it actually 0?
+              ?c#0
+              goc     5$            ; non-zero
+              ?a#0    s             ; is it actually 0?
               gonc    22$           ; yes, result is also 0
-              acex
+              c=c-1                 ; special case when word size is 56
+              a=0     s
+5$:           acex
               ?c#0    s             ; bit affect upper part?
               gonc    10$           ; no
               abex    x

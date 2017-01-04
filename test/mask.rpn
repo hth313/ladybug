@@ -3,7 +3,7 @@
 .import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
 LBL "MASK"
@@ -23,4 +23,14 @@ MASKR 64
 INCI X
 FC? 00
 SF 99
+
+MASKL 56
+MASKR 56
+AND
+MASKR 48
+SL 08
+SUB
+FC? 00
+SF 99
+
 END
