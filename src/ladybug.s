@@ -3482,20 +3482,19 @@ classNibble:  c=b                   ; select header register
                                     ;  as we just had it
 15$:          rcr     1             ; step one register forward
               c=c+1   m
-              rcr     -1
-              c=c+1   pt            ; offset by 2
+              rcr     6
+              a=c     s             ; A.S= third nibble of address
+              rcr     7
+              a=a-1   s             ; make sure we do not overflow to 0x200
+              goc     16$
+              a=a-1   s
+              gonc    ERRNE_J1
+16$:          c=c+1   pt            ; offset by 2
               c=c+1   pt
 18$:          a=a-1   x             ; decrement nibble register counter
               gonc    12$
 
-              ldi     0x1ff
-              a=c     x
-              c=0     x
               rcr     4             ; C.X= last register address
-              ?c#0    m             ; register > FFF?
-              goc     ERRNE_J1      ; yes
-              ?a<c    x             ; within range (1FF max)
-              goc     ERRNE_J1      ; no
               dadd=c                ; select last register covered
               a=c     x             ; A.X= last register address
               c=b     wpt           ; C[3:1]= first register address
