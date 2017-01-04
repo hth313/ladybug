@@ -2,7 +2,7 @@
 
 .import ../src/ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, MASKL  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
 
@@ -82,6 +82,19 @@ FC? 00  ; should be equal and set zero flag
 SF 99
 SUB     ;  Subtract them for real as well
 FC? 00  ; should be 0 and set zero flag
+SF 99
+
+; Test large number with DSZI
+MASKL 4
+#LIT 1
+ADD
+DSZI X
+GTO 09
+SF 99
+LBL 09
+MASKL 4
+SUB
+FC? 00
 SF 99
 
 END
