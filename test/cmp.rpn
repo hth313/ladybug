@@ -7,6 +7,39 @@
 .postfix #LIT (semi-merged-integer-literal)
 
 LBL "TCMP"
+WSIZE 8
+SF 02
+MASKL 8
+#LIT 0x7f
+CMP Y
+LE?
+SF 99
+GT?
+GTO 09
+SF 99
+LBL 09
+GE?
+GTO 09
+SF 99
+LBL 09
+
+#LIT 0x30
+#LIT 0xaa
+CMP Y
+LT?
+GTO 09
+SF 99
+LBL 09
+
+GE?
+SF 99
+
+CF 02
+ENTER
+CMP Y
+GT?
+SF 99
+
 WSIZE 64
 XEQ 10
 WSIZE 57
