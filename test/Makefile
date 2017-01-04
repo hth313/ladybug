@@ -1,7 +1,7 @@
 
 RPNS = top.rpn incdec.rpn absneg.rpn div.rpn mul.rpn addsub.rpn mask.rpn \
        logical.rpn bit.rpn shift.rpn sex.rpn cmp.rpn memory.rpn stack.rpn \
-       alpha.rpn pause.rpn bitsum.rpn
+       alpha.rpn pause.rpn bitsum.rpn wsize.rpn
 
 SRCS = lb-test.s
 OBJS = $(RPNS:%.rpn=%.o) $(SRCS:%.s=%.o)

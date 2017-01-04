@@ -1,0 +1,39 @@
+;;; Test memory, most tests are done as part of other tests
+
+.import ../src/ladybug
+
+.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix #LIT (semi-merged-integer-literal)
+
+LBL "TWSIZE"
+
+WSIZE 16
+SF 25
+MASKL 4
+WSIZE IND X
+FS?C 25
+SF 99
+
+#LIT 32
+WSIZE IND X
+WSIZE?
+SUB
+FC? 00
+SF 99
+
+SF 25
+WSIZE IND X
+FS?C 25
+SF 99
+
+#LIT 64   ; this is OK
+WSIZE IND X
+
+SF 25       ; not accepted
+INCI X
+WSIZE IND X
+FS?C 25
+SF 99
+
+END
