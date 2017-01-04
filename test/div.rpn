@@ -158,7 +158,7 @@ SF 25    ; now for a real div by 0
 MASKL 4
 #LIT 0
 RMD
-FS? 25
+FS?C 25
 SF 99
 
 
