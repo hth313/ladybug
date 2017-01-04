@@ -1658,7 +1658,7 @@ bitMask_rom2: switchBank 1
 
 
               .section Code
-;;; IN: A.X - bit number (0-63)
+;;; IN: A.X - bit number (0-64)
 ;;; OUT: C.X - upper part
 ;;;      C   - lower part
 ;;;      A.S - 0 if bit is in lower part
