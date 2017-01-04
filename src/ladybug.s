@@ -9,7 +9,7 @@
     This module is intended for professionals working with computers at the
     lowest level.
 
-    The name is derives from that the module is a very useful tool when
+    The name is derived from that the module is a very useful tool when
     debugging, these are kind of friendly bugs, and the HP-41 is powered
     by Lady sized cells.
 
@@ -1568,7 +1568,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
               ?s6=1                 ; double divide?
               gonc    10$           ; no
               ?b#0    xs            ; double divide, doing Y?
-              goc     20$           ; yes, need special treatment @@ not executed at all
+              goc     20$           ; yes, need special treatment
 10$:          c=b
               c=-c    x             ; negate upper part
               acex
@@ -4962,7 +4962,7 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
 
 ;;; Done with 56x56 MUL, the lowest 56 bits of the result in A will
 ;;; not be affected by the two following 8x56 multiplications.
-;;; N has the upper parts, so we tuck it away there and gets the
+;;; N has the upper parts, so we tuck it away there and get the
 ;;; two bytes at the same time.
 30$:          abex                  ; A= second 56 bits of sum
               bcex
