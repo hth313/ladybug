@@ -10,6 +10,54 @@ LBL "TMEM"
 SF 25
 #LIT 500
 LDI IND X
-FS? 25
+FS?C 25
 SF 99
+
+WSIZE 64      ; register way out of range (0x1000)
+SF 25
+#LIT 0x1000
+STI 00
+LDI IND 00
+FS?C 25
+SF 99
+
+SF 25         ; register 0xfff  (inside 0xfff register limit)
+DECI 00
+LDI IND 00
+FS?C 25
+SF 99
+
+SF 25        ; Register that gets address inside 0xfff, but above last
+#LIT 0xD00   ; legal address 0x1ff
+STI 00
+LDI IND 00
+FS?C 25
+SF 99
+
+SF 25        ; Bit numbers differs slightly from register access, so
+MASKL 4      ; we test that as well
+STI 00
+SB IND 00
+FS?C 25
+SF 99
+
+SF 25
+#LIT 65
+STI 00
+SB IND 00
+FS?C 25
+SF 99
+
+SF 25        ; STI IND ST out of range tests
+MASKL 4
+STI IND X
+FS?C 25
+SF 99
+
+SF 25
+#LIT 0x1000
+STI IND X
+FS?C 25
+SF 99
+
 END
