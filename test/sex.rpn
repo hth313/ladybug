@@ -66,6 +66,23 @@ SUB
 FC? 00
 SF 99
 
+SF 25           ; cannot sign extend 0-sized number
+SEX IND X
+FS?C 25
+SF 99
+
+SEX 60
+FC? 00
+SF 99
+
+MASKL 4
+SR 4
+SEX 60
+MASKL 8
+SUB
+FC? 00
+SF 99
+
 RTN
 
 LBL 01

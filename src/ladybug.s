@@ -4314,9 +4314,9 @@ SEX:          nop
               rxq     Argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
-              a=a-1   x
-              golc     ERRDE     ; 0 gives DATA ERROR
               rxq     findBufferUserFlags_argumentValueG_rom1
+              a=a-1   x
+              golc    ERRDE         ; 0 gives DATA ERROR
               rxq     findBufferGetXSaveL
               pt=     0             ; load argument
               c=0     x
