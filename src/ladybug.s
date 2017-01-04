@@ -4041,7 +4041,7 @@ WSIZE:        nop
               data=c
               a=0                   ; A= FF
               a=a-1
-              goc     11$
+              goc     11$           ; always branch
 16$:          c=m                   ; unsigned or positive, clear bits outside
               c=c+c                 ; set first bit outside
               c=c-1                 ; make it a mask
@@ -4049,7 +4049,7 @@ WSIZE:        nop
               c=c&a
               data=c
               a=0                   ; A= 00
-11$:          c=n                   ; write A[1:0]to upper part
+11$:          c=n                   ; write A[1:0] to upper part
               acex    x
               goto    22$
 
