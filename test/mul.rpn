@@ -3,7 +3,7 @@
 .import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR, SB  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
 LBL "TMUL"
@@ -76,6 +76,113 @@ SF 99
 CLXI
 #LIT 0x81
 SL 56
+SUB
+FC? 00
+SF 99
+
+WSIZE 56
+MASKL 2
+MASKR 2
+DMUL
+#LIT 2
+SUB
+FC? 00
+SF 99
+RDNI
+MASKL 1
+SR 1
+SUB
+FC? 00
+SF 99
+
+SF 02
+MASKL 2
+MASKR 2
+DMUL
+INCI X
+FC? 00
+SF 99
+RDNI
+MASKL 1
+SR 1
+SUB
+FC? 00
+SF 99
+
+WSIZE 64
+SB 56       ;  keep lower 56 bits 0
+MASKR 64    ;  -1
+DMUL
+INCI X
+FC? 00
+SF 99
+RDNI
+MASKL 8
+SUB
+FC? 00
+SF 99
+
+CF 02
+MASKL 2
+SR 8
+MASKL 2
+DMUL
+#LIT 9
+SL 52
+SUB
+FC? 00
+SF 99
+ADD
+FC? 00
+SF 99
+
+MASKL 8   ; check overflow single precision
+ENTERI
+MUL
+FC? 04
+SF 99
+FC? 00
+SF 99
+
+SB 16    ; check overflow single precision
+#LIT 0
+SB 56
+MUL
+FC? 04
+SF 99
+FC? 00
+SF 99
+
+WSIZE 16
+SF 02
+#LIT 0x6000
+#LIT 2
+MUL
+FC? 04
+SF 99
+#LIT 0x4000
+SUB
+FC? 00
+SF 99
+
+#LIT 0xC000
+#LIT 2
+MUL
+FC? 04
+SF 99
+#LIT 0x8000
+SUB
+FC? 00
+SF 99
+
+
+CF 02
+#LIT 0xC000
+#LIT 2
+MUL
+FC? 04
+SF 99
+#LIT 0x8000
 SUB
 FC? 00
 SF 99
