@@ -6845,6 +6845,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=b     x             ; get upper digits
               rcr     2
               pt=     2
+              s2=0                  ; clear overflow flag
               s3=     0             ; remember we are doing upper part
 
 8$:           ?c#0                  ; everything zero?
@@ -6858,12 +6859,19 @@ decpos:       b=0     xs            ; clear flag for digits above
 
 9$:           n=c
               c=0
-
 10$:          c=c+c                 ; Sum * 16
-              c=c+c
-              c=c+c
-              c=c+c
-              a=c
+              gonc    31$
+              s2=1
+31$:          c=c+c
+              gonc    32$
+              s2=1
+32$:          c=c+c
+              gonc    33$
+              s2=1
+33$:          c=c+c
+              gonc    34$
+              s2=1
+34$:          a=c
               c=n
               rcr     -1
               cnex
@@ -6873,11 +6881,8 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c+1                 ; BCD convert
               c=c-1
               c=a+c
-              gonc    11$           ; @@ fall through not covered
-              bcex    xs            ; set flag that we dropped bits
-              c=0     xs
-              c=c+1   xs
-              bcex
+              gonc    11$
+              s2=1                  ; set flag that we dropped bits
 11$:          dec pt
               ?pt=    0
               gonc    10$
@@ -6898,12 +6903,15 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=0     wpt           ; clear digits area
               ?c#0                  ; something set outside?
               gonc    14$           ; no
-              bcex    xs            ; set flag for digits above
-              c=c+1   xs
-              bcex    xs
+              s2=1                  ; set flag for digits above
 
 14$:          gosub   CLLCDE
 
+              c=0     xs            ; move overflow flag to B.XS
+              ?s2=1
+              gonc    13$
+              c=c+1   xs
+13$:          bcex    xs
               ?st=1   IF_DigitEntry
               gonc    150$
               ldi     0x1f          ; show underscore if in digit entry
