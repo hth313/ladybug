@@ -5466,21 +5466,32 @@ divCommon:    rcr     2
               goc     45$           ; upper part
 44$:          a=c
               c=m
-              c=c&a
+              ?c#0                  ; word size == 56 ?
+              goc     42$           ; no, word size < 56
+              c=n
+              cstex
+              ?s0=1
+              goc     48$
+              cstex
+              goto    46$
+48$:          cstex
+              goto    49$
+
+2000$:        goto    200$
+
+42$:          c=c&a
               ?c#0
               gonc    46$           ; no carry
-              c=regn  Z             ; carry to hi(op1)
+49$:          c=regn  Z             ; carry to hi(op1)
               c=c+1
               regn=c  Z
               goto    46$
-
-2000$:        goto    200$
 
 45$:          c=n                   ; inspect upper part
               goto    44$
 
 55$:          c=n                   ; make C[2:0] the high part word
-                                    ;  to test ougoing carry from
+                                    ;  to test outgoing carry from
               ?s6=1                 ; double operation?
               gonc    52$           ; no
               rcr     3             ; yes
@@ -5508,13 +5519,18 @@ divCommon:    rcr     2
               goc     55$
               c=regn  Y
               ?s6=1                 ; double operation?
-              gonc    52$           ; no
+              gonc    51$           ; no
               c=regn  Z             ; yes
+51$:          ?a#0                  ; word size == 56 ?
+              goc     52$           ; no
+              a=a+1                 ; make bit mask = 1
+              goto    55$
+
 52$:          c=c&a
               a=0                   ; assume outgoing carry = 0
               ?c#0
               gonc    58$
-              a=a+1                 ; set outgoing carry
+54$:          a=a+1                 ; set outgoing carry
 
 58$:          c=n                   ; normalize alignment of N
               rcr     -3
