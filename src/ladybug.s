@@ -5618,10 +5618,10 @@ divCommon:    rcr     2
               c=-c-1  x
               acex
               c=-c
-              goc     72$
+              goc     73$
               a=a+1   x
               gonc    73$
-72$:          s11=1                 ; just bit not the rest
+              s11=1                 ; need to negate upper part
 73$:          b=a     x
               a=c
               rxq     maskABx_rom2  ; mask again
@@ -5651,8 +5651,7 @@ divCommon:    rcr     2
               c=c+1
               gonc    79$
               a=a+1   x
-79$:          s11=1
-              b=a     x
+79$:          b=a     x
               a=c
 80$:          ?a#0
               goc     81$
@@ -5661,7 +5660,8 @@ divCommon:    rcr     2
 81$:          s7=0                  ; non-zero
 
 ;;; Drop the stack and save upper part of X.
-82$:          switchBank 1
+82$:          s11=1
+              switchBank 1
               rxq     maskAndSave10 ; save X
               s9=0
               rxq     dropZN10
