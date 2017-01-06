@@ -6831,10 +6831,10 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=g
               acex
               setdec
+              ?s1=1                 ; from ALDI?
+              goc     500$          ; yes
               ?a#0    xs            ; window set?
               goc     500$          ; yes
-              ?s1=1                 ; from ALDI?
-              goc     500$          ; yes @@ conditional not taken
 
 ;;; No window set, as we only need the lowest part of the result we can keep working in
 ;;; a single output register.
