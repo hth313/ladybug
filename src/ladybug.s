@@ -3966,7 +3966,7 @@ findBufferUserFlags_liftStackS11:
 liftStackS11: ?s11=1                ; push flag?
               goc     liftStack     ; yes
               s11=1                 ; no, set it and do not lift stack
-              rtn
+              golong  ENCP00
 
 liftStack:    c=b                   ; get buffer address to A.X
               rcr     10
