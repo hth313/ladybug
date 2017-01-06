@@ -7101,6 +7101,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 
 
 90$:          ldi     '0'
+              g=c
               golong  APNDNW
 
 
