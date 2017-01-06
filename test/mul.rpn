@@ -3,7 +3,7 @@
 .import ../src/ladybug
 
 .postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR, SB  (semi-merged-postfix)
+.postfix MASKL, MASKR, BITSUM, TST, SL, SR, CB, SB  (semi-merged-postfix)
 .postfix #LIT (semi-merged-integer-literal)
 
 LBL "TMUL"
@@ -109,6 +109,12 @@ SUB
 FC? 00
 SF 99
 
+XEQ 03
+WSIZE 56
+XEQ 03
+WSIZE 54
+XEQ 03
+
 WSIZE 64
 SB 56       ;  keep lower 56 bits 0
 MASKR 64    ;  -1
@@ -118,6 +124,16 @@ FC? 00
 SF 99
 RDNI
 MASKL 8
+SUB
+FC? 00
+SF 99
+
+MASKR 32
+ENTERI
+MUL
+DECI X
+MASKL 30
+SR 1
 SUB
 FC? 00
 SF 99
@@ -168,6 +184,7 @@ SF 99
 XEQ 02
 CF 02
 XEQ 02
+
 RTN
 
 
@@ -180,6 +197,18 @@ FC? 04
 SF 99
 #LIT 0x8000
 SUB
+FC? 00
+SF 99
+RTN
+
+LBL 03
+CLXI
+SB 40
+#LIT 2
+NEG
+MUL
+NEG
+CB 41
 FC? 00
 SF 99
 END
