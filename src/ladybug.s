@@ -1662,37 +1662,6 @@ signPositive: rxq     getSign_rom2  ; get the sign
               gonc    24$           ; no
               c=c+1   wpt           ; yes
 24$:          rcr     -6            ; realign trailer register
-#if 0
-              c=regn  Z             ; C= low part of lower half
-              c=-c                  ; negate lower part in low half
-              gonc    21$
-              s3=0                  ; bit-not next
-21$:          acex
-              cnex
-              rcr     6
-              pt=     1
-              c=-c-1  wpt           ; bit-not
-              ?s3=1                 ; should have negated?
-              gonc    22$           ; no
-              c=c+1   wpt           ; yes
-              goc     22$
-              s3=0                  ; bit-not next
-22$:          cnex                  ; lower part in high half
-              c=-c-1
-              ?s3=1
-              gonc    23$
-              c=c+1
-              goc     23$
-              s3=0
-23$:          regn=c  Z             ; write out high part to Z
-              cnex                  ; C[1:0]= upper part of high half
-              bcex    wpt           ; C[1:0]= upper part of low half
-              c=-c-1  wpt           ; bit-not it
-              ?s3=1                 ; should be negated?
-              gonc    24$           ; no
-              c=c+1   wpt           ; yes
-24$:          rcr     -6            ; realign trailer register
-#endif
               cnex
               goto    150$
 
@@ -5745,18 +5714,18 @@ getSign_rom2: getSign
               .section Code2
 forceSign:    c=m                   ; get carry mask
               ?c#0                  ; 56 bit value?
-              gonc    56$           ; yes
+              gonc    56$           ; yes @@ conditional not taken
               ?c#0    s             ; carry in highest nibble?
-              goc     40$           ; yes
+              goc     40$           ; yes @@ conditional not taken
               c=c+c                 ; no, ((C << 3) >> 4)
               c=c+c
               c=c+c
               csr
 2$:           ?b#0    s             ; reset sign?
-              goc     20$           ; no
+              goc     20$           ; no @@ conditional not taken
               c=-c-1                ; make unmask
               ?st=1   Flag_UpperHalf
-              goc     5$
+              goc     5$            ; @@ conditional not taken
               c=c&a                 ; reset sign in lower part
 3$:           a=c
               rtn
@@ -5767,7 +5736,7 @@ forceSign:    c=m                   ; get carry mask
               rtn
 
 20$:          ?st=1   Flag_UpperHalf
-              goc     25$
+              goc     25$           ; @@ not executed at all
               c=c|a                 ; set sign in lower part
               goto    3$
 25$:          abex    x             ; set sign in upper part
@@ -6589,7 +6558,7 @@ shift1:       bcex                  ; shift one left
               c=c+c   x
               acex
               c=c+c
-              gonc    2$
+              gonc    2$            ; @@ fall through not covered
               a=a+1   x
 2$:           acex
               bcex
@@ -6608,7 +6577,7 @@ mul10:        gosub   GSB256        ; Shift1   *2
               gosub   GSB256        ; Shift    X * 8
               c=n
               a=a+c                 ; add (X * 2) and (X * 8)
-              gonc    1$
+              gonc    1$            ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6679,7 +6648,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=b     s             ; C= low part of (n >> 2)
 
               a=a+c                 ; B.X - A = (n >> 1) + (n >> 2)
-              gonc    5$
+              gonc    5$            ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6696,7 +6665,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               csr
               bcex    s
               a=a+c                 ; add lower parts
-              gonc    10$
+              gonc    10$           ; @@ fall through not covered
               bcex    x
               c=c+1   x             ; carry to upper part
               bcex    x
@@ -6706,7 +6675,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=b     wpt
               rcr     2
               a=a+c
-              gonc    15$
+              gonc    15$           ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6717,7 +6686,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               csr
               csr
               a=a+c
-              gonc    20$
+              gonc    20$           ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6729,7 +6698,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=0     wpt
               rcr     6
               a=a+c
-              gonc    22$
+              gonc    22$           ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6758,7 +6727,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=regn  Q
               acex
               a=a-c                 ; r = n - q*10 (lower part)
-              gonc    25$
+              gonc    25$           ; @@ fall through not covered
               bcex    x             ; borrow
               c=c-1   x
               bcex    x
@@ -6766,7 +6735,7 @@ div10:        acex                  ; save n in P[9:8]:Q
 25$:          c=0                   ; r + 6
               ldi     6
               a=a+c
-              gonc    30$
+              gonc    30$           ; @@ fall through not covered
               bcex    x
               c=c+1   x
               bcex    x
@@ -6822,15 +6791,14 @@ decDigits1:   c=regn  14
               rcr     12
               cstex
               ?st=1   Flag_2        ; signed mode?
-              gonc    6$            ; no
+              gonc    6$
               cstex
 
               gosub   GSB256        ; getSign
               ?c#0    s
               gonc    decpos        ; positive
               ?st=1   Flag_UpperHalf
-              goc     5$
-                                    ; negate with sign in low part
+              goc     5$            ; negate with sign in low part
               c=m                   ; get carry pos
               c=c-1                 ; make mask
               acex                  ; A=mask, C= low part
@@ -6845,7 +6813,7 @@ decDigits1:   c=regn  14
               c=-c    x             ; negate upper part
               acex
               c=-c                  ; negate lower part
-              gonc    3$
+              gonc    3$            ; @@ cond not taken
               a=a-1   x             ; ripple to upper part
 3$:           bcex                  ; B= lower part
               c=m
@@ -6866,7 +6834,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               ?a#0    xs            ; window set?
               goc     500$          ; yes
               ?s1=1                 ; from ALDI?
-              goc     500$          ; yes
+              goc     500$          ; yes @@ conditional not taken
 
 ;;; No window set, as we only need the lowest part of the result we can keep working in
 ;;; a single output register.
@@ -6905,7 +6873,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c+1                 ; BCD convert
               c=c-1
               c=a+c
-              gonc    11$
+              gonc    11$           ; @@ fall through not covered
               bcex    xs            ; set flag that we dropped bits
               c=0     xs
               c=c+1   xs
@@ -6992,7 +6960,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c+1                 ; BCD convert digit
               c=c-1
               c=a+c                 ; add to sum
-              gonc    526$
+              gonc    526$          ; @@ fall through not covered
               cmex                  ; carry
               c=c+1
               goto    528$
@@ -7084,9 +7052,9 @@ decpos:       b=0     xs            ; clear flag for digits above
               bcex    x             ; B= digit counter
               c=m                   ; C= lower part
               ?c#0                  ; check for zero
-              goc     84$
+              goc     84$           ; @@ fall through not covered
               ?a#0
-              gonc    90$           ; zero
+              gonc    90$           ; zero @@ not executed at all
 84$:          ?a#0    s
               goc     85$
               a=c     s
@@ -7119,7 +7087,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c-1   x
               rtn c                 ; done
               c=c-1   s
-              goc     87$           ; out of digits in first register
+              goc     87$           ; out of digits in first register @@ conditional not taken
               bcex                  ; restore B
               goto    86$
 87$:          bcex                  ; restore B
@@ -7233,10 +7201,10 @@ rpollio:      ?s7=1                 ; alpha mode?
               ;; the run-mode need to hanble pausing.
 10$:          ?s12=1                ; private?
               goc     pollretC0     ; yes
-              rgo     prgmio
-
               ?s5=1                 ; message flag (perhaps showing "ROM")
               goc     pollretC0     ; yes
+              rgo     prgmio
+
               ;; Handle pause timer.
 20$:          rgo     pauseio       ; the 'rgo' uses two levels!
 
