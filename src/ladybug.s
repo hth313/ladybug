@@ -7042,6 +7042,8 @@ decpos:       b=0     xs            ; clear flag for digits above
 ;;; M= lower part
 ;;; A= upper part
 80$:          sethex
+              acex                  ; save A in N
+              n=c
               ?s0=1                 ; positive?
               goc     82$           ; yes
               ldi     '-'
@@ -7050,11 +7052,13 @@ decpos:       b=0     xs            ; clear flag for digits above
               gosub   APNDNW
 82$:          ldi     28-1
               bcex    x             ; B= digit counter
+              c=n
+              a=c                   ; A= upper part
               c=m                   ; C= lower part
               ?c#0                  ; check for zero
-              goc     84$           ; @@ fall through not covered
+              goc     84$
               ?a#0
-              gonc    90$           ; zero @@ not executed at all
+              gonc    90$           ; zero
 84$:          ?a#0    s
               goc     85$
               a=c     s
@@ -7087,7 +7091,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c-1   x
               rtn c                 ; done
               c=c-1   s
-              goc     87$           ; out of digits in first register @@ conditional not taken
+              goc     87$           ; out of digits in first register
               bcex                  ; restore B
               goto    86$
 87$:          bcex                  ; restore B
