@@ -196,4 +196,116 @@ SUB
 FC? 00
 SF 99
 
+
+; DIV two large numbers
+CF 02
+MASKL 2
+ENTERI
+SR 2
+DIV
+#LIT 4
+SUB
+FC? 00
+SF 99
+
+#LIT 0
+MASKL 2
+#LIT 1
+DDIV
+MASKL 2
+SUB
+FC? 00
+SF 99
+ADD
+FC? 00
+SF 99
+
+SF 02
+MASKL 2
+ENTERI
+SR 2
+DIV
+INCI X
+FC? 00
+SF 99
+
+#LIT 0
+MASKL 2
+SR 2
+#LIT 2
+NEG
+DDIV
+#LIT 0xe8
+SL 56
+SUB
+FC? 00
+SF 99
+ADD
+FC? 00
+SF 99
+
+#LIT 0
+MASKL 16
+SR 2
+#LIT 2
+NEG
+DDIV
+#LIT 0xe0002
+SL 44
+SUB
+FC? 00
+SF 99
+ADD
+FC? 00
+SF 99
+
+; DDIV with size 56 is a bit interesting internally
+WSIZE 56
+MASKL 2
+MASKL 56
+LDI Y
+SR 2
+DDIV
+FC? 03   ; should give carry as we have reminder
+SF 99
+FC? 01
+SF 99
+INCI X   ; result is -1, check both parts
+FC? 00
+SF 99
+INCI Y
+FC? 00
+SF 99
+
+XEQ 02
+
+; DIV with word size smaller than 56
+WSIZE 54
+XEQ 02
+
+; Overflow
+WSIZE 16
+MASKL 1
+#LIT 1
+NEG
+DIV
+FC? 04
+SF 99
+FC? 00
+SF 99
+
+RTN
+
+LBL 02
+MASKL 2
+ENTERI
+SR 2
+DIV
+FC? 03
+SF 99
+FC? 01
+SF 99
+INCI X
+FC? 00
+SF 99
 END
