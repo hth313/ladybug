@@ -5714,18 +5714,18 @@ getSign_rom2: getSign
               .section Code2
 forceSign:    c=m                   ; get carry mask
               ?c#0                  ; 56 bit value?
-              gonc    56$           ; yes @@ conditional not taken
+              gonc    56$           ; yes
               ?c#0    s             ; carry in highest nibble?
-              goc     40$           ; yes @@ conditional not taken
+              goc     40$           ; yes
               c=c+c                 ; no, ((C << 3) >> 4)
               c=c+c
               c=c+c
               csr
 2$:           ?b#0    s             ; reset sign?
-              goc     20$           ; no @@ conditional not taken
+              goc     20$           ; no
               c=-c-1                ; make unmask
               ?st=1   Flag_UpperHalf
-              goc     5$            ; @@ conditional not taken
+              goc     5$
               c=c&a                 ; reset sign in lower part
 3$:           a=c
               rtn
@@ -5736,7 +5736,7 @@ forceSign:    c=m                   ; get carry mask
               rtn
 
 20$:          ?st=1   Flag_UpperHalf
-              goc     25$           ; @@ not executed at all
+              goc     25$
               c=c|a                 ; set sign in lower part
               goto    3$
 25$:          abex    x             ; set sign in upper part
@@ -6813,7 +6813,7 @@ decDigits1:   c=regn  14
               c=-c    x             ; negate upper part
               acex
               c=-c                  ; negate lower part
-              gonc    3$            ; @@ cond not taken
+              gonc    3$
               a=a-1   x             ; ripple to upper part
 3$:           bcex                  ; B= lower part
               c=m
