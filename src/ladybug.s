@@ -4527,7 +4527,7 @@ PSEI:         nop
 ALDI:         nop
               nop
               rxq     Argument
-              .con    OperandX     ; ALDI X is default
+              .con    OperandX      ; ALDI X is default
               rxq     findBufferUserFlags
               switchBank 2
               rcr     -4
@@ -4810,7 +4810,7 @@ noSkip:       s7=0
               golong  NOSKP
 LT3:          ?st=1   Flag_Overflow
               gonc    noSkip
-              goto skip
+              goto    skip
 
 
               .name   "GE?"
@@ -5352,7 +5352,7 @@ divCommon:    rcr     2
               a=c     x
               a=0     xs            ; A[2:0]= Y (low half)
               ?s6=1                 ; double operation?
-              gonc    8$            ; no @@ fall through not covered
+              gonc    8$            ; no
               rcr     2             ; C[2:0]= Z (high half)
               c=0     xs
               rcr     3             ; C[13:11]= Z (high half)
@@ -5576,12 +5576,12 @@ divCommon:    rcr     2
               gonc    64$           ; no
               st=1    Flag_Overflow ; yes, overflowed
 64$:          ?b#0    s             ; negative result?
-              gonc    65$           ; no @@ conditional not taken
+              gonc    65$
               c=b                   ; yes, negate result
               c=-c    x
               acex
               c=-c
-              gonc    68$           ; @@ fall through not covered
+              gonc    68$
               a=a-1   x
 68$:          b=a
               a=c
@@ -5600,7 +5600,7 @@ divCommon:    rcr     2
               goto    63$
 
 ;;; Result after DDIV
-;;;  N[8:6]-Z= upper half, bit need no masking
+;;;  N[8:6]-Z= upper half, bits need no masking
 ;;;  N[5:3]-Y= lower half, these bits need masking
 ;;;
 ;;;  S11 is known to be 0 and should end being set, we borrow
