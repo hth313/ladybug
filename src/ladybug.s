@@ -1532,9 +1532,11 @@ getSigns:     c=regn  X
               a=c
               c=n
               rcr     4             ; C[1:0]= upper Y
-              c=0     xs            ; C[2]= non-zero flag indicating doing Y
-              c=c+1   xs
               bcex    x             ; B[1:0]= upper Y
+              rxq     maskABx_rom2  ; mask Y
+              c=0     xs            ; B[2]= non-zero flag indicating doing Y
+              c=c+1   xs
+              bcex    xs
               rxq     signPositive
               goto    20$           ; (P+1) not changed
                                     ; (P+2) changed
@@ -1563,7 +1565,7 @@ signPositive: rxq     getSign_rom2  ; get the sign
               ?s7=1                 ; make positive?
               gonc    50$           ; no
               ?st=1   Flag_2        ; sign mode?
-              gonc    50$           ; no
+500$:         gonc    50$           ; no
 
               ?s6=1                 ; double divide?
               gonc    10$           ; no
@@ -1584,11 +1586,83 @@ signPositive: rxq     getSign_rom2  ; get the sign
               c=c+1   m
               gotoc
 
+;;; Cases below when we do not need to negate. For stack registers
+;;; other than X we need to mask them, and double divide also
+;;; requires swapping Y and Z
+50$:          ?b#0    xs            ; no need to negate, doing Y?
+              rtn nc                ; no, we are done, return to (P+1)
+                                    ; yes, mask Y
+              bcex    s             ; B.S= saved sign
+              rxq     maskABx_rom2
+              ?s6=1                 ; double divide?
+              gonc    55$           ; no
+
+;;; For double divide we need to mask Z, and swap it with Y.
+;;; Currently we have loaded Y, so we save Y in Z and mask
+;;; Z and leave it loaded and let the caller save it in Y
+;;; (believing it was Y).
+              c=regn  Z
+              acex                  ; A= Z
+              regn=c  Z             ; save Y in Z
+              c=n                   ; C= upper parts
+              rcr     6
+              bcex    x             ; save upper Y in Z and
+              bcex    xs            ; load upper Z to B[1:0]
+              rcr     -6
+              n=c
+              rxq     maskABx_rom2
+55$:          bcex    s             ; restore sign
+              goto    17$           ; return to (P+2)
+
+150$:         goto    15$           ; relay
+
 ;;; Negating for double divide and we have Y loaded in B[1:0]-A.
 ;;; This is actually the upper bits.
 ;;; We then load Z (lower bits), negate it and let the caller save
 ;;; it in Y as the DDIV routine wants them swapped.
+;;;
+;;; The currently loaded B[1:0]-A is properly masked, but the lower
+;;; part we get from Z needs to be masked.
 20$:          s3=1                  ; use c=-c
+
+              c=regn  Z             ; C= low part of lower half
+              acex
+              regn=c  Z             ; Z= low part of upper half
+              cnex
+              rcr     6
+              pt=     1
+              bcex    wpt           ; swap upper parts
+              cnex
+              rxq     maskABx_rom2  ; mask lower part
+
+              acex                  ; negate lower part in low half
+              c=-c
+              gonc    21$
+              s3=0                  ; bit-not next
+21$:          bcex    wpt           ; negate upper part of low half
+              c=-c-1  wpt           ; bitnot
+              ?s3=1                 ; should have negated?
+              gonc    22$           ; no
+              c=c+1   wpt           ; yes
+              goc     22$
+              s3=0                  ; bitnot next
+22$:          bcex    wpt
+              a=c
+              c=regn  Z             ; get low part of upper half
+              c=-c-1
+              ?s3=1                 ; should be negated?
+              gonc    23$           ; no
+              c=c+1                 ; yes
+              goc     23$
+              s3=0                  ; bitnot next
+23$:          regn=c  Z
+              cnex                  ; get upper part of upper half
+              c=-c-1  wpt
+              ?s3=1                 ; should be negated?
+              gonc    24$           ; no
+              c=c+1   wpt           ; yes
+24$:          rcr     -6            ; realign trailer register
+#if 0
               c=regn  Z             ; C= low part of lower half
               c=-c                  ; negate lower part in low half
               gonc    21$
@@ -1618,36 +1692,9 @@ signPositive: rxq     getSign_rom2  ; get the sign
               gonc    24$           ; no
               c=c+1   wpt           ; yes
 24$:          rcr     -6            ; realign trailer register
+#endif
               cnex
-              goto    15$
-
-;;; Cases below when we do not need to negate. For stack registers
-;;; other than X we need to mask them, and double divide also
-;;; requires swapping Y and Z
-50$:          ?b#0    xs            ; no need to negate, doing Y?
-              rtn nc                ; no, we are done, return to (P+1)
-                                    ; yes, mask Y
-              bcex    s             ; B.S= saved sign
-              rxq     maskABx_rom2
-              ?s6=1                 ; double divide?
-              gonc    55$           ; no
-
-;;; For double divide we need to mask Z, and swap it with Y.
-;;; Currently we have loaded Y, so we save Y in Z and mask
-;;; Z and leave it loaded and let the caller save it in Y
-;;; (believing it was Y).
-              c=regn  Z
-              acex                  ; A= Z
-              regn=c  Z             ; save Y in Z
-              c=n                   ; C= upper parts
-              rcr     6
-              bcex    x             ; save upper Y in Z and
-              bcex    xs            ; load upper Z to B[1:0]
-              rcr     -6
-              n=c
-              rxq     maskABx_rom2
-55$:          bcex    s             ; restore sign
-              goto    17$           ; return to (P+2)
+              goto    150$
 
 
               .section Code2
