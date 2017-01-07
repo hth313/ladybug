@@ -9,7 +9,7 @@ FatEnd:       .con    0, 0
 
 
               .section Code
-              .name "LB TEST 1A"
+              .name "-LB TEST 0A"
 Header:       rtn
 
               .section TAIL
@@ -20,5 +20,5 @@ Header:       rtn
               .con    0             ; I/O
               .con    0             ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A1TL"        ; Identifier LT-1A
+              .text   "A0TL"        ; Identifier LT-0A
               .con    0             ; checksum position
