@@ -2,7 +2,7 @@
 Implementation
 **************
 
-This chapter is aimed to give an understanding of how the HP-41 has been extended to work with integer numbers.
+This chapter aims to give an understanding of how the HP-41 has been extended to work with integer numbers.
 
 
 .. index:: buffer, I/O buffer, XROM number
@@ -28,7 +28,7 @@ As the lower 56 bits are stored in the normal stack registers, it makes it easie
 
 In addition to the extra bits for the stack, the buffer keeps track of all other things related to the integer mode. The complete integer state is preserved when you turn your calculator off. In fact, turning the HP-41 off and on will not cause the HP-41 to leave the integer mode. Integer mode stays active until you make an explicit switch to floating point mode (just press the gold shift key and the ``PI`` (0) key to get out of integer mode).
 
-If you unplug Ladybug, the next time you turn the HP-41 on, it will reclaim the buffer registers and make them available in the free memory pool.
+If you unplug Ladybug, the next time you turn the HP-41 on, the HP-41 will reclaim the buffer registers and make them available in the free memory pool.
 
 
 Keboard layout
@@ -42,11 +42,13 @@ The window key is the dot key. It was selected because the display uses dots to 
 
 The bit set, clear and test instructions are located on the row below the corresponding flag operations.
 
-Negation is the same thing as ``CHS``, bitwise ``NOT`` on the same key (shifted) is closely related to negation.
+Negation is the same thing as ``CHS``, bitwise ``NOT`` on the same key (shifted) is it is closely related to negation.
 
 Shift and rotate operations are plentiful. They are arranged together on the upper part of the keyboard.
 
-Double operations are the shifted variant on the corresponding key. As these shifted keys are related to compares on the floating point keyboard and ``CMP`` actually is a subtraction, so it went to the subtraction key. ``TST`` is related to ``CMP``, so it was placed next to it.
+Double ``MUL`` and ``DIV`` operations are the shifted variant on the corresponding key.
+
+``CMP`` is actually a subtract operation, so it is on the shifted ``SUB`` key. ``TST`` is related to ``CMP``, so it was placed next to it. These keys are comparisons on the floating point keyboard, so that also makes some sense.
 
 The logical operations are held together in the usual order you say them, AND, OR, XOR, which also is the alphabetic order.
 

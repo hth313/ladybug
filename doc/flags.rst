@@ -22,7 +22,7 @@ Flag 5 is used to control zero fill of numbers. Zero filling means that all digi
 
 In decimal mode, zero fill has no effect.
 
-If the number is larger than can be displayed, the window feature will enable a dot before the base character to indicate more digits available than is shown. This only happens if there is any non-zero digit above what is shown and works that way even in zero fill mode. This is to make it easy to see if there is anything of real interest there and prevents the need from constantly inspecting upper windows only to find zero digits.
+If the number is larger than can be displayed, the window feature will enable a dot before the base character to indicate more digits available than is shown. This only happens if there is any non-zero digit above what is shown and works that way even in zero fill mode. This is to make it easy to see if there is anything of real interest there.
 
 
 .. index:: carry flag, flags; carry
@@ -32,7 +32,7 @@ Carry flag
 
 The carry flag is significant to most micro processors. It carries the bit out of a an addition, or the borrow into a subtraction. It is also used in shift operations as the spill bit shifted or rotated out.
 
-Here it is assigned to flag 3, which if you straighten and mirror it resembles a C.
+Here it is assigned to flag 3, which resembles a C, if you straighten and mirror it.
 
 .. index:: overflow flag, flags; overflow
 
@@ -57,4 +57,4 @@ The sign flag is the most significant bit of the result. In signed mode this is 
 Flag 1 is used for sign, because it is a bit just copied from the result and it signals negative result when this bit is 1.
 
 .. note::
-   The zero flag is set to indicate that the representable part of the result is zero. If you add two numbers so that they produce a carry out, but the lower parts consists of only 0 bits, the zero flag is set. Mathematically, the result is not zero, but this is how micro processors work, numbers wrap. You also have the carry flag and the overflag to inspect in order to interpret a result.
+   The zero flag is set to indicate that the representable part of the result is zero. If you add two numbers so that they produce a carry out, but the lower parts consists of only 0 bits, the zero flag is set. Mathematically, the result is not zero, but this is how micro processors work, numbers wrap. You also have the carry flag and the overflag to inspect to interpret the result.

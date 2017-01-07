@@ -2,7 +2,7 @@
 Limitations
 ***********
 
-This chapter covers known limitations in the current implementation.
+This chapter covers known limitations with the current implementation.
 
 
 .. index:: clock display

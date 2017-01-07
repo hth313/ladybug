@@ -2,7 +2,7 @@
 Differences to the HP-16C
 *************************
 
-Being inspired by the HP-16C there are a lot of similarities between the Ladybug module for the HP-41 and the HP-16C. Apart from the obvious differences, such as form factor, battery life, alpha capabilities on the HP-41 and dedicated decorated keyboard on the HP-16C, there are a lot more subtle differences, which are discussed in this chapter.
+Being inspired by the HP-16C there are a lot of similarities between the Ladybug module for the HP-41 and the HP-16C. Apart from the obvious differences, such as form factor, battery life, alpha capabilities on the HP-41 and dedicated decorated keyboard on the HP-16C, there are other less obvious differences, many of which are discussed in this chapter.
 
 
 
@@ -11,9 +11,9 @@ Being inspired by the HP-16C there are a lot of similarities between the Ladybug
 Flags
 =====
 
-Flags are arranged differently. The reason for this is the annunciators 0-4 on the HP-41 that we can take advantage of to provide additional feedback compared to the HP-16C. The arrangement was inspired by making it logical, rather than trying to be compatible with the HP-16C.
+Flags are arranged differently. The reason for this is the annunciators 0-4 on the HP-41 that can be used to provide additional feedback compared to the HP-16C. The arrangement was inspired by making it logical, rather than trying to be compatible with the HP-16C.
 
-The sign and zero flags are very common on micro processors and gives additional feedback, being shown on the annunciators. It also allows for implementing compares in a way more similar to micro processors, rather than keeping with the calculator style compares between X and Y (or X and 0).
+The sign and zero flags are very common on micro processors and gives additional feedback, being shown on the annunciators. It also allows for implementing compares in a way more similar to micro processors, which is discussed next.
 
 
 .. index:: compares
@@ -31,7 +31,7 @@ It is also possible to use the ``TST`` instruction, or rely on the flags set aft
 Co-existing modes
 =================
 
-The HP-16C keeps the floating point and integer modes quite separate. Changing between the modes affect stack contents and word sizes. On the HP-41 the integer mode is basically a keyboard and display shell, the functional behavior remains the same even if you switch mode.
+The HP-16C keeps the floating point and integer modes separate. Changing between the modes affect stack contents and word sizes. On the HP-41 the integer mode is basically a keyboard and display shell, the functional behavior remains the same when you switch mode.
 
 As a result, the mode separation is not as strict and stack register values are not normally pruned when changing mode, as we will discuss next.
 
@@ -43,13 +43,13 @@ Word size change affecting stack
 
 The HP-16C truncates values on the stack according to the active word size. Changing a word size to a smaller one and then back will not preserve all value bits. Ladybug only affect value bits on the stack when going to a *larger* word size. Reducing to a smaller word size will not affect value bits on the stack.
 
-Increasing the word size will affect all registers on the stack with Ladybug. In signed mode, values are sign extended and in unsigned mode, values are zero extended. This is done to preserve numerical values.
+Increasing the word size will affect all registers on the stack with Ladybug. In signed mode, values are sign extended, and in unsigned mode values are zero extended. This is done to preserve numerical values.
 
-It is possible to keep 56-bit floating point values on the stack, allowing sharing between integer and floating point values provides that the word size is not increased. This allows for mixing floating point operations with integer mode, provided a little bit of care is exercised.
+It is possible to keep 56-bit floating point values on the stack, provided that the word size is not increased. This allows for mixing floating point operations with integer mode.
 
-The reason for this, is that the HP-41 at any time can perform floating point operations. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode.
+The reason for doing it this way is that the HP-41 can perform floating point operations at any time. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode. On the other hand, you get more possibilities on the HP-41.
 
-In Ladybug, numbers are masked as needed when they are used as input to operations, not because they are laying around somewhere.
+Numbers are masked as needed when they are used as input to operations in Ladybug, not because they are laying around somewhere.
 
 
 .. index:: postfix operands, operands
@@ -57,7 +57,7 @@ In Ladybug, numbers are masked as needed when they are used as input to operatio
 Postfix operands
 ================
 
-Ladybug takes advantage of the prompting functions on the HP-41 to allow for accessing stack registers in the same ways as numeric registers. Indirection can also be done on any register, not just the single index register on the HP-16C.
+Ladybug takes advantage of the prompting instructions on the HP-41 to allow for accessing stack registers in the same ways as numeric registers. Indirection can also be done on any register, not just the single index register as on the HP-16C.
 
 
 .. index:: zero fill mode, mode; zero fill, setting zero fill

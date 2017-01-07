@@ -19,11 +19,11 @@ In integer mode, the data storage size is based on the selected word size. The s
 
 In the floating point mode, data storage registers are always 56-bits wide (14 nibbles).
 
-The integer mode shares the data storage area with floating point mode.
+The same data register area is shared by the floating point and integer modes.
 
-With integer mode, it means that with word size 8, each storage value takes 2 nibbles. Starting at floating point register 0, the first 7 (56/8=7) integer registers overlap with the first floating point register. Integer register 0 is in the rightmost two nibbles of floating point register 0, the following registers are allocated one by one as long as the are nibbles available.
+In integer mode it means that with word size 8, each storage value needs 2 nibbles. Starting at floating point register 0, the first 7 (56/8=7) integer registers overlap with the first floating point register. Integer register 0 is in the rightmost two nibbles of floating point register 0, the following registers are allocated one by one as long as the are nibbles available.
 
-With word size 32, nibble register 0 is inside floating point register 0, nibble register 1 takes the first 24 (56-32=24) bits from register 0, and 8 bits from floating point register 1.
+In word size 32, nibble register 0 is inside floating point register 0, nibble register 1 takes the first 24 (56-32=24) bits from register 0, and 8 bits from floating point register 1.
 
 Changing the word size effectively changes the boundaries used in the storage register area, but will not alter the contents of the memory in any way. It just changes the interpretation of the data memory area.
 

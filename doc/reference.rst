@@ -3,16 +3,16 @@
 Instruction reference
 *********************
 
-This chapter goes through the instructions provided by Ladybug. Instructions follow the ordinary 4-level stack convention of the HP-41, operations consume arguments and put their result on the stack.
+This chapter goes through the instructions provided by Ladybug.
 
 .. index:: mode; flags, mode; setting, operations; mode related
 
 Mode related
 ============
 
-The following instructions control the mode settings. Mode settings are preserved and restored if you switch out of integer mode and then back again.
+The following instructions control mode settings. Mode settings are preserved and restored if you switch out of integer mode and then back again.
 
-Signed mode and zero filling are controlled by flags and are shared between integer and floating point modes. If you change such flag in floating point mode, it will affect the behavior in integer node as well.
+Signed mode and zero filling are controlled by flags and are shared between integer and floating point modes. If you change such flag in floating point mode, it will affect the behavior in integer mode as well.
 
 
 .. index:: integer mode, mode; integer
@@ -28,9 +28,9 @@ Switch to integer mode. The first time you enter integer mode the word size is s
 FLOAT
 ^^^^^
 
-Switch to floating point mode, in other words, leave integer mode. This restores the keyboard and display to its normal floating point behavior.
+Switch to floating point mode, leaving integer mode. This restores the keyboard and display to its normal floating point behavior.
 
-Integer instructions in floating point mode still works, but will not display or use the dedicated keyboard. This makes it possible to intermix floating point and integer operations in a program.
+Integer instructions in floating point mode still works, but will not display or use the dedicated keyboard.
 
 
 .. index:: binary base, base; binary
@@ -66,7 +66,7 @@ Enable base 16, work with hexadecimal integers.
 WSIZE _ _
 ^^^^^^^^^
 
-Prompts for and sets the current word size.
+Set word size.
 
 
 .. index:: word size; inspecting, inspecting word size
@@ -113,10 +113,10 @@ Disable zero fill mode.
 Stack operations
 ================
 
-The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. Ladybug provides a set of instructions that duplicate already existing stack manipulation operations, but that takes the stack and the extra needed storage in account.
+The integer stack shares the stack with the ordinary floating point stack. As integers larger than 56 bits will not fit in a stack register, extra storage on the side (the I/O buffer) is used to keep track of the extra bits. Ladybug provides a set of instructions that duplicate already existing stack manipulation operations, but which takes the stack register extension parts in account.
 
 .. hint::
-   If you are working with a word size of 56 and less, you can actually use the corresponding built in stack manipulation instructions intended for floating point numbers instead. This is especially useful in a program as they are one byte instructions compared to two for the integer counterparts.
+   If you work in word size of 56 and less, you can actually use the corresponding built in stack manipulation instructions intended for floating point numbers instead. This is especially useful in a program as they takes less space compared to the integer mode counterparts.
 
 
 ENTERI
@@ -155,44 +155,44 @@ Rotate the stack up one step.
 Arithmetic operations
 =====================
 
-Instructions that perform some kind of calculation, like arithmetic, logical and bit manipulation instructions, consume their arguments and place the result on the stack. The original value of X is placed in L (Last X) register. If the instruction consumes more arguments from the stack than it produces, the stack drops and the contents of the top register (T) is duplicated as needed.
+Instructions that perform some kind of calculation, i.e. arithmetic, logical and bit manipulation instructions, consume their arguments and place the result on the stack. The original value of X is placed in the L (Last X) register. If the instruction consumes more arguments from the stack than it produces, the stack drops and the contents of the top register (T) is duplicated as needed.
 
 
 ADD
 ^^^
 
-Add X with Y, put the result in X and drop the stack.
+Add X with Y, the result is placed in X and the stack drops.
 
 
 SUB
 ^^^
 
-Subtract X from Y, put the result in X and drop the stack.
+Subtract X from Y, the result is placed in X and the stack drops.
 
 MUL
 ^^^
 
-Multiply X with Y, put the result in X and drop the stack. If the operation overflows, the overflow bit is set. In signed operation, the result sign is always the correct one.
+Multiply X with Y, the result is placed in X and the stack drops. If the operation overflows, the overflow bit is set. In signed operation, the result sign is always the correct one.
 
 DIV
 ^^^
 
-Divide Y by X, put the quotient in X and drop the stack.
+Divide Y by X, the quotient is placed in X and the stack drops.
 
 
 RMD
 ^^^
 
-Divide Y by X, put the remainder in X and drop the stack.
+Divide Y by X, the remainder is placed in X and the stack drops.
 
 NEG
 ^^^
 
 Negate X.
 
-In signed mode the smallest negative number does not have a corresponding positive counterpart. Negating that number ends up with the same number as the input. In this case the overflow flag is set to indicate that the result could not be represented. For all other signed values, the input is negated and the overflow is cleared.
+In signed mode the smallest negative number does not have a corresponding positive counterpart. Negating that number ends up with the same number as the input. In this case the overflow flag is set to indicate that the result could not be represented. For all other signed values, the input is negated and the overflow flag is cleared.
 
-In unsigned mode, the number is negated, giving the same bit pattern as would result in signed mode. However, as all numbers are considered positive, a negative number can not be represented and the overflow flag will be set to indicate this. The only case you will not get an overflow flag is when the input is 0 (as 0 negated is also 0, and it is can be represented in unsigned mode).
+In unsigned mode, the number is negated, giving the same bit pattern as would result in signed mode. However, as all numbers are considered positive, a negative number can not be represented and the overflow flag will be set to indicate this. The only case you will not get an overflow flag is when the input is 0 (as 0 negated is also 0).
 
 
 ABSI
@@ -203,8 +203,6 @@ Absolute value of X.
 In signed mode, negative numbers are negated to make them positive. As negation does the same code as ``NEG``, see ``NEG`` for a discussion on how the smallest negative number behaves.
 
 In unsigned mode all numbers are considered positive, and negation is never done. The overflow flag is always cleared in this case.
-
-As signed mode uses 2-complement representation, the smallest negative number (for example, hex 80 in word size 8), has no corresponding positive number and the result is the same as the input. In this case the overflow flag is set to indicate that the real result cannot be represented. In all other cases the overflow flag will be reset.
 
 
 .. index:: operations; double precision, double precision
@@ -217,19 +215,19 @@ Multiplication and divide are also available in double versions.
 DMUL
 ^^^^
 
-Multiply X with Y, the double result is stored in X and Y, the high order bits are in X.
+Multiply X with Y, the double result is placed in X and Y (high part in X).
 
 
 DDIV
 ^^^^
 
-Divide the double value in Z and Y (high part in Y), is divided by X. The resulting double quotient is stored in X and Y (high order bits in X). Stack drops one step.
+Divide the double value in Z and Y (high part in Y) by X. The double quotient result is placed in X and Y (high part in X). Stack drops one step.
 
 
 DRMD
 ^^^^
 
-Divide the double value in Z and Y (high part in Y), is divided by X. The resulting single precision remainder is stored in X. Stack drops two steps.
+Divide the double value in Z and Y (high part in Y) by X. The single precision remainder result is placed in X. Stack drops two steps.
 
 
 .. index:: logical operations, operations; logical
@@ -240,17 +238,17 @@ Logical operations
 AND
 ^^^
 
-Logical AND between X and Y, put the result in X and drop the stack.
+Logical AND between X and Y, result is placed in X and the stack drops.
 
 OR
 ^^
 
-Logical OR between X and Y, put the result in X and drop the stack.
+Logical OR between X and Y, result is placed in X and the stack drops.
 
 XOR
 ^^^
 
-Logical XOR between X and Y, put the result in X and drop the stack.
+Logical XOR between X and Y, result is placed in X and the stack drops.
 
 
 NOT
@@ -267,12 +265,12 @@ Shift operations
 SL _ _
 ^^^^^^
 
-Shift X left by the given number of steps. The most recently shifted out bit is stored in the carry bit.
+Shift X left by the given number of steps. The most recently shifted out bit is placed in the carry bit.
 
 SR _ _
 ^^^^^^
 
-Shift X right by the given number of steps. The most recently shifted out bit is stored in the carry bit.
+Shift X right by the given number of steps. The most recently shifted out bit is placed in the carry bit.
 
 
 RL _ _
@@ -290,19 +288,19 @@ Rotate X right by the given number of steps. Bits going out at the right end app
 RLC _ _
 ^^^^^^^
 
-Rotate X left by the given number of steps through carry. A bit that is rotated goes to the carry, the previous carry is rotated in at the right hand side.
+Rotate X left by the given number of steps through carry. A bit that is rotated out goes to the carry, the previous carry is rotated in at the right hand side.
 
 
 RRC _ _
 ^^^^^^^
 
-Rotate X right by the given number of steps through carry. A bit that is rotated goes to the carry, the previous carry is rotated in at the left hand side.
+Rotate X right by the given number of steps through carry. A bit that is rotated out goes to the carry, the previous carry is rotated in at the left hand side.
 
 
 ASR _ _
 ^^^^^^^
 
-Aritmetic right shift. This duplicates the sign bit as the number is shifted right. The most recent outgoing bit is stored in the carry bit.
+Aritmetic right shift. This duplicates the sign bit as the number is shifted right. The most recent shifted out bit is placed in the carry.
 
 
 .. index:: bitwise operations, operations; bitwise
@@ -355,7 +353,7 @@ Test if a bit of X (0-63) is set, skip next instruction in a program if the bit 
 BITSUM
 ^^^^^^
 
-Count the number of bits in X and put that number in X.
+Count the number of bits in X and place that number in X.
 
 
 .. index:: compare operations, operations; compares
@@ -365,13 +363,13 @@ Comparisons
 
 Comparing values with Ladybug differs from what you may be used to on an HP calculator. Instead of comparing X to Y, or X to 0, you test flags set by the previous operation. There are three variants to this:
 
-To compare two numbers, use the ``CMP`` instruction which works similar to a compare  on a microprocessor. It performs a subtraction, setting flags according to the result and discards the numerical result. The actual comparison between two numbers starts with a  ``CMP``, followed by a flag conditional operation which conditionally skips the following instruction.
+#. To compare two numbers, use the ``CMP`` instruction which works similar to a compare  on a microprocessor. It performs a subtraction, setting flags according to the result and discards the numerical result. The actual comparison between two numbers starts with a  ``CMP``, followed by a flag conditional operation which conditionally skips the following instruction.
 
-To compare to 0, use the ``TST`` instruction followed by a test of flag 0.
+#. To compare to 0, use the ``TST`` instruction followed by a test of flag 0.
 
-Furthermore, arithmetic and bit manipulation instructions set flags according to the result, making it possible to just test suitable flags after such operation.
+#. Furthermore, arithmetic and bit manipulation instructions set flags according to the result, making it possible to just test suitable flags after such operation.
 
-Here are the included instructions that are directly related to compares.
+Here are the provided instructions that are related to comparing values.
 
 CMP _ _
 ^^^^^^^^
@@ -434,7 +432,7 @@ Subtract one from the register specified in the argument, update sign and zero f
 DSZI _ _
 ^^^^^^^^^
 
-Subtract one from the register specified in the argument, skip next instruction if the result is zero. This is useful for implementing loops counting down.
+Subtract one from the register specified in the argument, skip next instruction if the result is zero. This is useful for implementing loops.
 
 
 INCI _ _
@@ -458,7 +456,7 @@ Miscellaneous instructions
 ALDI _ _
 ^^^^^^^^
 
-Load the value from the specified register, append it to alpha register obeying the current word size, selected base, active sign mode and obeying zero fill flag.
+Append the value from the specified register to the alpha register obeying the current word size, selected base, active sign mode and zero fill flag.
 
 
 .. index:: pause operation, operations; pause
@@ -466,8 +464,8 @@ Load the value from the specified register, append it to alpha register obeying 
 PSEI _ _
 ^^^^^^^^^
 
-Integer pause instruction. Works very much like the existing ``PSE`` instruction, but runs with the integer mode active. This instruction takes and argument which controls the duration of the pause.
+Integer pause instruction. Works very much like the existing ``PSE`` instruction, but runs with the integer mode active. This instruction takes an argument which controls the duration of the pause.
 
-The length of the pause in seconds is approximately the value divided by 7. An argument of 00 is the default and gives a pause of about 1 second, which is similar to the built in ``PSE`` instruction. A 00 argument corresponds to 07, but 00 is easier perhaps easier to remember.
+The length of the pause in seconds is approximately the value divided by 7. An argument of 00 behaves as 07 and gives a pause of about 1 second, similar to the built in ``PSE`` instruction.
 
-Whenever a key is pressed, the pause is restarted. The pause length is limited to 64 (about 9 seconds), which is probably longer than you want in most cases.
+When a key is pressed, the pause is restarted. The pause length is limited to 64 (about 9 seconds), which is probably longer than you want in most cases.
