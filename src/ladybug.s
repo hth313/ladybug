@@ -7209,7 +7209,7 @@ rpollio:      ?s7=1                 ; alpha mode?
               rgo     pollio
 
               ;; Program mode. Separated here so that we know that only
-              ;; the run-mode need to hanble pausing.
+              ;; the run-mode need to handle pausing.
 10$:          ?s12=1                ; private?
               goc     pollretC0     ; yes
               ?s5=1                 ; message flag (perhaps showing "ROM")
