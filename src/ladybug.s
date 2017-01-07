@@ -6558,7 +6558,7 @@ shift1:       bcex                  ; shift one left
               c=c+c   x
               acex
               c=c+c
-              gonc    2$            ; @@ fall through not covered
+              gonc    2$
               a=a+1   x
 2$:           acex
               bcex
@@ -6577,7 +6577,7 @@ mul10:        gosub   GSB256        ; Shift1   *2
               gosub   GSB256        ; Shift    X * 8
               c=n
               a=a+c                 ; add (X * 2) and (X * 8)
-              gonc    1$            ; @@ fall through not covered
+              gonc    1$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6648,7 +6648,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=b     s             ; C= low part of (n >> 2)
 
               a=a+c                 ; B.X - A = (n >> 1) + (n >> 2)
-              gonc    5$            ; @@ fall through not covered
+              gonc    5$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6665,7 +6665,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               csr
               bcex    s
               a=a+c                 ; add lower parts
-              gonc    10$           ; @@ fall through not covered
+              gonc    10$
               bcex    x
               c=c+1   x             ; carry to upper part
               bcex    x
@@ -6675,7 +6675,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=b     wpt
               rcr     2
               a=a+c
-              gonc    15$           ; @@ fall through not covered
+              gonc    15$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6686,7 +6686,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               csr
               csr
               a=a+c
-              gonc    20$           ; @@ fall through not covered
+              gonc    20$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6698,7 +6698,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=0     wpt
               rcr     6
               a=a+c
-              gonc    22$           ; @@ fall through not covered
+              gonc    22$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6727,7 +6727,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=regn  Q
               acex
               a=a-c                 ; r = n - q*10 (lower part)
-              gonc    25$           ; @@ fall through not covered
+              gonc    25$
               bcex    x             ; borrow
               c=c-1   x
               bcex    x
@@ -6735,7 +6735,7 @@ div10:        acex                  ; save n in P[9:8]:Q
 25$:          c=0                   ; r + 6
               ldi     6
               a=a+c
-              gonc    30$           ; @@ fall through not covered
+              gonc    30$
               bcex    x
               c=c+1   x
               bcex    x
@@ -6968,7 +6968,7 @@ decpos:       b=0     xs            ; clear flag for digits above
               c=c+1                 ; BCD convert digit
               c=c-1
               c=a+c                 ; add to sum
-              gonc    526$          ; @@ fall through not covered
+              gonc    526$
               cmex                  ; carry
               c=c+1
               goto    528$
