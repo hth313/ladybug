@@ -7128,10 +7128,8 @@ decpos:       b=0     xs            ; clear flag for digits above
 ;;;
 ;;; ----------------------------------------------------------------------
 
-;;; Temporaily disabled, the linker fails to lay out sections with it
-
-;              .section Legal7
-;              nop
+              .section Legal7
+              nop
 
 
               .section Tail
