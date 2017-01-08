@@ -20,7 +20,7 @@ RCLSW
 X>Y?
 SF 99
 RDN
-.0004
+.0005
 X<=Y?
 SF 99
 
@@ -29,7 +29,7 @@ RCL Z
 X>Y?
 SF 99
 RDN
-.00015
+.0002
 X<=Y?
 SF 99
 
