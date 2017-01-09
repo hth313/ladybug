@@ -3465,7 +3465,7 @@ clStatus:     dadd=c                ; select status register
               c=c+1   m
               gotoc                 ; return to (P+2)
 
-clNib:        a=a+c   x             ; A= register number
+clNib:        a=a+c   x             ; A.X= register number
 classNibble:  c=b                   ; select header register
               rcr     10
               dadd=c
@@ -3519,11 +3519,11 @@ classNibble:  c=b                   ; select header register
               a=c     x             ; A.X= last register address
               c=b     wpt           ; C[3:1]= first register address
               csr     wpt           ; C.X= first register address
-              c=a-c   x             ; C[0]= number of registers needed
+              c=a-c   x             ; C[0]= number of registers needed - 1
               rcr     1
-              bcex    s             ; B.S= number of registers needed
+              bcex    s             ; B.S= number of registers needed - 1
               c=data                ; read memory
-              c=-c-1  m             ; invert a lot of bits, but not all
+              c=-c-1  m             ; invert many bits, but not all
               data=c
               a=c
               c=data
@@ -3538,7 +3538,7 @@ classNibble:  c=b                   ; select header register
               c=c-1   s             ; C.S= nibble offset
 ;;; Nibble classification returns with:
 ;;;  C.X= first register address
-;;;  C.S= nibble offset in first register + 1
+;;;  C.S= nibble offset in first register
 ;;;  B.S= number of registers needed - 1
 ;;; Last register is within range and exists (also selected).
               rtn
@@ -4187,7 +4187,7 @@ LDI:          nop
               rxq     findBufferUserFlags
               rxq     loadG_rom1
 LDI10:        acex
-              n=c                   ; save value in B
+              n=c                   ; save value in N
               rxq     liftStackS11
               c=n
               regn=c  X
