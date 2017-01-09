@@ -1288,7 +1288,7 @@ chkbuf:       ldi     BufNumber
               goto    2$
 
 noBuf:        rxq     errorMessage
-              .messl  "NO PROG BUF"
+              .messl  "NO INTGR BUF"
 errorExit:    gosub   LEFTJ
               s8=1
               gosub   MSG105
