@@ -10,7 +10,7 @@ This chapter covers known limitations with the current implementation.
 Clock display
 =============
 
-The Time module and the HP-41CX offers a running clock display, which does not work with integer mode. The clock starts, but immediately stops updating. To use the clock, switch to floating point mode.
+The Time module and the HP-41CX offers a running clock display, which does not work with integer mode. The time is displayed but it does not update. To show the running clock, switch to floating point mode.
 
 
 .. index:: printer
