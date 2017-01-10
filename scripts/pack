@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Build module and documentaiton
+pushd src
+make
+popd
+pushd doc
+make html
+popd
+
+# Set up a dist folder
+rm -rf dist
+mkdir dist
+cp src/ladybug.mod dist/
+cp -R doc/_build/html dist/doc
+
+# Clean up some stuff we do not want
+rm -rf dist/doc/_sources
+rm dist/doc/.buildinfo
+
+# Pack a .zip
+pushd dist
+zip -r ladybug *
+popd
