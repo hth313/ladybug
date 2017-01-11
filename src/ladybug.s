@@ -1198,7 +1198,7 @@ createBuf:    acex    x             ; save address of first free register
 
               c=0
               pt=     13
-              lc      BufNumber     ; build header
+              lc      1             ; build header
               lc      BufNumber
               lc      0
               lc      BufSize
