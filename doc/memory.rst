@@ -53,7 +53,7 @@ Register indirection
 
 Register indirection in integer mode works conceptionally as before, but uses the integer value in the storage location to point to a numeric nibble memory register.
 
-The range of nibble storage registers that can be accessed is 0-4095. Actual amount of available memory may put limitations on this, but for small word sizes it is possible to get quite far. With word size 4, addressing the entire allowed range requires 292 registers, which is possible on an HP-41.
+The range of nibble storage registers that can be accessed is 0--4095. Actual amount of available memory may put limitations on this, but for small word sizes it is possible to get quite far. With word size 4, addressing the entire allowed range requires 292 registers, which is possible on an HP-41.
 
 
 Memory manipulation

@@ -16,7 +16,7 @@ Numeric bases
 
 Ladybug provides four numeric bases, binary (2), octal (8), decimal (10) and hexadecimal (16). Internally, numbers are represented as binary integers. The selected base controls the input and display of integers. The same binary number can be represented in any of the bases and it is easy to go between the bases. Thus, you can at any time during a calculation switch base to the one most suitable at that point. Any result (or partial result, thanks to RPN logic) can easily be shown in any available base.
 
-Four keys (G-J) on the HP-41 keyboard represent ``HEXS``, ``DECS``, ``OCTS`` and ``BINS`` instructions that switch the base. Thus, switching base takes a single key press.
+Four keys (G--J) on the HP-41 keyboard represent ``HEXS``, ``DECS``, ``OCTS`` and ``BINS`` instructions that switch the base. Thus, switching base takes a single key press.
 
 At any time a binary integer is displayed, it is displayed in the active base with a single letter at the right end of the display, indicating the active base.
 
@@ -44,7 +44,7 @@ Unsigned
 
 In the unsigned mode the leftmost bit adds magnitude to the number, not sign. This essentially doubles the value range.
 
-In word size 8, numbers range from 0-255 (decimal).
+In word size 8, numbers range from 0--255 (decimal).
 
 
 .. index:: word size, sign extension
@@ -65,4 +65,4 @@ Windows
 
 Depending on the number base and word size, the display may not be able to display the full number. In such cases the base letter will have a dot next to it indicating that there are more digits outside what is shown. To display such numbers you can use the window feature which is available on the dot key.
 
-Pressing window (dot) gives a prompt for the window. The permitted range is 0-7, with 0 being the least significant part, which is what is shown by default. Simply press the desired window number to show the other parts of the number. The dots beside the base character gives feedback to whether there are more digits to the left or to the right of what is currently shown.
+Pressing window (dot) gives a prompt for the window. The permitted range is 0--7, with 0 being the least significant part, which is what is shown by default. Simply press the desired window number to show the other parts of the number. The dots beside the base character gives feedback to whether there are more digits to the left or to the right of what is currently shown.

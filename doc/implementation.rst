@@ -38,7 +38,7 @@ The keyboard layout uses the existing similar functions on keys whenever possibl
 
 The base change keys are ordered in the same way as on the HP-16C and are located after the F digit.
 
-The window key is the dot key. It was selected because the display uses dots to indicate presence of more windows. It is also very close to the 0-3 keys, so you will find the typical argument keys close to the window activation key.
+The window key is the dot key. It was selected because the display uses dots to indicate presence of more windows. It is also very close to the 0--3 keys, so you will find the typical argument keys close to the window activation key.
 
 The bit set, clear and test instructions are located on the row below the corresponding flag operations.
 

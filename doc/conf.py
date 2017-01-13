@@ -50,8 +50,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Ladybug'
-copyright = u'2016, hth313'
-author = u'hth313'
+copyright = u'2017, Håkan Thörngren'
+author = u'Håkan Thörngren'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -153,7 +153,7 @@ html_static_path = ['_static']
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
-#html_use_smartypants = True
+html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}

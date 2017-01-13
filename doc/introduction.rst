@@ -16,7 +16,7 @@ Ladybug is a module image that needs to be put in some programmable plug-in modu
 
 It is also possible to use Ladybug on HP-41 emulators.
 
-The Ladybug image is a 3x4K module. Two banks occupies a single 4K page in the normal memory expansion space, together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7-F) of the HP-41 expansion space, but the page 4 image must be placed in address page 4.
+The Ladybug image is a 3x4K module. Two banks occupies a single 4K page in the normal memory expansion space, together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7--F) of the HP-41 expansion space, but the page 4 image must be placed in address page 4.
 
 
 This release

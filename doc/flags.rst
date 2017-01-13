@@ -5,7 +5,7 @@ Flags
 
 Flags are fundamental to the integer mode. Flags are used to control behavior and give  information about the result of operations.
 
-Flags 0-5 are given special purpose by the integer mode. These flags are used because most are visible in the display, which makes it easy to see the flags while doing manual operations.
+Flags 0--5 are given special purpose by the integer mode. These flags are used because most are visible in the display, which makes it easy to see the flags while doing manual operations.
 
 Some logic is intended in the assignment of the flag numbers, which makes it easier to remember them.
 
