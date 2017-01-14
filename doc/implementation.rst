@@ -38,19 +38,19 @@ The keyboard layout uses the existing similar functions on keys whenever possibl
 
 The base change keys are ordered in the same way as on the HP-16C and are located after the F digit.
 
-The window key is the dot key. It was selected because the display uses dots to indicate presence of more windows. It is also very close to the 0--3 keys, so you will find the typical argument keys close to the window activation key.
+The window key is the dot key. It was selected because the display uses dots to indicate presence of more windows. It is also very close to the 0--3 keys, so you will find the typical argument keys close to the window selection key.
 
 The bit set, clear and test instructions are located on the row below the corresponding flag operations.
 
-Negation is the same thing as ``CHS``, bitwise ``NOT`` on the same key (shifted) is it is closely related to negation.
+Negation is the same thing as ``CHS``, bitwise ``NOT`` is on the same key (shifted) as it is closely related to negation.
 
 Shift and rotate operations are plentiful. They are arranged together on the upper part of the keyboard.
 
-Double ``MUL`` and ``DIV`` operations are the shifted variant on the corresponding key.
+Double ``MUL`` and ``DIV`` operations are the shifted variant of the corresponding key.
 
-``CMP`` is actually a subtract operation, so it is on the shifted ``SUB`` key. ``TST`` is related to ``CMP``, so it was placed next to it. These keys are comparisons on the floating point keyboard, so that also makes some sense.
+``CMP`` is actually a subtract operation, so it is on the shifted ``SUB`` key. ``TST`` is related to ``CMP``, so it was placed next to it. These keys are also where comparisons are on the floating point keyboard, so that also makes some sense.
 
-The logical operations are held together in the usual order you say them, AND, OR, XOR, which also is the alphabetic order.
+The logical operations are held together in the usual order you say them, AND, OR, XOR, which also is the alphabetical order.
 
 When you feel that you need to work with floating point numbers, you probably want to use that PI constant, so the ``FLOAT`` operation to switch to floating point mode is on the PI key.
 

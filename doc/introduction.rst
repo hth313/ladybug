@@ -56,7 +56,7 @@ If you feel that you need to brush up your background knowledge, here are some s
 * *Extend your HP-41*, W Mier-Jedrzejowicz, 1985.
 
 
-As always, learning by doing tends to work best. Put fresh batteries into your HP-41 and put it to work, it is a great tool, despite being some 30+ years old.
+As always, learning by doing tends to work best. Insert fresh batteries into your HP-41 and put it to work, it is a great tool, despite being some 30+ years old.
 
 
 Integer mode

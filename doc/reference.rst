@@ -10,9 +10,9 @@ This chapter goes through the instructions provided by Ladybug.
 Mode related
 ============
 
-The following instructions control mode settings. Mode settings are preserved and restored if you switch out of integer mode and then back again.
+The following instructions control mode settings. Mode settings are preserved if you switch out of integer mode and then back again.
 
-Signed mode and zero filling are controlled by flags and are shared between integer and floating point modes. If you change such flag in floating point mode, it will affect the behavior in integer mode as well.
+Signed mode and zero filling are controlled by flags that are shared between integer and floating point modes. If you change such flag in floating point mode, it will affect the behavior in integer mode as well.
 
 
 .. index:: integer mode, mode; integer
@@ -172,7 +172,7 @@ The integer stack shares the stack with the ordinary floating point stack. As in
 Arithmetic operations
 =====================
 
-Instructions that perform some kind of calculation, i.e. arithmetic, logical and bit manipulation instructions, consume their arguments and place the result on the stack. The original value of X is placed in the L (Last X) register. If the instruction consumes more arguments from the stack than it produces, the stack drops and the contents of the top register (T) is duplicated as needed.
+Instructions that perform some kind of calculation, i.e. arithmetic, logical and bit manipulation instructions, consume their arguments and place the result on the stack. The original value of X is placed in the L (Last X) register. If the instruction consumes more arguments from the stack than it produces, the stack drops and the contents of the top register (T) is duplicated.
 
 
 .. object:: ADD
@@ -195,11 +195,11 @@ Instructions that perform some kind of calculation, i.e. arithmetic, logical and
 
 .. object:: MUL
 
-   Multiply X with Y, the result is placed in X and the stack drops. If the operation overflows, the overflow bit is set. In signed operation, the result sign is always the correct one.
+   Multiply X with Y, the result is placed in X and the stack drops.
 
    .. describe:: Affected flags
 
-   Sign, zero and overflow flags set according to the result. The sign flag will have the correct value of the result. Carry is not affected.
+   Sign, zero and overflow flags set according to the result. The sign flag will have the correct value of the real result. Carry is not affected.
 
 
 .. object:: DIV
@@ -208,7 +208,7 @@ Instructions that perform some kind of calculation, i.e. arithmetic, logical and
 
    .. describe:: Affected flags
 
-   Sign, zero and overflow flags set according to the result. The sign flag will have the correct value of the result. Carry set if remainder is non-zero, cleared otherwise.
+   Sign, zero and overflow flags set according to the result. The sign flag will have the correct value of the real result. Carry set if remainder is non-zero, cleared otherwise.
 
 
 .. object:: RMD

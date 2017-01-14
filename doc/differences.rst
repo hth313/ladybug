@@ -13,7 +13,7 @@ Flags
 
 Flags are arranged differently. The reason for this is the annunciators 0-4 on the HP-41 that can be used to provide additional feedback compared to the HP-16C. The arrangement was inspired by making it logical, rather than trying to be compatible with the HP-16C.
 
-The sign and zero flags are very common on micro processors and gives additional feedback, being shown on the annunciators. It also allows for implementing compares in a way more similar to micro processors, which is discussed next.
+The sign and zero flags are very common on micro processors and gives additional feedback, being shown by the annunciators. It also allows for implementing compares in a way more similar to micro processors, which is discussed next.
 
 
 .. index:: compares
@@ -47,9 +47,9 @@ Increasing the word size will affect all registers on the stack with Ladybug. In
 
 It is possible to keep 56-bit floating point values on the stack, provided that the word size is not increased. This allows for mixing floating point operations with integer mode.
 
-The reason for doing it this way is that the HP-41 can perform floating point operations at any time. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode. On the other hand, you get more possibilities on the HP-41.
+The reason for doing it this way, is that the HP-41 can perform floating point operations at any time. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode. On the other hand, you get more possibilities on the HP-41.
 
-Numbers are masked as needed when they are used as input to operations in Ladybug, not because they are laying around somewhere.
+Numbers are in general masked as needed when they are used as input to operations in Ladybug, not because they are laying around somewhere.
 
 
 .. index:: postfix operands, operands
@@ -65,9 +65,9 @@ Ladybug takes advantage of the prompting instructions on the HP-41 to allow for 
 Zero fill mode
 ==============
 
-With Ladybug, the zero fill mode does not indicate available digits above the current window if they are all zero. The HP-16C will always indicate that there is more to see, even if it just fill 0 digits.
+With Ladybug, the zero fill mode does not indicate available digits above the current window if they are all zero. The HP-16C will always indicate that there is more to see, even if it only filled 0 digits.
 
-The reason for this difference is that it is believed that instantly knowing if there is anything non-zero to see outside the display is more useful, than to be constantly reminded that the word size is actually larger than what can be shown in a single display.
+The reason for this difference is that it is believed that instantly knowing if there is anything non-zero to see outside the display is more useful than to be constantly reminded that the word size is actually larger than what can be shown in a single display.
 
 
 .. index:: 1-complement mode, mode; 1-complement, signed mode
