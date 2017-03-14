@@ -6426,7 +6426,7 @@ prgmio:       c=data                ; C= buffer header
               goto    900$
 
 
-              .section KeyTable
+              .section KeyTable, rodata
 ;;; **********************************************************************
 ;;;
 ;;; Keyboard definition
