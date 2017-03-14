@@ -7132,6 +7132,43 @@ decpos:       b=0     xs            ; clear flag for digits above
               nop
 
 
+;;; Switch back to bank 1 and fall into rpollio
+              .section Code2
+              .shadow rpollio - 1
+rpollio2:     enrom1
+
+
+              .section Tail2
+;;; **********************************************************************
+;;;
+;;; Poll vectors, module identifier and checksum in page 2
+;;;
+;;; This is a banked ROM and poll vectors are not expected to be called.
+;;;
+;;; If the wrong bank is left active by accident, which may happen if we
+;;; are placed next to another ROM that is not so careful, or we have a
+;;; bug, we switch back to bank 1 for the very important IO poll.
+;;;
+;;; For all the rest we ignore it, as the power up sequence will reset
+;;; to bank 1.
+;;;
+;;; **********************************************************************
+
+              nop                   ; Pause
+              nop                   ; Running
+              nop                   ; Wake w/o key
+              nop                   ; Powoff
+              goto    rpollio2      ; I/O
+              nop                   ; Deep wake-up
+              nop                   ; Memory lost
+                                    ; Identifier PR-1A
+              .con    1             ; A
+              .con    '0'           ; 0
+              .con    0x202         ; B (bank switched)
+              .con    0x0c          ; L
+              .con    0             ; checksum position
+
+
               .section Tail
 ;;; ----------------------------------------------------------------------
 ;;;
