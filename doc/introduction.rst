@@ -109,6 +109,12 @@ The name
 The Ladybug name derives from that it is a useful tool for debugging at very low levels, using a calculator that is powered by Lady sized batteries. A ladybug is also a cute little animal.
 
 
+Acknowledgments
+===============
+
+Thanks to Robert Meyer for contributing the overlay for i41CX+ emulator (iPhone).
+
+
 Feedback
 ========
 
