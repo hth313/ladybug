@@ -22,7 +22,7 @@ The Ladybug image is a 3x4K module. Two banks occupies a single 4K page in the n
 This release
 ============
 
-This version, 0A is a release to early adopters, in the hope to get feedback. The instruction allocation (XROM numbers) is currently considered preliminary and may change in the future.
+This version, 0B is a release to early adopters, in the hope to get feedback. The instruction allocation (XROM numbers) is currently considered preliminary and may change in the future.
 
 
 .. index:: buffer, I/O buffer, XROM number

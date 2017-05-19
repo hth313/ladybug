@@ -281,7 +281,7 @@ switchBank:   .macro  n
 
               .section Code
 
-              .name   "-LADYBUG 0A"  ; The name of the module
+              .name   "-LADYBUG 0B"  ; The name of the module
 Header:       rtn
 
 
@@ -7162,7 +7162,7 @@ rpollio2:     enrom1
               nop                   ; Deep wake-up
               nop                   ; Memory lost
                                     ; Identifier PR-1A
-              .con    1             ; A
+              .con    2             ; B
               .con    '0'           ; 0
               .con    0x202         ; B (bank switched)
               .con    0x0c          ; L
@@ -7270,5 +7270,5 @@ rpollio:      ?s7=1                 ; alpha mode?
               goto    rpollio       ; I/O
               goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A0BL"        ; Identifier LB-0A
+              .text   "B0BL"        ; Identifier LB-0B
               .con    0             ; checksum position
