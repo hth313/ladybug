@@ -87,7 +87,7 @@ To enter an integer literal in another base, switch out of program mode, change 
 
 Integers in programs are always displayed using the current base. If you enter a hexadecimal number at one point, then edit the program at a later point in decimal mode, you will see the hexadecimal number displayed as a decimal number.
 
-Numbers that are to larger than 8 digits will turn on the dot by the base character to indicate that the number is larger than is shown. The window feature can be used to inspect other parts of the number, just as you can do outside program mode.
+Numbers that are to need more than 8 digits will turn on the dot by the base character to indicate that there are more digits than is shown. The window key can be used to inspect other parts of the number, just as you can do outside program mode.
 
 Storing integer literals in a program works in a similar way as prompting instructions. A special ``#LIT`` instruction is used to prefix the literal, and the literal is encoded as a binary alpha string on the following line.
 

@@ -19,7 +19,7 @@ A buffer is a private storage area allocated from the free memory area, much lik
 Stack space is shared with the ordinary floating point stack and the extra bits (when needed), are kept in the buffer. Instructions that work on the stack, such as ``ENTER`` and ``RDN`` have an integer counterpart instruction that works on the full 64-bit value.
 
 .. note::
-   If you are using a word size of 56 or less, you can use the floating point counterpart instructions for stack manipulations, as they behave the same. This makes most sense in a program as those instructions are shorter (occupy less memory space).
+   If you are using a word size of 56 or less, you can use the floating point counterpart instructions for stack manipulations, as they behave the same. This makes most sense in a program as those instructions are shorter (occupy less memory space) and execute faster.
 
 As the lower 56 bits are stored in the normal stack registers, it makes it easier to interact with the ordinary 56-bit calculator registers for special purposes. The main disadvantage is that instructions such as ``CAT 4``, ``TIME`` and ``DATE`` that leaves a number in X register, which will corrupt the integer stack if word size is larger than 56.
 
@@ -34,7 +34,7 @@ If you unplug Ladybug, the next time you turn the HP-41 on, the HP-41 will recla
 Keboard layout
 ==============
 
-The keyboard layout uses the existing similar functions on keys whenever possible. However, the stack manipulation operations ``RDN`` and ``X<>Y`` are moved to shifted keys as it was judged that digit entry is more important.
+The keyboard layout uses the existing similar functions on keys whenever possible. However, the stack manipulation operations ``RDN`` and ``X<>Y`` are moved to shifted keys as it was judged more important to have access to all digit entry keys without pressing shift.
 
 The base change keys are ordered in the same way as on the HP-16C and are located after the F digit.
 

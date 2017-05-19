@@ -41,13 +41,13 @@ As a result, the mode separation is not as strict and stack register values are 
 Word size change affecting stack
 ================================
 
-The HP-16C truncates values on the stack according to the active word size. Changing a word size to a smaller one and then back will not preserve all value bits. Ladybug only affect value bits on the stack when going to a *larger* word size. Reducing to a smaller word size will not affect value bits on the stack.
+The HP-16C truncates values on the stack according to the active word size. Changing a word size to a smaller one and then back will not preserve all value bits. Ladybug only alters value bits on the stack when going to a *larger* word size. Reducing to a smaller word size will *not* affect value bits on the stack.
 
 Increasing the word size will affect all registers on the stack with Ladybug. In signed mode, values are sign extended, and in unsigned mode values are zero extended. This is done to preserve numerical values.
 
 It is possible to keep 56-bit floating point values on the stack, provided that the word size is not increased. This allows for mixing floating point operations with integer mode.
 
-The reason for doing it this way, is that the HP-41 can perform floating point operations at any time. Keeping the stack properly masked would be a quite elaborate task, which would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode. On the other hand, you get more possibilities on the HP-41.
+The reason for doing it this way, is that the HP-41 can perform floating point operations at any time. Keeping the stack properly masked would be a quite elaborate task and would get in the way with the ability to keep floating point values around. The HP-16C has an easier task here, as it has a more strict separation between floating point mode and integer mode. On the positive side, you gain the ability to have both integers and floating points on the stack at the same time.
 
 Numbers are in general masked as needed when they are used as input to operations in Ladybug, not because they are laying around somewhere.
 
@@ -85,7 +85,7 @@ Window display
 
 The window display only provides for moving a full window at a time, not by single digits which is also available on the HP-16C.
 
-The keyboard layout to do this does not require shift keys, which makes it somewhat easier to work with windows with Ladybug, compared to the HP-16C.
+The keyboard layout to do this does not require pressing a shift key, which makes it somewhat easier to work with windows with Ladybug, compared to the HP-16C.
 
 
 .. index:: operations; double precision, double precision
@@ -127,9 +127,17 @@ Ladybug takes full advantage of the prompting facility of the HP-41. Instruction
 
 .. code-block:: ca65
 
-   MASKL IND X
+   WSIZE IND X
 
-Shift operations prompt for the shift count, which makes it unnecessary to have two instructions to implement the same shift operation, as is done on the HP-16C.
+However, for ``MASKL`` which takes two values on the HP-16C, such straight translation would not work as the instruction would take the the stack registers in opposite order.
+
+In most cases you will probably just use a postfix numeric argument rather than a register indirection:
+
+.. code-block:: ca65
+
+   MASKL 4
+
+Shift operations prompt for the shift count, which makes it unnecessary to have two instructions to implement the same shift operation, compared to the HP-16C.
 
 .. note::
    No savings would be made by making two instructions, as the default behavior of the semi-merged shift instructions is to shift by 1. In other words, the shift instructions do dual duty as shift by one and shift by arbitrary number of steps.
