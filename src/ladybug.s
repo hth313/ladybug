@@ -1298,7 +1298,7 @@ errorExit:    gosub   LEFTJ
 ;;; **********************************************************************
 ;;;
 ;;; Locate the integer buffer and set up carry bit in M register.
-;;; Terminate with error message "NO PROG BUF: if buffer does not exist.
+;;; Terminate with error message "NO PROG BUF": if buffer does not exist.
 ;;;
 ;;; CarryToM    Alternative entry, enter with buffer header register
 ;;;             selected and A.X containing its address. Sets up the
