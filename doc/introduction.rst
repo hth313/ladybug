@@ -2,27 +2,46 @@
 Introduction
 ************
 
-Welcome to Ladybug for the HP-41 calculator! Ladybug is a powerful tool, intended to be useful when you are debugging or working with low level matters related to computers.
+Welcome to Ladybug for the HP-41 calculator! Ladybug is a powerful
+tool, intended to be useful when you are debugging or working with low
+level matters related to computers.
 
-Ladybug provides a new mode for you HP-41 calculator which allows it to work as a customizable integer binary calculator. It makes it easy to work in different number bases, perform arithmetic, bitwise and logical operations in a given fixed word size. Operations that you typically will encounter when working with computers at its lowest level.
+Ladybug provides a new mode for you HP-41 calculator which allows it
+to work as a customizable integer binary calculator. It makes it easy
+to work in different number bases, perform arithmetic, bitwise and
+logical operations in a given fixed word size. Operations that you
+typically will encounter when working with computers at its lowest
+level.
 
-The main goal with this module is to blend the majority of the capabilities of an HP-16C into the HP-41 environment, while taking advantage of the extra facilities provided by the HP-41. In other words, to combine the best of both worlds.
+The main goal with this module is to blend the majority of the
+capabilities of an HP-16C into the HP-41 environment, while taking
+advantage of the extra facilities provided by the HP-41. In other
+words, to combine the best of both worlds.
 
 
 Plug-in module
 ==============
 
-Ladybug is a module image that needs to be put in some programmable plug-in module hardware. This can be a Clonix module, an MLDL or some kind of ROM emulator. You need to consult the documentation of ROM emulation hardware for this.
+Ladybug is a module image that needs to be put in some programmable
+plug-in module hardware. This can be a Clonix module, an MLDL or some
+kind of ROM emulator. You need to consult the documentation of ROM
+emulation hardware for this.
 
 It is also possible to use Ladybug on HP-41 emulators.
 
-The Ladybug image is a 3x4K module. Two banks occupies a single 4K page in the normal memory expansion space, together with a page 4 (takeover ROM). It can be plugged into any of the expansion ports (7--F) of the HP-41 expansion space, but the page 4 image must be placed in address page 4.
+The Ladybug image is a 3x4K module. Two banks occupies a single 4K
+page in the normal memory expansion space, together with a page 4
+(takeover ROM). It can be plugged into any of the expansion ports
+(7--F) of the HP-41 expansion space, but the page 4 image must be
+placed in address page 4.
 
 
 This release
 ============
 
-This version, 0B is a release to early adopters, in the hope to get feedback. The instruction allocation (XROM numbers) is currently considered preliminary and may change in the future.
+This version, 0B is a release to early adopters, in the hope to get
+feedback. The instruction allocation (XROM numbers) is currently
+considered preliminary and may change in the future.
 
 
 .. index:: buffer, I/O buffer, XROM number
@@ -30,9 +49,12 @@ This version, 0B is a release to early adopters, in the hope to get feedback. Th
 Resource requirements
 =====================
 
-Ladybug allocates two registers from the free memory pool. Apart from this, it does not impose any restrictions on the environment and will run comfortable on any HP-41C, HP-41CV or HP-41CX at standard speed.
+Ladybug allocates two registers from the free memory pool. Apart from
+this, it does not impose any restrictions on the environment and will
+run comfortable on any HP-41C, HP-41CV or HP-41CX at standard speed.
 
-The XROM number used by this module is 16 and the private storage area is I/O buffer number 0.
+The XROM number used by this module is 16 and the private storage area
+is I/O buffer number 0.
 
 
 
@@ -42,7 +64,9 @@ Using this guide
 This guide assumes that you have a working knowledge about:
 
 * The HP-41 calculator, especially its RPN system.
-* Have a good understanding of different number bases and working with different word sizes. Basically bits as used in most computers at its lowest level.
+* Have a good understanding of different number bases and working with
+  different word sizes. Basically bits as used in most computers at
+  its lowest level.
 
 
 Further reading
@@ -62,19 +86,31 @@ As always, learning by doing tends to work best. Insert fresh batteries into you
 Integer mode
 ============
 
-Providing the HP-41 with an integer mode similar to the way it works on the HP-16C is the main design goal of this module. When the integer mode is enabled, both the keyboard and the display change behavior. Instead of showing floating point numbers, you will see binary integers in the number base and word size chosen.
+Providing the HP-41 with an integer mode similar to the way it works
+on the HP-16C is the main design goal of this module. When the integer
+mode is enabled, both the keyboard and the display change
+behavior. Instead of showing floating point numbers, you will see
+binary integers in the number base and word size chosen.
 
-In integer mode, your HP-41 behaves in the same way as you are used to, except that many keys perform integer operations instead of their previous floating point operations. This transformation takes place both inside, as well as outside user mode. As usual, you can make key assignments in user mode to override the default behavior.
+In integer mode, your HP-41 behaves in the same way as you are used
+to, except that many keys perform integer operations instead of their
+previous floating point operations. This transformation takes place
+both inside, as well as outside user mode. As usual, you can make key
+assignments in user mode to override the default behavior.
 
-Integer operations also work in program mode. You can write programs based on integer operations, just as you can write floating point programs. In fact, with some care you can actually intermix integer and floating point operations in a program.
+Integer operations also work in program mode. You can write programs
+based on integer operations, just as you can write floating point
+programs. In fact, with some care you can actually intermix integer
+and floating point operations in a program.
 
 
 License
 =======
 
-The Ladybug software and its manual is copyright by Håkan Thörngren 2017 under the BSD 3-clause license.
+The Ladybug software and its manual is copyright by Håkan Thörngren
+2017 under the BSD 3-clause license.
 
-| Copyright (c) 2017, Håkan Thörngren
+| Copyright (c) 2017-2018, Håkan Thörngren
 | All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -106,7 +142,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The name
 ========
 
-The Ladybug name derives from that it is a useful tool for debugging at very low levels, using a calculator that is powered by Lady sized batteries. A ladybug is also a cute little animal.
+The Ladybug name derives from that it is a useful tool for debugging
+at very low levels, using a calculator that is powered by Lady sized
+batteries. A ladybug is also a cute little animal.
 
 
 Acknowledgments
@@ -118,4 +156,5 @@ Thanks to Robert Meyer for contributing the overlay for i41CX+ emulator (iPhone)
 Feedback
 ========
 
-Feedback and suggestions are welcome, the author can be contacted at hth313@gmail.com
+Feedback and suggestions are welcome, the author can be contacted at
+hth313@gmail.com

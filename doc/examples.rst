@@ -3,13 +3,17 @@ Programming examples
 ********************
 
 
-This chapter goes through some programming snippets and examples to give a feeling about how the instructions work.
+This chapter goes through some programming snippets and examples to
+give a feeling about how the instructions work.
 
 
 Left justify
 ============
 
-To left justify the number, one can take advantage of the sign flag which will be set when the leftmost bit is set. To avoid an infinite loop, one need to test the input value in X for zero. The following code snippet performs a left justify:
+To left justify the number, one can take advantage of the sign flag
+which will be set when the leftmost bit is set. To avoid an infinite
+loop, one need to test the input value in X for zero. The following
+code snippet performs a left justify:
 
 .. code-block:: ca65
 
