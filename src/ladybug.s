@@ -2582,7 +2582,6 @@ RollDown1:    c=b
 
 ;;; **********************************************************************
 ;;;
-
 ;;; RDNI - Roll stack down.
 ;;;
 ;;; **********************************************************************
@@ -6547,7 +6546,7 @@ prgmio:       c=data                ; C= buffer header
 ;;; ----------------------------------------------------------------------
 
               .section Code
-              ;; Align Shift1 to allow GSB256 to be used
+              ;; Align shift1 to allow GSB256 to be used
               ;; This is done to save one subroutine level as
               ;; RXQ uses +1 and when coming from Div10, we
               ;; do not have that to spare.
@@ -6564,7 +6563,7 @@ shift1:       bcex                  ; shift one left
               bcex
               rtn
 
-mul10:        gosub   GSB256        ; Shift1   *2
+mul10:        gosub   GSB256        ; shift1   X * 2
               acex
               n=c                   ; save temp in N
               acex
@@ -6573,8 +6572,8 @@ mul10:        gosub   GSB256        ; Shift1   *2
               bcex    x
               rcr     -3
               bcex
-              gosub   GSB256        ; Shift1   X * 4
-              gosub   GSB256        ; Shift    X * 8
+              gosub   GSB256        ; shift1   X * 4
+              gosub   GSB256        ; shift1   X * 8
               c=n
               a=a+c                 ; add (X * 2) and (X * 8)
               gonc    1$
@@ -6618,15 +6617,15 @@ div10:        acex                  ; save n in P[9:8]:Q
               rcr     -8
               regn=c  P
 
-              gosub   GSB256        ; Shift1
-              gosub   GSB256        ; Shift1
+              gosub   GSB256        ; shift1
+              gosub   GSB256        ; shift1
               acex
               n=c                   ; C.X : N = n << 2
               acex
               c=b     x
               rcr     -3
               stk=c
-              gosub   GSB256        ; Shift1
+              gosub   GSB256        ; shift1
                                     ; B.X : A = n << 3
               c=stk
               rcr     3
@@ -6703,7 +6702,7 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=c+1   x
               bcex    x
 
-22$:          gosub   GSB256        ; (Shift1)   q = q >> 3;
+22$:          gosub   GSB256        ; (shift1)   q = q >> 3;
               bcex    x
               rcr     1
               c=0     xs
