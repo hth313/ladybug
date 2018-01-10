@@ -23,11 +23,3 @@ Contents:
    differences
    implementation
    limitations
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
-
