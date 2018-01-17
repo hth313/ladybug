@@ -1,11 +1,8 @@
 ; Sign extend test
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix RR, RL, RRC, RLC, ASR, SEX  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TSEX"
 WSIZE 16   ; set a small word size
@@ -25,9 +22,9 @@ ADD
 WSIZE 64
 
 WSIZE 16
-#LIT 12   ; small positive
+integer 12   ; small positive
 WSIZE 64  ; implicit extend
-#LIT 12
+integer 12
 SUB
 FC? 00
 SF 99
@@ -47,7 +44,7 @@ WSIZE 64
 XEQ 01
 
    ; Test the SEX instruction
-#LIT 0x100
+integer 0x100
 ENTERI
 SEX 8
 FS? 01
@@ -86,11 +83,11 @@ SF 99
 RTN
 
 LBL 01
-#LIT 32768
+integer 32768
 GTO 02
 
 LBL 00
-#LIT 32768
+integer 32768
 NEG
 LBL 02
 SUB

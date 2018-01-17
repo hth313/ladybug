@@ -1,17 +1,15 @@
 ;;; Test ADD and SUB
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "ADDSUB"
 WSIZE 64
-#LIT 4
+integer 4
 MASKL IND X
 SUB
-#LIT 0x1000000000000004
+integer 0x1000000000000004
 CMP Y
 FC? 00
 SF 99
@@ -19,7 +17,7 @@ SF 99
 ; check overflow
 WSIZE 8
 SF 02
-#LIT 0x60
+integer 0x60
 ENTER
 ADD
 FC? 04
@@ -50,12 +48,12 @@ SF 99
 
 ;; test invariant
 WSIZE 16
-#LIT 64
+integer 64
 STI 01
 LBL 01
 WSIZE IND 01
 MASKL 08
-#LIT 0
+integer 0
 LDI Y
 SUB
 ADD
@@ -66,7 +64,7 @@ SF 99
 WSIZE 16
 LDI 01
 DECI 01
-#LIT 16
+integer 16
 SUB
 FC? 00
 GTO 01
@@ -74,21 +72,21 @@ GTO 01
 ;; test 80 00 SUB in signed mode and unsigned mode, it should not set overflow
 WSIZE 08
 SF 02
-#LIT 0x80
-#LIT 0
+integer 0x80
+integer 0
 SUB
 FS? 04
 SF 99
 
 CF 02
-#LIT 0x80
-#LIT 0
+integer 0x80
+integer 0
 SUB
 FS? 04
 SF 99
 
 ;; In unsigned mode, overflow behaves as carry
-#LIT 0xa0
+integer 0xa0
 ENTER
 ADD
 FC? 03
@@ -96,7 +94,7 @@ SF 99
 FC? 04
 SF 99
 
-#LIT 0x7f
+integer 0x7f
 ENTER
 ADD
 FS? 03
@@ -105,16 +103,16 @@ FS? 04
 SF 99
 
 
-#LIT 0
-#LIT 1
+integer 0
+integer 1
 SUB
 FC? 03
 SF 99
 FC? 04
 SF 99
 
-#LIT 1
-#LIT 0
+integer 1
+integer 0
 SUB
 FS? 03
 SF 99

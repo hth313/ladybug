@@ -1,10 +1,8 @@
 ;;; Test MUL and DMUL
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR, CB, SB  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TMUL"
 WSIZE 64
@@ -16,22 +14,22 @@ DMUL      ; should give  X = F8800....  and Y= 0
 TST Y     ; Y= lower part, should be 0
 FC? 00
 SF 99
-#LIT 0xf88
+integer 0xf88
 SL 52
 SUB
 FC? 00
 SF 99
 
 CF 02  ; unsigned, multiply 2 by 1,2,4...
-#LIT 1
+integer 1
 STI 00    ; 1,2,4,8,...
 STI 01    ; 1,2,3,...
 
 LBL 01
 LDI 00
-#LIT 2
+integer 2
 MUL
-#LIT 1
+integer 1
 SL IND 01
 SUB
 FC? 00
@@ -51,7 +49,7 @@ ENTERI
 DMUL
 FS? 00
 SF 99
-#LIT 0xfc04
+integer 0xfc04
 SL 48
 SUB
 FC? 00
@@ -66,7 +64,7 @@ MASKL 7
 SR 1
 MASKR 56
 DMUL
-#LIT 0x7e
+integer 0x7e
 SL 48
 MASKR 48
 OR
@@ -74,7 +72,7 @@ SUB
 FC? 00
 SF 99
 CLXI
-#LIT 0x81
+integer 0x81
 SL 56
 SUB
 FC? 00
@@ -84,7 +82,7 @@ WSIZE 56
 MASKL 2
 MASKR 2
 DMUL
-#LIT 2
+integer 2
 SUB
 FC? 00
 SF 99
@@ -143,7 +141,7 @@ MASKL 2
 SR 8
 MASKL 2
 DMUL
-#LIT 9
+integer 9
 SL 52
 SUB
 FC? 00
@@ -161,7 +159,7 @@ FC? 00
 SF 99
 
 SB 16    ; check overflow single precision
-#LIT 0
+integer 0
 SB 56
 MUL
 FC? 04
@@ -171,12 +169,12 @@ SF 99
 
 WSIZE 16
 SF 02
-#LIT 0x6000
-#LIT 2
+integer 0x6000
+integer 2
 MUL
 FC? 04
 SF 99
-#LIT 0x4000
+integer 0x4000
 SUB
 FC? 00
 SF 99
@@ -190,12 +188,12 @@ RTN
 
 
 LBL 02
-#LIT 0xC000
-#LIT 2
+integer 0xC000
+integer 2
 MUL
 FC? 04
 SF 99
-#LIT 0x8000
+integer 0x8000
 SUB
 FC? 00
 SF 99
@@ -204,7 +202,7 @@ RTN
 LBL 03
 CLXI
 SB 40
-#LIT 2
+integer 2
 NEG
 MUL
 NEG

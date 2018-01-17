@@ -1,16 +1,14 @@
 ;;; Compares
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TCMP"
 WSIZE 8
 SF 02
 MASKL 8
-#LIT 0x7f
+integer 0x7f
 CMP Y
 LE?
 SF 99
@@ -23,8 +21,8 @@ GTO 09
 SF 99
 LBL 09
 
-#LIT 0x30
-#LIT 0xaa
+integer 0x30
+integer 0xaa
 CMP Y
 LT?
 GTO 09
@@ -76,8 +74,8 @@ GTO 13
 
 
 LBL 01          ; 4 5
-#LIT  4
-#LIT  5
+integer  4
+integer  5
 RTN
 
 LBL 03         ; -4 -5

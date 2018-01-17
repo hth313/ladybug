@@ -1,17 +1,15 @@
 ;;; Bit set, clear and test tests
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TBIT"
 WSIZE 56
-#LIT 64
+integer 64
 STI M
 XEQ 00
-#LIT 57
+integer 57
 STI M
 XEQ 00
 DECI M
@@ -20,17 +18,17 @@ LBL 00
 RCL M
 STO N
 
-#LIT 0      ; push a zero, we accumulate bits here
+integer 0      ; push a zero, we accumulate bits here
 GTO 09
 LBL 01
 WSIZE IND M
 B? IND N    ; bit should not be set yet
 SF 99
-#LIT 0
+integer 0
 SB IND N    ; set a bit
 FS? 00
 SF 99
-#LIT 1
+integer 1
 SL IND N    ; set same bit using shift
 LDI Y
 SUB

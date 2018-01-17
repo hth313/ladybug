@@ -1,10 +1,8 @@
 ;;; Test memory, most tests are done as part of other tests
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TWSIZE"
 
@@ -15,7 +13,7 @@ WSIZE IND X
 FS?C 25
 SF 99
 
-#LIT 32
+integer 32
 WSIZE IND X
 WSIZE?
 SUB
@@ -27,7 +25,7 @@ WSIZE IND X
 FS?C 25
 SF 99
 
-#LIT 64   ; this is OK
+integer 64   ; this is OK
 WSIZE IND X
 
 SF 25       ; not accepted

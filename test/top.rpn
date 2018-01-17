@@ -1,5 +1,7 @@
 ;;; General test runner
 
+#include "ladybug.h"
+
 LBL "LBTEST"
 
 "DIV"

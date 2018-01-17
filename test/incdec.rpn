@@ -1,15 +1,13 @@
 ;;; Test increments and decrements
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, MASKL  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
-
+#include "ladybug.h"
 
 LBL "INCDEC"
 WSIZE 12
 
-#LIT 0xffe
+integer 0xffe
 INCI X      ; 0xfff
 FC? 01  ; sign should be set
 SF 99
@@ -67,7 +65,7 @@ SF 99
 
 ; DSZI to fill nibble memory
 WSIZE 4
-#LIT 0
+integer 0
 LBL 01
 STI IND X
 DSZI X
@@ -75,7 +73,7 @@ GTO 01
 
 ; Now we should have FE...10 in low nibble memory
 WSIZE 64
-#LIT 0xfedcba9876543210
+integer 0xfedcba9876543210
 LDI IND Y  ; Y should be 0
 CMP Y
 FC? 00  ; should be equal and set zero flag
@@ -86,7 +84,7 @@ SF 99
 
 ; Test large number with DSZI
 MASKL 4
-#LIT 1
+integer 1
 ADD
 DSZI X
 GTO 09
