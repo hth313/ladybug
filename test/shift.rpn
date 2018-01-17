@@ -1,11 +1,8 @@
 ;;; Bit set, clear and test tests
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix RR, RL, RRC, RLC, ASR  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TSHIFT"
 CF 02
@@ -25,7 +22,7 @@ ASR 12
 FC? 01
 SF 99
 NEG
-#LIT 2
+integer 2
 SL 44
 SUB
 FC? 00
@@ -36,7 +33,7 @@ SR 01
 ASR 03
 FS? 01
 SF 99
-#LIT 0xf8
+integer 0xf8
 SL 52
 SUB
 FC? 00
@@ -54,7 +51,7 @@ SF 99
 
 MASKL 7
 ASR 14
-#LIT 0xfffff800000000
+integer 0xfffff800000000
 SUB
 FC? 00
 SF 99
@@ -72,7 +69,7 @@ SF 99
 
 MASKL 7
 ASR 3
-#LIT 0xffc00000
+integer 0xffc00000
 SUB
 FC? 00
 SF 99
@@ -182,16 +179,16 @@ SF 99
 RTN
 
 LBL 10   ; test left shift 0 steps, which should at least put
-#LIT 1   ; the value in L
-#LIT 0
-#LIT 3
+integer 1   ; the value in L
+integer 0
+integer 3
 RR IND Y
 GTO 09
 
 LBL 08   ; test left shift 0 steps, which should at least put
-#LIT 1   ; the value in L
-#LIT 0
-#LIT 3
+integer 1   ; the value in L
+integer 0
+integer 3
 SL IND Y
 LBL 09
 LASTXI

@@ -1,15 +1,13 @@
 ;;; Test ABSI and NEG
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "ABSNEG"
 SF 02        ; signed mode
 WSIZE 16
-#LIT  0x42
+integer  0x42
 ENTER
 NEG      ; negate
 FS? 04   ; should not overflow
@@ -25,7 +23,7 @@ ABSI
 X!=Y?
 SF 99
 
-#LIT 0x8000
+integer 0x8000
 NEG
 FC? 04    ; this value should overflow
 SF 99
@@ -47,7 +45,7 @@ FC? 04    ; unsigned sets overflow
 SF 99
 
 ; Test 0 in unsigned mode all sizes, it never cause overflow
-#LIT 64
+integer 64
 STI 00   ; assuming word size 16 for counter
 LBL 03
 WSIZE IND 00
@@ -74,7 +72,7 @@ DSZI 00
 GTO 03
 
 ; Test overflow with single bit on all word sizes
-#LIT 64
+integer 64
 STI 00   ; assuming word size 16 for counter
 
 LBL 01
@@ -109,8 +107,8 @@ GTO 01
 WSIZE 56
 MASKL 1
 STO M      ; 8000.. constant
-#LIT 9  STO N   ; counter
-#LIT 64 STO O   ; word size
+integer 9   STO N   ; counter
+integer 64  STO O   ; word size
 SF 02     ; do this is signed mode
 LBL 02
 WSIZE IND O

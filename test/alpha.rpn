@@ -2,12 +2,10 @@
 ;;; As we do not have any easy way to convert numbers back at the moment
 ;;; we just look at the length of numbers.
 
-.import ../src/ladybug
+.import ladybug
 .import 41cx
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP, SB, CB, B?  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR, ALDI  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TALDI"
 CF 05
@@ -15,14 +13,14 @@ HEXS
 WSIZE 64
 
 8
-#LIT 0xdeadbeaf
+integer 0xdeadbeaf
 CLA
 ALDI X
 XEQ 16
 
 SF 05
 16
-#LIT 23
+integer 23
 CLA
 ALDI X
 XEQ 16
@@ -36,7 +34,7 @@ XEQ 16
 
 DECS
 3
-#LIT 100
+integer 100
 CLA
 ALDI X
 XEQ 16

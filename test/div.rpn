@@ -1,18 +1,16 @@
 ;;; Test DIV, DDIV, RMD and DRMD
 
-.import ../src/ladybug
+.import ladybug
 
-.postfix PSEI, DSZI, DECI, INCI, WSIZE, LDI, STI, CMP  (semi-merged-postfix)
-.postfix MASKL, MASKR, BITSUM, TST, SL, SR  (semi-merged-postfix)
-.postfix #LIT (semi-merged-integer-literal)
+#include "ladybug.h"
 
 LBL "TDIV"
 WSIZE 64
 SF 02
-#LIT 0xfc
+integer 0xfc
 SL 56
 MASKL 4   ; F000..
-#LIT 4
+integer 4
 DIV
 SUB
 FC? 00
@@ -42,10 +40,10 @@ SF 99
 
 ;; unsigned remainder
 CF 02
-#LIT 14
-#LIT 2
+integer 14
+integer 2
 NEG
-#LIT 56
+integer 56
 CF 03     ; RMD does not affect carry
 CF 04     ; RMD does not affect overflow
 RMD
@@ -66,12 +64,12 @@ SF 99
 
 ;; Signed double divide, negative operands in, result is positive
 SF 02
-#LIT 1234    ; marker to check that T remains
-#LIT 100000  ; low part
+integer 1234    ; marker to check that T remains
+integer 100000  ; low part
 NEG
-#LIT 0       ; high part
+integer 0       ; high part
 NOT
-#LIT 1000
+integer 1000
 NEG
 DDIV
 FS? 00
@@ -80,23 +78,23 @@ TST X
 FC? 00
 SF 99
 CLXI
-#LIT 100
+integer 100
 SUB
 FC? 00
 SF 99
 CLXI
-#LIT 1234
+integer 1234
 SUB
 FC? 00
 SF 99
 
 ;; Signed double divide, negative result
-#LIT 1234    ; marker to check that T remains
-#LIT 100000  ; low part
+integer 1234    ; marker to check that T remains
+integer 100000  ; low part
 NEG
-#LIT 0       ; high part
+integer 0       ; high part
 NOT
-#LIT 1000
+integer 1000
 DDIV
 FS? 00
 SF 99
@@ -104,30 +102,30 @@ TST X
 FS? 00
 SF 99
 CLXI
-#LIT 100
+integer 100
 ADD
 FC? 00
 SF 99
 CLXI
-#LIT 1234
+integer 1234
 SUB
 FC? 00
 SF 99
 
 
 ;; Signed DRMD
-#LIT  1234567
+integer  1234567
 NEG
-#LIT 0
+integer 0
 NOT
-#LIT  100
+integer  100
 NEG
 DRMD
 FS? 00
 SF 99
 FC? 01
 SF 99
-#LIT 67
+integer 67
 ADD
 FC? 00
 SF 99
@@ -136,12 +134,12 @@ SF 99
 ;;; Unsigned DRMD
 CF 02
 MASKL 12
-#LIT 0xf
-#LIT 1000
+integer 0xf
+integer 1000
 DRMD
 FS? 01
 SF 99
-#LIT 360
+integer 360
 SUB
 FC? 00
 SF 99
@@ -156,7 +154,7 @@ SF 99
 
 SF 25    ; now for a real div by 0
 MASKL 4
-#LIT 0
+integer 0
 RMD
 FS?C 25
 SF 99
@@ -166,7 +164,7 @@ SF 99
 SF 02
 MASKL 1
 MASKL 64
-#LIT 256
+integer 256
 DDIV
 RDNI
 MASKL 9
@@ -176,7 +174,7 @@ SF 99
 
 ;  DDIV with Z = 00 (lower part), FFF in upper part
 MASKL 64
-#LIT 256
+integer 256
 DDIV
 RDNI
 MASKL 8
@@ -203,14 +201,14 @@ MASKL 2
 ENTERI
 SR 2
 DIV
-#LIT 4
+integer 4
 SUB
 FC? 00
 SF 99
 
-#LIT 0
+integer 0
 MASKL 2
-#LIT 1
+integer 1
 DDIV
 MASKL 2
 SUB
@@ -229,13 +227,13 @@ INCI X
 FC? 00
 SF 99
 
-#LIT 0
+integer 0
 MASKL 2
 SR 2
-#LIT 2
+integer 2
 NEG
 DDIV
-#LIT 0xe8
+integer 0xe8
 SL 56
 SUB
 FC? 00
@@ -244,13 +242,13 @@ ADD
 FC? 00
 SF 99
 
-#LIT 0
+integer 0
 MASKL 16
 SR 2
-#LIT 2
+integer 2
 NEG
 DDIV
-#LIT 0xe0002
+integer 0xe0002
 SL 44
 SUB
 FC? 00
@@ -286,7 +284,7 @@ XEQ 02
 ; Overflow
 WSIZE 16
 MASKL 1
-#LIT 1
+integer 1
 NEG
 DIV
 FC? 04
