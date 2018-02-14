@@ -4,6 +4,8 @@
 
 LBL "LBTEST"
 
+INTEGER
+
 "DIV"
 AVIEW
 XEQ "TDIV"
