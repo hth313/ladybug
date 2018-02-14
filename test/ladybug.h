@@ -1,6 +1,8 @@
 #ifndef __LADYBUG_H
 #define __LADYBUG_H
 
+.import ladybug
+
 .postfix ALDI, PSEI, DSZI, DECI, INCI, WSIZE, CLRI (semi-merged-postfix)
 .postfix LDI, STI, CMP, SEX                        (semi-merged-postfix)
 .postfix SB, CB, B?                                (semi-merged-postfix)

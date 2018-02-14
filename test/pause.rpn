@@ -1,6 +1,5 @@
 ;;; Pause test
 
-.import ladybug
 .import 41cx
 
 #include "ladybug.h"

@@ -1,7 +1,5 @@
 ;;; Test MASKL and MASKR
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "MASK"
