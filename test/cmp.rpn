@@ -1,7 +1,5 @@
 ;;; Compares
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "TCMP"

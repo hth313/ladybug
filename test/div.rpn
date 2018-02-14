@@ -1,7 +1,5 @@
 ;;; Test DIV, DDIV, RMD and DRMD
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "TDIV"

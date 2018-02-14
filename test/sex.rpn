@@ -1,7 +1,5 @@
 ; Sign extend test
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "TSEX"

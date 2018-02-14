@@ -1,7 +1,5 @@
 ;;; Test increments and decrements
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "INCDEC"

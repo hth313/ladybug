@@ -1,7 +1,5 @@
 ;;; Bit set, clear and test tests
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "TBIT"

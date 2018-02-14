@@ -2,7 +2,6 @@
 ;;; As we do not have any easy way to convert numbers back at the moment
 ;;; we just look at the length of numbers.
 
-.import ladybug
 .import 41cx
 
 #include "ladybug.h"

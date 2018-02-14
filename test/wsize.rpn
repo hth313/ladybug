@@ -1,7 +1,5 @@
 ;;; Test memory, most tests are done as part of other tests
 
-.import ladybug
-
 #include "ladybug.h"
 
 LBL "TWSIZE"
