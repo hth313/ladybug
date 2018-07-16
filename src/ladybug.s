@@ -5964,7 +5964,7 @@ Argument:     ?s13=1                ; running?
 ;;; We may need to input stack registers. The mainframe code cannot handle
 ;;; this for XROM instructions, it will overwrite the second byte with the
 ;;; postfix byte, ruining the XROM instruction.
-;;; To make it work, we need to provide out own prompt handler that can do
+;;; To make it work, we need to provide our own prompt handler that can do
 ;;; it properly for 2-byte XROM instructions. We will in the end use the
 ;;; alternative way of giving the argument in B.X so everything comes
 ;;; together just fine.
@@ -6026,7 +6026,7 @@ parseStack:   gosub   MESSL
               c=g
               st=c
 ;;; Compared to the mainframe version, we do not overwrite the postfix
-;;; byte of the instructin here, as it is part of the 2 byte XROM
+;;; byte of the instruction here, as it is part of the 2 byte XROM
 ;;; opcode.
               c=regn  10
               acex                  ; A[4:1]= current instruction
