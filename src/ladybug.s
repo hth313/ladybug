@@ -5905,6 +5905,24 @@ Argument:     ?s13=1                ; running?
 ;;; as we are executing <sigma>REG instead. Once that has been properly
 ;;; inserted into the program, we alter it to be the postfix argument.
 ;;;
+;;; The reason for using <sigma>REG is that it adds a bit of safety.
+;;; When a semi-merged instruction is inserted in a program, it is
+;;; actual made up of two instructions, first the XROM and then we start
+;;; entry of the <sigma>REG instruction behind the scene, showing it as
+;;; the prompting XROM instruction.
+;;; Later when the dust have settled, there are two possible outcomes.
+;;; Either the instruction was entered, or instruction entry was cancelled.
+;;; In order to tell what happened, we check the instruction in program
+;;; memory. If this is <sigma>REG instruction, then we assume it is out
+;;; one and we can alter it to Text-1 (or delete it when it corresponds
+;;; to default behavior).
+;;;
+;;; We choose <sigma>REG for; this as it is rarely used in a program.
+;;; A Text-1 string literal is more likely to be in a program and we could
+;;; mistake it for being the postfix operand when the user actually cancelled
+;;; the instruction. In that case the semi-merged instruction would hijack
+;;; the real Text-1!
+;;;
 ;;; **********************************************************************
 
 30$:          c=regn  10
@@ -6305,7 +6323,7 @@ prgmio:       c=data                ; C= buffer header
               ?st=1   IF_Argument   ; check if inserting prompt
               gonc    10$           ; no
 
-;;; Now change byte from $99 to $f1!!
+;;; Now change byte from 0x99 to 0xf1!!
               rxq     NXBYTP
               b=a
               a=c     x
