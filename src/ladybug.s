@@ -279,7 +279,7 @@ switchBank:   .macro  n
 ;;;
 ;;; ************************************************************
 
-              .section Code
+              .section Code, reorder
 
               .name   "-LADYBUG 0B"  ; The name of the module
 Header:       rtn
@@ -299,7 +299,7 @@ Header:       rtn
 ;;;
 ;;; ************************************************************
 
-              .section Code
+              .section Code, reorder
               .name   "#LIT"
 Literal:      ?s13=1                ; running?
               goc     10$           ; yes
@@ -326,7 +326,7 @@ Literal:      ?s13=1                ; running?
 XROMi:        .equ    160 + (XROMno / 4)
 XROMj:        .equ    64 * (XROMno % 4)
 
-              .section Code
+              .section Code, reorder
 
 clearDigitEntryMStop:
               c=m                   ; C.X= key
@@ -816,7 +816,7 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
               golong  ERR120        ; back up and show previous program line
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; Handle entry of digits in program mode.
@@ -933,7 +933,7 @@ baseChar:     ?s1=1
 2$:           ldi     'B' - 0x40
               rtn
 
-              .section Code
+              .section Code, reorder
 lineAndBaseLCD:
               ?st=1   Flag_PRGM     ; in program mode?
               gonc    40$           ; no
@@ -1051,7 +1051,7 @@ exitNoUserST_B10_rom2:
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
 putXnoFlags:  rxq     maskAndSave
               goto    exitUserST
 
@@ -1227,7 +1227,7 @@ errorMessage: gosub   ERRSUB
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
               .name   "FLOAT"
 FLOAT:        nop                   ; non-programmable (allow mode switch in program mode)
               rxq     chkbuf
@@ -1387,7 +1387,7 @@ carryToM:     acex    x             ; (P+2)  C.X= buffer address
               goto    20$
 
 
-              .section Code
+              .section Code, reorder
 findBufferUserFlags:
               c=regn  14            ; bring up user flags
               rcr     12
@@ -1397,7 +1397,7 @@ findBufferUserFlags:
               rtn
 
 
-              .section Code2
+              .section Code2, reorder
 findBufferUserFlags_rom2:
               c=regn  14            ; bring up user flags
               rcr     12
@@ -1431,7 +1431,7 @@ findBufferUserFlags_rom2:
 
 Flag_56:      .equ    9             ; set when word size is 56
 
-              .section Code2
+              .section Code2, reorder
 findBufferGetXSaveL56_rom2:
               st=0    Flag_56
               switchBank 1
@@ -1443,7 +1443,7 @@ findBufferGetXSaveL56_rom2:
               st=1    Flag_56
               rtn
 
-              .section Code
+              .section Code, reorder
 findBufferGetXSaveL:
               s0=0                  ; no division by 0 check
 findBufferGetXSaveL0:
@@ -1483,7 +1483,7 @@ findBufferGetXSaveL0no11:
               dadd=c
               rtn
 
-              .section Code2
+              .section Code2, reorder
 ;;; **********************************************************************
 ;;;
 ;;; getSignsMakePositive - Get the signs of X and Y, make them positive
@@ -1557,7 +1557,7 @@ getSigns:     c=regn  X
               bcex    x             ; restore upper X
               rtn
 
-              .section Code2
+              .section Code2, reorder
 ;;; Get the sign and maybe make positive
 signPositive: rxq     getSign_rom2  ; get the sign
               ?c#0    s             ; positive?
@@ -1666,14 +1666,14 @@ signPositive: rxq     getSign_rom2  ; get the sign
               goto    150$
 
 
-              .section Code2
+              .section Code2, reorder
 bitMask_rom2: switchBank 1
               rxq     bitMask
               switchBank 2
               rtn
 
 
-              .section Code
+              .section Code, reorder
 ;;; IN: A.X - bit number (0-64)
 ;;; OUT: C.X - upper part
 ;;;      C   - lower part
@@ -1708,7 +1708,7 @@ bitMask10:    rcr     -3
               goto    15$
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; drop - drop stack, by copying T to Z and Z to Y
@@ -1753,7 +1753,7 @@ dropZN10:     c=b                   ; select upper part register
               rtn
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; maskAndSave - finalize result in X by masking it, update zero/sign
@@ -1924,7 +1924,7 @@ saveLiteral:  acex
               goto    12$
 
 
-             .section Code
+             .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; setXFlags - set sign/zero flags according to X.
@@ -1974,7 +1974,7 @@ setSignFlag:  st=0    Flag_Sign
               rtn
 
 
-              .section Code2
+              .section Code2, reorder
 setSignFlag_rom2:
               switchBank 1
               rxq     setSignFlag
@@ -1998,7 +1998,7 @@ setSignFlag_rom2:
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code2
+              .section Code2, reorder
 setFlagsABx:  rxq     maskABx_rom2
               st=0    Flag_Zero
               ?b#0    x
@@ -2025,7 +2025,7 @@ setFlagsABx:  rxq     maskABx_rom2
               rtn
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; XOR - Entry point for exclusive OR between X and Y.
@@ -2214,7 +2214,7 @@ ADD_2:        rxq     findBufferGetXSaveL
               goto    15$
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; CLXI - Entry point for clear integer X register, and disable stack lift.
@@ -2231,7 +2231,7 @@ CLXI:         rxq     findBufferUserFlags
               rgo     putXnoFlags
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; IABS - Integer ABS, make the number positive
@@ -2319,7 +2319,7 @@ NOT:          rxq     findBufferGetXSaveL
 putX_J0:      rgo     putX
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; CB - Clear a bit.
@@ -2382,7 +2382,7 @@ SB10:         rxq     findBufferGetXSaveL
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
               .name   "B?"
 `B?`:         nop
               nop
@@ -2412,7 +2412,7 @@ SB10:         rxq     findBufferGetXSaveL
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
               .name   "MASKR"
 MASKR:        nop
               nop
@@ -2494,7 +2494,7 @@ MASK10:       rxq     liftStackS11
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
               .name   "LASTXI"
 LASTXI:       rxq     findBufferUserFlags_liftStackS11
               c=b
@@ -2614,7 +2614,7 @@ RUPI:         rxq     RollDown
               goto    RDNExit
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; Rotate and shift functions.
@@ -2816,7 +2816,7 @@ leftShift:    switchBank 2
               goto    100$
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------
 ;;;
 ;;; Shift right
@@ -3002,7 +3002,7 @@ rightShift:
 12$:          rgo     putX_rom2
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; displayX - Display the X register
@@ -3437,7 +3437,7 @@ maskABx:      .macro
 ;;;
 ;;; **********************************************************************
 
-              .section Code2
+              .section Code2, reorder
 ;;; Align local subroutine so we can use GSB256
 ;;; Note that for nibble memory we only need two consequtive registers.
 ;;; The worst case would be 64 bits (16 nibbles), but it still only need
@@ -3852,15 +3852,15 @@ saveG:        c=0     x             ; select chip 0
 58$:          golong  ENCP00
 
 
-              .section Code2
+              .section Code2, reorder
 ERRNE_rom2:   switchBank 1
               golong  ERRNE
 
-              .section Code2
+              .section Code2, reorder
 ERRDE_rom2:   switchBank 1
               golong  ERRDE
 
-              .section Code
+              .section Code, reorder
 findBufferUserFlags_argumentValueG_rom1:
               rxq     findBufferUserFlags
 argumentValueG_rom1:
@@ -3869,7 +3869,7 @@ argumentValueG_rom1:
               switchBank 1
               rtn
 
-              .section Code
+              .section Code, reorder
 loadG_rom1:   switchBank 2
               rxq     loadG
               switchBank 1
@@ -3887,7 +3887,7 @@ loadG_rom1:   switchBank 2
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
 loadX:        c=b
               rcr     10
               c=c+1   x
@@ -3903,7 +3903,7 @@ maskCBx:      a=c
 maskABx_rom1: maskABx
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; ENTERI- Integer stack enter.lift.
@@ -3919,7 +3919,7 @@ ENTERI:       rxq     findBuffer
                                     ; we keep the same value in X
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Lift the stack.
@@ -3966,7 +3966,7 @@ liftStack:    c=b                   ; get buffer address to A.X
               rtn
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; WSIZE? - get word size
@@ -3990,7 +3990,7 @@ liftStack:    c=b                   ; get buffer address to A.X
               rgo     putX
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; WSIZE - set word size
@@ -4127,7 +4127,7 @@ WSZ_OK:       rgo     exitNoUserST_B10_rom2
 ;;; it, and CAT has kind of misbehaved in a similar way from the
 ;;; beginning.
 
-              .section Code
+              .section Code, reorder
               .con    0x97, 0xf, 0x4, 0xe, 0x309, 0x117 ; WINDOW
 WINDOW:       nop                   ; no programmable
               ldi     8             ; allow up to 7
@@ -4177,7 +4177,7 @@ PWINDOW:      nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "LDI"
 LDI:          nop
               nop
@@ -4200,7 +4200,7 @@ LDI10:        acex
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "STI"
 STI:          nop
               nop
@@ -4219,7 +4219,7 @@ STI:          nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "INCI"
 INCI:         nop
               nop
@@ -4242,7 +4242,7 @@ INCI:         nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "DECI"
 DECI:         nop
               nop
@@ -4271,7 +4271,7 @@ DECI00:       c=a
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "DSZI"
 DSZI:         nop
               nop
@@ -4306,7 +4306,7 @@ DSZI:         nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "CLRI"
 CLRI:         nop
               nop
@@ -4326,7 +4326,7 @@ CLRI:         nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "SEX"
 SEX:          nop
               nop
@@ -4383,7 +4383,7 @@ SEX:          nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "BITSUM"
 BITSUM:       nop
               nop
@@ -4437,7 +4437,7 @@ BITSUM:       nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "PSEI"
 PSEI:         nop
               nop
@@ -4490,7 +4490,7 @@ PSEI:         nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "ALDI"
 ALDI:         nop
               nop
@@ -4663,7 +4663,7 @@ ALDI:         nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "TST"
 TST:          nop
               nop
@@ -4683,7 +4683,7 @@ TST:          nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "CMP"
 CMP:          nop
               nop
@@ -4759,7 +4759,7 @@ CMP:          nop
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .name   "LT?"
 `LT?`:        c=regn  14
               rcr     12
@@ -4840,7 +4840,7 @@ GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code2
+              .section Code2, reorder
 ;;; Multiply 8x56
 ;;; IN  ST= 8 bits
 ;;;     M= 56 bits
@@ -4886,7 +4886,7 @@ GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
               gonc    10$
               rtn
 
-              .section Code
+              .section Code, reorder
               .name   "DMUL"
 DMUL:         s11=1                 ; want double result
               goto    mulCommon
@@ -5245,7 +5245,7 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
 85$:          rgo     exitUserST
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; DIV, RMD, DDIV, DRMD - single and double divide routine
@@ -5689,7 +5689,7 @@ getSign:      .macro
               goto    8$
               .endm
 
-              .section Code2
+              .section Code2, reorder
 getSign_rom2: getSign
 
 
@@ -5710,7 +5710,7 @@ getSign_rom2: getSign
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code2
+              .section Code2, reorder
 forceSign:    c=m                   ; get carry mask
               ?c#0                  ; 56 bit value?
               gonc    56$           ; yes
@@ -5753,7 +5753,7 @@ forceSign:    c=m                   ; get carry mask
               goto    2$
 
 
-              .section Code
+              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Argument - Handle numerical arguments for functions in external
@@ -6074,7 +6074,7 @@ parseStack:   gosub   MESSL
               goto    15$
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; Increment and get next byte from program memory.
@@ -6090,7 +6090,7 @@ NXBYT:        gosub   INCAD
               goto    NXBYT         ; skip null
 
 
-              .section Code
+              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; Right justify display
@@ -6131,7 +6131,7 @@ RightJustify:
 ;;;
 ;;; **********************************************************************
 
-              .section Code
+              .section Code, reorder
 pauseio:      c=data
               ?s3=1                 ; program mode?
               goc     20$           ; yes
@@ -6563,7 +6563,7 @@ prgmio:       c=data                ; C= buffer header
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               ;; Align shift1 to allow GSB256 to be used
               ;; This is done to save one subroutine level as
               ;; RXQ uses +1 and when coming from Div10, we
@@ -6799,7 +6799,7 @@ div10:        acex                  ; save n in P[9:8]:Q
 ;;;
 ;;; ----------------------------------------------------------------------
 
-              .section Code
+              .section Code, reorder
               .align  256
 getSign:      getSign
 decDigits:    ?st=1   Flag_PRGM     ; program mode?
