@@ -64,7 +64,7 @@ KeyEntry:     .macro  fun
 ;;; up the keyboard layout (many uses).
 ;;; The first header entry doubles as the prefix to literals in programs,
 ;;; which is handled automatically. However, there are a few places in the
-;;; code that hardcodes this XROM code without using the corresponding label
+;;; code that hard-codes this XROM code without using the corresponding label
 ;;; and XROM number, we simply assume it will be A4-00 in a few places.
 ;;; If the XROM number or another entry point than 0 is used, some few
 ;;; changes are also needed in the code.
@@ -314,7 +314,7 @@ Literal:      ?s13=1                ; running?
 
 ;;; **********************************************************************
 ;;;
-;;; Keyboard handler. This routine is the keyboars takeover code which
+;;; Keyboard handler. This routine is the keyboard takeover code which
 ;;; is done by faking a partial key sequence that is to be handled here,
 ;;; but in reality we will just implement a different keyboard layout.
 ;;;
@@ -402,7 +402,7 @@ keyHandler:   nop                   ; ignore back arrow entry (deal with it as a
 
 ;;; Auto assignment tests are here, but since we heavily depend on the upper
 ;;; part of the keyboard, it just takes too long. Entering hex digits slows
-;;; down, as well as switching between different bases. These are quite cental
+;;; down, as well as switching between different bases. These are quite central
 ;;; functions, so it was decided to disable this.
 ;;; If it is to be put back, then there should probably be a flag to control
 ;;; it, but it really makes things slow and these are so central I think
@@ -824,7 +824,7 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
 ;;; Similar to XROMs with postfix arguments, we use an XROM function
 ;;; before the actual binary data embedded in a string literal.
 ;;; Initialization consists of writing the prefix XROM and prepare a text
-;;; one placeholder.
+;;; one place-holder.
 ;;;
 ;;; **********************************************************************
 
@@ -1188,7 +1188,7 @@ createBuf:    acex    x             ; save address of first free register
               c=c+1   x             ; select upper part register
               dadd=c
 
-              c=0                   ; write inital upper parts register
+              c=0                   ; write initial upper parts register
               c=c+1   s
               data=c
 
@@ -1261,7 +1261,7 @@ chkbuf:       ldi     BufNumber
 2$:           c=0     x             ; Select chip 0
               dadd=c
               c=regn  c             ; find chain head .END.
-              ?a<c    x             ; have we reached chainhead?
+              ?a<c    x             ; have we reached chain-head?
               rtn nc                ; yes, return to (P+1), not found
               acex    x             ; no, select and load register
               dadd=c
@@ -1713,7 +1713,7 @@ bitMask10:    rcr     -3
 ;;;
 ;;; drop - drop stack, by copying T to Z and Z to Y
 ;;;        Assume that Y should be lost and X is written elsewhere.
-;;; dropZN10 - alterntive entry where upper part of Z is held un N[1:0],
+;;; dropZN10 - alternative entry where upper part of Z is held in N[1:0],
 ;;;            call with S9=0
 ;;;
 ;;; In: B[12:10] - buffer header address
@@ -1935,7 +1935,7 @@ saveLiteral:  acex
 ;;;     S8/S9 - set according to word size
 ;;;     M - carry mask
 ;;;
-;;; Out: Sign flag in user flags set to higehst bit in X according to
+;;; Out: Sign flag in user flags set to highest bit in X according to
 ;;;      word size
 ;;;
 ;;; Uses: C, A
@@ -2500,7 +2500,7 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
               c=b
               rcr     10
               c=c+1   x
-              dadd=c                ; select trailer reg
+              dadd=c                ; select trailer register
               c=data
 
               bcex    x             ; B.X= upper part
@@ -2521,7 +2521,7 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
 SWAPI:        rxq     findBufferUserFlags
               c=b
               rcr     10
-              c=c+1   x             ; point to trailer reg
+              c=c+1   x             ; point to trailer register
               dadd=c
               c=data
 
@@ -2559,7 +2559,7 @@ RollDown:     rxq     findBufferUserFlags
 RollDown1:    c=b
               rcr     10
               c=c+1   x
-              dadd=c                ; select trailer reg
+              dadd=c                ; select trailer register
 
               c=data
               pt=     1
@@ -2626,7 +2626,7 @@ Bit_Rotate:   .equ    (1 << 3)
 Bit_ThroughCarry: .equ (1 << 2)     ; set for RRC/RLC
 Bit_Arithmetic: .equ  (1 << 1)      ; set for arithmetic shift
 
-;;; Define a few macros to make it easy to test a bit in the bitfield
+;;; Define a few macros to make it easy to test a bit in the bit-field
 isArithmetic: .macro
               c=b     s
               c=c+c   s
@@ -3317,18 +3317,18 @@ takeOverKeyboard:
 ;;;    such information is lost and the LCD becomes right justified.
 ;;;    This is not normally a problem, as the next key usually cause new
 ;;;    contents for the LCD, but pressing SHIFT or USER will not rewrite
-;;;    contents and the display becomes right justfied.
+;;;    contents and the display becomes right justified.
 ;;;
-;;; We work arund these problems by checking the display before we hand it
+;;; We work around these problems by checking the display before we hand it
 ;;; off to the key sequence parser. If the display have a non-space character
 ;;; in the rightmost position, it is safe.
 ;;; Otherwise we count the number of spaces starting from left and store
 ;;; the count in the buffer. The KeyHandler can then make use of this to
 ;;; recreate the display if needed.
 ;;; If the display contains all spaces, we store a single small '.' in the
-;;; rightmost position to prevent an inifinite loop.
+;;; rightmost position to prevent an infinite loop.
 ;;;
-;;; Note: It should be possible to work around orignal displays by putting
+;;; Note: It should be possible to work around original displays by putting
 ;;;       a character outside its character set in the rightmost position.
 ;;;       Such character should look like a blank and test as a non-space,
 ;;;       unfortunately Halfnut displays does not have a character with
@@ -3439,7 +3439,7 @@ maskABx:      .macro
 
               .section Code2, reorder
 ;;; Align local subroutine so we can use GSB256
-;;; Note that for nibble memory we only need two consequtive registers.
+;;; Note that for nibble memory we only need two consecutive registers.
 ;;; The worst case would be 64 bits (16 nibbles), but it still only need
 ;;; 2 registers no matter where we are. The reason is that it gets aligned
 ;;; to an even number of nibbles. Thus, it cannot be split between three
@@ -3481,7 +3481,7 @@ classNibble:  c=b                   ; select header register
               a=c     m             ; A[3]/A[5:3]= nibbles for each entity - 1
               c=regn  13
               rcr     3
-              c=0     m             ; clear nibs above to catch register
+              c=0     m             ; clear nibbles above to catch register
                                     ;  overflow properly
               pt=     13            ; nibble counter offset by 2
               lc      2
@@ -3754,7 +3754,7 @@ saveG:        c=0     x             ; select chip 0
 50$:          bcex    s             ; B.S= nibble offset
               c=stk                 ; C[6:3]= upper part of value to save
               rcr     -4
-              stk=c                 ; push first register and reg count
+              stk=c                 ; push first register and register count
               rcr     4 + 3         ; C[1:0]= upper part to save
               c=0     xs
               c=0     m
@@ -5277,7 +5277,7 @@ divCommon:    rcr     2
 ;;; For double operations that means we need to swap Y with Z.
               c=b     s             ; C.S= variant
               s11=0                 ; S11 is borrowed as RMD flag
-              s6=0                  ; S6 is borrowed to notify if ww are doing
+              s6=0                  ; S6 is borrowed to notify if we are doing
                                     ;  a double divide, meaning we will need the
                                     ;  Z register as input as well
 
@@ -5557,7 +5557,7 @@ divCommon:    rcr     2
               gonc    67$
               rxq     forceSign
 
-67$:          s11=1                 ; we have borroed the push flag,
+67$:          s11=1                 ; we have borrowed the push flag,
                                     ;   it should be set so lets fix that
               acex
               regn=c  X
@@ -5814,7 +5814,7 @@ Argument:     ?s13=1                ; running?
               goto    8$
 7$:           abex    wpt           ; argument follows in program
               gosub   INCAD
-              gosub   PUTPC         ; store new pc (skip over Text1 instruction)
+              gosub   PUTPC         ; store new PC (skip over Text1 instruction)
               ?s4=1                 ; single step?
               gonc    71$           ; no
               c=regn  15            ; yes, bump line number
@@ -5875,7 +5875,7 @@ Argument:     ?s13=1                ; running?
               g=c
               c=data                ; get trailer
               pt=     10
-              c=g                   ; put default arg into 'pf' field
+              c=g                   ; put default argument into 'pf' field
               data=c                ; write back
 
               gosub   LDSST0        ; argument not obtained yet
@@ -5911,7 +5911,7 @@ Argument:     ?s13=1                ; running?
 ;;; entry of the <sigma>REG instruction behind the scene, showing it as
 ;;; the prompting XROM instruction.
 ;;; Later when the dust have settled, there are two possible outcomes.
-;;; Either the instruction was entered, or instruction entry was cancelled.
+;;; Either the instruction was entered, or instruction entry was canceled.
 ;;; In order to tell what happened, we check the instruction in program
 ;;; memory. If this is <sigma>REG instruction, then we assume it is out
 ;;; one and we can alter it to Text-1 (or delete it when it corresponds
@@ -5919,7 +5919,7 @@ Argument:     ?s13=1                ; running?
 ;;;
 ;;; We choose <sigma>REG for; this as it is rarely used in a program.
 ;;; A Text-1 string literal is more likely to be in a program and we could
-;;; mistake it for being the postfix operand when the user actually cancelled
+;;; mistake it for being the postfix operand when the user actually canceled
 ;;; the instruction. In that case the semi-merged instruction would hijack
 ;;; the real Text-1!
 ;;;
@@ -6033,7 +6033,7 @@ parseStack:   gosub   MESSL
               gosub   GTACOD        ; get alpha code
               pt=     13
               lc      4             ; set for LASTX
-              a=c                   ; A.S= reg index, A.X=char
+              a=c                   ; A.S= register index, A.X=char
               ldi     76
               ?a#c    x
               goc     20$
@@ -6331,7 +6331,7 @@ prgmio:       c=data                ; C= buffer header
               ?a#c    x             ; MCODE prompt?
               goc     8$            ; no - it was aborted
               ldi     Text1
-              abex                  ; get addr again
+              abex                  ; get address again
               gosub   PTBYTA        ; store text1
 
               gosub   INCADA        ; step forward to postfix byte
@@ -6385,7 +6385,7 @@ prgmio:       c=data                ; C= buffer header
               acex
               rcr     11
               cxisa
-              ?c#0    x             ; check if 2 nops
+              ?c#0    x             ; check if 2 NOPs
               goc     90$           ; no
               c=c+1   m
               cxisa
@@ -7098,7 +7098,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 85$:          m=c                   ; M= lower part
               pt=     13
               lc      14-1          ; digit counter for first register
-              bcex    s             ; B.S= 13 (digit counter first reg)
+              bcex    s             ; B.S= 13 (digit counter first register)
                                     ; B.X= overall digit counter
 
 86$:          acex    s             ; C.S= next digit value
@@ -7140,7 +7140,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 ;;;
 ;;; This is how Extended Function/HP41CX checks it, so it is assumed
 ;;; it is the way to do it. By putting a NOP there, the probe call will
-;;; return and it will seem as the is no HPIL module in place in the
+;;; return and it will seem as the is no HP-IL module in place in the
 ;;; case we are compiled to page 7.
 ;;;
 ;;; ----------------------------------------------------------------------
