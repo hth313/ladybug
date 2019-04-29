@@ -9,7 +9,7 @@ all: $(MOD)
 	asnut -g -l $<
 
 $(MOD): $(OBJS) linker.scm ladybug.moddesc
-	lnnut -g $(OBJS) -llinker.lst linker.scm ladybug.moddesc
+	lnnut -g $(OBJS) --list-file=linker.lst linker.scm ladybug.moddesc -o ladybug
 
 clean:
-	rm $(OBJS) $(MOD)
+	-rm $(OBJS) $(MOD) ladybug
