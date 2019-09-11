@@ -16,7 +16,7 @@ all: $(MOD)
 	rpncomp -I../src -l $<
 
 $(MOD): $(OBJS) Plugin4K.scm lb-test.moddesc
-	lnnut -llinker.lst -g $(OBJS) Plugin4K.scm lb-test.moddesc
+	lnnut --list-file=linker.lst -g $(OBJS) Plugin4K.scm lb-test.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)
