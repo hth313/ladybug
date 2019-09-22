@@ -281,7 +281,7 @@ switchBank:   .macro  n
 
               .section Code, reorder
 
-              .name   "-LADYBUG 0B"  ; The name of the module
+              .name   "-LADYBUG 0C"  ; The name of the module
 Header:       rtn
 
 
@@ -7288,5 +7288,5 @@ rpollio:      ?s7=1                 ; alpha mode?
               goto    rpollio       ; I/O
               goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "B0BL"        ; Identifier LB-0B
+              .text   "C0BL"        ; Identifier LB-0C
               .con    0             ; checksum position
