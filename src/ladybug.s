@@ -7213,7 +7213,7 @@ rpollio2:     enrom1
 
 deepWake:     n=c
               rxq     chkbuf
-              goto    pollret       ; (P+1) not found
+              goto    pollret     ; (P+1) not found
               c=c+1   s             ; (P+2) reclaim it
 
               cstex
@@ -7228,9 +7228,10 @@ deepWake:     n=c
               rcr     -4
 
               data=c
-pollretC0:    c=0
+
+pollret:      c=0
               dadd=c
-pollret:      c=n
+              c=n
 RMCK10_LJ:    golong  RMCK10
 
 rpollio:      ?s7=1                 ; alpha mode?
@@ -7247,7 +7248,7 @@ rpollio:      ?s7=1                 ; alpha mode?
               ;; We link so that 'chkbuf' is present at XF00, so GSB256
               ;; will take us there.
               gosub   GSB256        ; chkbuf
-              goto    pollretC0     ; (P+1) no integer buffer
+              goto    pollret       ; (P+1) no integer buffer
               pt=     4
               c=c+c   pt            ; doing pause?
               goc     20$           ; yes
@@ -7255,9 +7256,9 @@ rpollio:      ?s7=1                 ; alpha mode?
               c=m                   ; C= system flags
               c=c+c   xs
               c=c+c   xs
-              goc     pollretC0     ; data entry in progress
+              goc     pollret       ; data entry in progress
               c=c+c   xs
-              goc     pollretC0     ; partial key entry in progress
+              goc     pollret       ; partial key entry in progress
               ?s3=1                 ; program mode?
               goc     10$           ; yes
               rgo     pollio
@@ -7265,9 +7266,9 @@ rpollio:      ?s7=1                 ; alpha mode?
               ;; Program mode. Separated here so that we know that only
               ;; the run-mode need to handle pausing.
 10$:          ?s12=1                ; private?
-              goc     pollretC0     ; yes
+              goc     pollret       ; yes
               ?s5=1                 ; message flag (perhaps showing "ROM")
-              goc     pollretC0     ; yes
+              goc     pollret       ; yes
               rgo     prgmio
 
               ;; Handle pause timer.

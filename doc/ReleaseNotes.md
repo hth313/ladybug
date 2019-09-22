@@ -4,6 +4,18 @@
 
 Ladybug is a bank switched module which consists of three pages. Ensure that you load it properly into your HP-41 for correct operation. The supplied `.mod` file is properly configured for this, but if you extract the pages and do it manually, be careful!
 
+## Version 0C
+
+Minor update, September 22, 2019.
+
+### Corrections
+
+* The ON poll vector code that reclaims the integer buffer would leave
+  some other DADD selected than SS0 if there is no integer buffer
+  around. This violates the ROMCHK protocol. Further down the line, if
+  another module had a power ON poll vector that assumed SS0 was up
+  (as it may do), it would incorrectly access some register in the
+  buffer area, potentially even program registers.
 
 ## Version 0B
 
