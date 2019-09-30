@@ -6426,7 +6426,8 @@ prgmio:       c=data                ; C= buffer header
 35$:          abex
               gosub   INCAD
               gosub   GTBYT         ; get argument
-36$:          gosub   ROW930        ; display argument
+36$:          s0=0                  ; ensure 2-digit operand
+              gosub   ROW930        ; display argument
               goto    900$
 
 
