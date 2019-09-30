@@ -6,7 +6,7 @@ Ladybug is a bank switched module which consists of three pages. Ensure that you
 
 ## Version 0C
 
-Minor update, September 22, 2019.
+Minor update, September 29, 2019.
 
 ### Corrections
 
@@ -16,6 +16,13 @@ Minor update, September 22, 2019.
   another module had a power ON poll vector that assumed SS0 was up
   (as it may do), it would incorrectly access some register in the
   buffer area, potentially even program registers.
+
+* Add timing annotation on the PSEI loop to make it run at the desired
+  speed on the HP-41CL (also when turbo mode is enabled).
+
+* Semi-merged postfix arguments turned into single digit form when a
+  printer was connected.
+
 
 ## Version 0B
 

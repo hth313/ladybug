@@ -39,7 +39,7 @@ placed in address page 4.
 This release
 ============
 
-This version, 0B is a release to early adopters, in the hope to get
+This version, 0C is a release to early adopters, in the hope to get
 feedback. The instruction allocation (XROM numbers) is currently
 considered preliminary and may change in the future.
 
@@ -51,7 +51,7 @@ Resource requirements
 
 Ladybug allocates two registers from the free memory pool. Apart from
 this, it does not impose any restrictions on the environment and will
-run comfortable on any HP-41C, HP-41CV or HP-41CX at standard speed.
+run comfortable on any HP-41C, HP-41CV, HP-41CX or HP-41CL.
 
 The XROM number used by this module is 16 and the private storage area
 is I/O buffer number 0.
