@@ -6160,10 +6160,12 @@ pauseio:      c=data
               rcr     7             ; C.M= pause counter * 0x100
               a=c     m
               gosub   PGMAON
+              .newt_timing_start
 10$:          chk kb
               goc     reconstructReturnRomCheck
               a=a-1   m
               gonc    10$
+              .newt_timing_end
 
               ;; Timed out, reset the pause flag
               acex    x
