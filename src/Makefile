@@ -1,15 +1,17 @@
-
-SRCS = ladybug.s bank2.s mainframe.s osExtension.s
+RATATOSK = ../../ratatosk/src
+SRCS = ladybug.s bank2.s mainframe.s
 OBJS = $(SRCS:%.s=%.o)
 MOD = ladybug.mod
 
 all: $(MOD)
 
 %.o: %.s
-	asnut -g -l $<
+	asnut -I$(RATATOSK) -g -l $^ -o $@
+#+RTS -s -prof -hy -L60
+# -xc -K500K -p -s    -prof -hc   -hy -L60
 
 $(MOD): $(OBJS) linker.scm ladybug.moddesc
-	lnnut -g $(OBJS) -llinker.lst linker.scm ladybug.moddesc
+	lnnut -g $(OBJS) --list-file=linker.lst linker.scm ladybug.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)
