@@ -3733,7 +3733,9 @@ WINDOW:       nop                   ; no programmable
                                     ;          after a command, here it is safe
                                     ;          to set it to 0)
               data=c
-WINEXIT:      rgo     exitNoUserST
+WINEXIT:      rxq     displayXB10
+              gosub   displayDone
+              golong  NFRC
 
 
 #if  0
