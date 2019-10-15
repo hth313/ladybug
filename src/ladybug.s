@@ -49,7 +49,7 @@
 ;;; **********************************************************************
 #endif
 
-#include "ratatosk.h"
+#include "OS4.h"
 
 #define LFE(x)  `FAT entry: \x`
 #define FATOFF(x) (LFE(x) - FatStart) / 2
@@ -274,7 +274,7 @@ Header:       rtn
 ;;;
 ;;; ladybugShell - the application shell definition
 ;;;
-;;; This record describes to Ratatosk that we are an application
+;;; This record describes to OS4 that we are an application
 ;;; with suitable key and display handlers.
 ;;;
 ;;; ************************************************************
@@ -350,7 +350,7 @@ XROMj:        .equ    64 * (XROMno % 4)
 ;;; During digit entry, we use flag 9 to keep track of programming mode
 Flag_PRGM:    .equ    9
 
-;;; My keyboard handler. We just bounce back to Ratatosk with a defintion of
+;;; My keyboard handler. We just bounce back to OS4 with a defintion of
 ;;; a keyboard to use.
 
               .align  4
@@ -5270,7 +5270,6 @@ keyTable:
               KeyEntry SWAPI        ; X<>Y
               .con    0x30e         ; SHIFT
               .con    0             ; CATALOG
-;              .con    0x200         ; CATALOG
               KeyEntry CMP          ; -
               KeyEntry TST          ; +
               KeyEntry DMUL         ; *
@@ -5280,7 +5279,6 @@ keyTable:
               .con    0x10b         ; 1/X  (B digit)
               KeyEntry Hex          ; RDN
               .con    0             ; XEQ
-;              .con    0x2e0         ; XEQ
               .con    0             ; right half of enter key
               .con    0x107         ; 7
               .con    0x104         ; 4
@@ -5290,7 +5288,6 @@ keyTable:
               ;; Logical column 1, shifted
               KeyEntry SR           ; 1/X
               KeyEntry RDNI         ; RDN
-;              .con    0x20f         ; ASN
               .con    0             ; ASN
               .con    0             ; right half of enter key
               .con    0x2a8         ; SF
@@ -5326,7 +5323,6 @@ keyTable:
               .con    0x109         ; 9
               .con    0x106         ; 6
               .con    0x103         ; 3
-;              .con    0x205         ; R/S
               .con    0             ; R/S
 
               ;; Logical column 3, shifted
@@ -5334,10 +5330,7 @@ keyTable:
               KeyEntry RLC          ; COS
               .con    0             ; GTO
               .con    0             ; RTN
-              .con    0             ; FS?
-;              .con    0x2d0         ; GTO
-;              .con    0x285         ; RTN
-;              .con    0x2ac         ; FS?
+              .con    0x2ac         ; FS?
               KeyEntry B?           ; 6
               KeyEntry XOR          ; 3
               KeyEntry WSIZE        ; R/S
@@ -5345,7 +5338,6 @@ keyTable:
               ;; Logical column 4
               .con    0x10e         ; LN   (E digit)
               KeyEntry Binary       ; TAN
-;              .con    0x208         ; SST
               .con    0             ; SST
               .con    0x1ff         ; BACKARROW
               .con    0x30c         ; MODE ALPHA
@@ -5356,7 +5348,6 @@ keyTable:
               ;; Logical column 4, shifted
               KeyEntry RR           ; LN
               KeyEntry RRC          ; TAN
-;              .con    0x207         ; BST
               .con    0             ; BST
               KeyEntry CLXI         ; BACKARROW
               KeyEntry ALDI         ; MODE ALPHA
