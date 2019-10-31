@@ -333,39 +333,25 @@ Literal:      gosub   xargument     ; mark as special form
               rgo     displayPrgmLiteral
 
 
-;;; **********************************************************************
-;;;
-;;; Keyboard handler. This routine is the keyboars takeover code which
-;;; is done by faking a partial key sequence that is to be handled here,
-;;; but in reality we will just implement a different keyboard layout.
-;;;
-;;; Code here heavily borrowed from NEWFCN in mainframe, at least for
-;;; the first part.
-;;;
-;;; **********************************************************************
-
 XROMi:        .equ    160 + (XROMno / 4)
 XROMj:        .equ    64 * (XROMno % 4)
 
 ;;; During digit entry, we use flag 9 to keep track of programming mode
 Flag_PRGM:    .equ    9
 
-;;; My keyboard handler. We just bounce back to OS4 with a defintion of
-;;; a keyboard to use.
-
-              .align  4
-              .section Code
-keyHandler:   gosub   keyKeyboard   ; does not return
-              .con    .low12 keyboard ; argument to keyKeyboard
-
-
-;;; The keyboard description. We provide handlers for digit entry and ending
+;;; **********************************************************************
+;;;
+;;; The keyboard handler. We provide handlers for digit entry and ending
 ;;; digit entry and point to the keyboard table to use.
 ;;; Do not support auto assigned top keys, it slows things down too much and
 ;;; we rely on it for hexadecimal digit entry which should be fast.
+;;;
+;;; **********************************************************************
+
               .section Code
               .align  4
-keyboard:     .con    0             ; flags
+keyHandler:   gosub   keyKeyboard   ; does not return
+              .con    0             ; flags
               .con    .low12 doDigit ; handle a digit
               .con    .low12 clearDigitEntry ; end digit entry
               .con    .low12 keyTable
