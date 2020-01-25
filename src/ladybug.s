@@ -287,6 +287,9 @@ ladybugShell: .con    AppShell
               .con    .low12 keyHandler ; user keys
               .con    0                 ; alpha keys, use default
               .con    .low12 myName
+              .con    0                 ; activation
+              .con    0                 ; deactivation
+              .con    0                 ; timeout
 
               .section Code
               .align  4
