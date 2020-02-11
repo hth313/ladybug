@@ -105,7 +105,7 @@ XROMno:       .equ    16
               .con    (FatEnd - FatStart) / 2 ; number of entry points
 
 FatStart:
-              .fat    Header        ; ROM header
+              .fat    LadyHeader    ; ROM header
               FAT     Literal
               FAT     FLOAT         ; mode change
               .fat    Integer
@@ -268,7 +268,7 @@ switchBank:   .macro  n
               .section Code, reorder
 
               .name   "-LADYBUG 1A"  ; The name of the module
-Header:       rtn
+LadyHeader:   rtn
 
 ;;; ************************************************************
 ;;;
