@@ -51,14 +51,6 @@
 
 #include "OS4.h"
 
-#define LFE(x)  `FAT entry: \x`
-#define FATOFF(x) (LFE(x) - FatStart) / 2
-
-;;; Make it easy to populate the key table
-KeyEntry:     .macro  fun
-              .con   FATOFF(fun)
-              .endm
-
 ;;; Create a FAT entry with an appropriate label.
 ;;; The purpose of this label is to allow us to refer to the entry point,
 ;;; which is used for accessing the instruction (few uses) and setting
@@ -5245,7 +5237,7 @@ keyTable:
               ;; Logical column 0
               .con    0x10a         ; SIGMA+  (A digit)
               .con    0x10f         ; X<>Y    (F digit here)
-              .con    0x30e         ; SHIFT
+              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
               KeyEntry ENTERI       ; ENTER^
               KeyEntry SUB          ; -
               KeyEntry ADD          ; +
@@ -5255,7 +5247,7 @@ keyTable:
               ;; Logical column 0, shifted
               KeyEntry SL           ; SIGMA+
               KeyEntry SWAPI        ; X<>Y
-              .con    0x30e         ; SHIFT
+              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
               .con    0             ; CATALOG
               KeyEntry CMP          ; -
               KeyEntry TST          ; +
@@ -5277,7 +5269,7 @@ keyTable:
               KeyEntry RDNI         ; RDN
               .con    0             ; ASN
               .con    0             ; right half of enter key
-              .con    0x2a8         ; SF
+              .con    BuiltinKey(0xa8) ; SF
               KeyEntry SB           ; 4
               KeyEntry AND          ; 1  (FIX key)
               KeyEntry FLOAT        ; 0
@@ -5295,9 +5287,9 @@ keyTable:
               ;; Logical column 2, shifted
               KeyEntry ASR          ; SQRT
               KeyEntry RMD          ; SIN
-              .con    0x2cf         ; LBL
+              .con    BuiltinKey(0xcf) ; LBL
               KeyEntry NOT          ; CHS
-              .con    0x2a9         ; CF
+              .con    BuiltinKey(0xa9) ; CF
               KeyEntry CB           ; 5
               KeyEntry OR           ; 2
               KeyEntry LASTXI       ; decimal point (LastX)
@@ -5317,7 +5309,7 @@ keyTable:
               KeyEntry RLC          ; COS
               .con    0             ; GTO
               .con    0             ; RTN
-              .con    0x2ac         ; FS?
+              .con    BuiltinKey(0xac) ; FS?
               KeyEntry B?           ; 6
               KeyEntry XOR          ; 3
               KeyEntry WSIZE        ; R/S
@@ -5327,9 +5319,9 @@ keyTable:
               KeyEntry Binary       ; TAN
               .con    0             ; SST
               .con    0x1ff         ; BACKARROW
-              .con    0x30c         ; MODE ALPHA
-              .con    0x20c         ; MODE PRGM
-              .con    0x30c         ; MODE USER
+              .con    BuiltinKey(0x0c) ; MODE ALPHA
+              .con    BuiltinKey(0x0c) ; MODE PRGM
+              .con    BuiltinKeyKeepDigitEntry(0x0c) ; MODE USER
               .con    0             ; OFF key special
 
               ;; Logical column 4, shifted
