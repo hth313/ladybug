@@ -1006,7 +1006,7 @@ FLOAT:        nop                   ; non-programmable
                                     ;  (allow  mode switch in program mode)
               ldi     .low12 ladybugShell
               gosub   exitShell     ; must be a gosub to provide page address
-              rtn
+              golong  NFRPU         ; must golong as exitShell uses +3 levels
 
 
               .section Code, reorder
