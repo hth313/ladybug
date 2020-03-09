@@ -33,8 +33,8 @@
 
     Operations (like add and shifts) uses a variant of 'FindBuffer' that
     sets up the user flags (such as sign mode, carry and zero flags).
-    Examples of such routines are 'findBufferUserFlags' and
-    'findBufferGetXSaveL'.
+    Examples of such routines are 'findIntegerBufferUserFlags' and
+    'findIntegerBufferGetXSaveL'.
     These are similar to 'FindBuffer', but as said, they set up user flags
     instead of the internal flag set.
 
@@ -307,7 +307,7 @@ Literal:      gosub   xargument     ; mark as special form
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
               rtn nc                ; no, do nothing
-10$:          rxq     findBufferUserFlags_liftStackS11
+10$:          rxq     findIntegerBufferUserFlags_liftStackS11
               rxq     fetchLiteral
               regn=c  X
               gosub   PUTPCA        ; we already have chip 0 selected
@@ -315,7 +315,7 @@ Literal:      gosub   xargument     ; mark as special form
 
 ;;; Display literal in program mode.
 20$:          c=0     x
-              gosub   chkbuf
+              gosub   findBuffer
               rtn                   ; (P+1) no integer b uffer
               acex                  ; C= buffer address
               cmex
@@ -355,7 +355,7 @@ keyHandler:   gosub   keyKeyboard   ; does not return
               .align  4
 clearDigitEntry:
               c=0     x
-              gosub   chkbuf
+              gosub   findBuffer
               goto    clearDigitEntry20 ; (P+1) should not happen
               c=data                ; get full header
               cstex                 ; clear internal digit entry flag
@@ -373,7 +373,7 @@ clearDigitEntry20:
 ;;; Handle numeric entry
               .align  4
 doDigit:      releaseKey
-              rxq     findBuffer    ; buffer address to B[12:10]
+              rxq     findIntegerBuffer ; buffer address to B[12:10]
               c=st                  ; restore C[1:0]
               acex    x             ; base - 1 to A[0]
               pt=     0             ; get digit to C[2:0]
@@ -675,7 +675,7 @@ prgmDigent:   ?s12=1                ; private?
               pt=     0
               g=c                   ;  entered char
 
-              rxq     findBuffer    ; restore M, ST
+              rxq     findIntegerBuffer ; restore M, ST
 
               c=0                   ; start out with 0
               b=0     x
@@ -904,7 +904,7 @@ exitNoUserST: gosub   shellDisplay
 Binary:       ldi     1
 BaseHelper:   rcr     1
               bcex    s
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               cstex
               rcr     1
               bcex    s
@@ -924,7 +924,7 @@ exit:         goto    exitNoUserST
 Integer:      nop                   ; non-programmable
                                     ;  (allow mode switch in program mode)
               c=0     x             ; buffer ID 0
-              gosub   chkbuf
+              gosub   findBuffer
               goto    createBuf     ; (P+1) create buffer
                                     ; (P+2) buffer exists
 
@@ -1037,8 +1037,9 @@ noBuf:        gosub   errorMessage
 ;;;
 ;;; **********************************************************************
 
-findBuffer:   c=0     x
-              gosub   chkbuf
+findIntegerBuffer:
+              c=0     x
+              gosub   findBuffer
               goto    noBuf         ; (P+1)
 carryToM:     acex    x             ; (P+2)  C.X= buffer address
               rcr     -10
@@ -1108,21 +1109,21 @@ carryToM:     acex    x             ; (P+2)  C.X= buffer address
 
 
               .section Code, reorder
-findBufferUserFlags:
+findIntegerBufferUserFlags:
               c=regn  14            ; bring up user flags
               rcr     12
               st=c
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               cstex                 ; bring up user flags
               rtn
 
               .section Code2, reorder
-findBufferUserFlags_rom2:
+findIntegerBufferUserFlags_rom2:
               c=regn  14            ; bring up user flags
               rcr     12
               st=c
               switchBank 1
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               switchBank 2
               cstex                 ; bring up user flags
               rtn
@@ -1150,10 +1151,10 @@ findBufferUserFlags_rom2:
 Flag_56:      .equ    9             ; set when word size is 56
 
               .section Code2, reorder
-findBufferGetXSaveL56_rom2:
+findIntegerBufferGetXSaveL56_rom2:
               st=0    Flag_56
               switchBank 1
-              rxq     findBufferGetXSaveL
+              rxq     findIntegerBufferGetXSaveL
               switchBank 2
               c=m
               ?c#0
@@ -1162,9 +1163,9 @@ findBufferGetXSaveL56_rom2:
               rtn
 
               .section Code, reorder
-findBufferGetXSaveL56:
+findIntegerBufferGetXSaveL56:
               st=0    Flag_56
-              rxq     findBufferGetXSaveL
+              rxq     findIntegerBufferGetXSaveL
               c=m
               ?c#0
               rtn c
@@ -1172,12 +1173,12 @@ findBufferGetXSaveL56:
               rtn
 
               .section Code, reorder
-findBufferGetXSaveL:
+findIntegerBufferGetXSaveL:
               s0=0                  ; no division by 0 check
-findBufferGetXSaveL0:
+findIntegerBufferGetXSaveL0:
               s11=1                 ; set push flag (enable stack lift)
-findBufferGetXSaveL0no11:
-              rxq     findBuffer
+findIntegerBufferGetXSaveL0no11:
+              rxq     findIntegerBuffer
               cstex                 ; restore header
               n=c                   ; save header
               rxq     loadX
@@ -1750,7 +1751,7 @@ setFlagsABx:  rxq     maskABx_rom2
 ;;; **********************************************************************
 
               .name   "XOR"
-XOR:          rxq     findBufferGetXSaveL
+XOR:          rxq     findIntegerBufferGetXSaveL
               c=b                   ; save buf ptr on stack
               rcr     6
               stk=c
@@ -1787,7 +1788,7 @@ aoxfix_2:     rgo     putXDrop
 ;;; **********************************************************************
 
               .name   "OR"
-OR:           rxq     findBufferGetXSaveL
+OR:           rxq     findIntegerBufferGetXSaveL
               c=regn  Y             ; OR lower part of X with Y
               c=c|a
               regn=c  X             ; write back
@@ -1806,7 +1807,7 @@ OR:           rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "AND"
-AND:          rxq     findBufferGetXSaveL
+AND:          rxq     findIntegerBufferGetXSaveL
               c=regn  Y             ; AND lower part of X with Y
               c=c&a
               regn=c  X             ; write back
@@ -1839,7 +1840,7 @@ SUB:          s9=1
 
               .name   "ADD"
 ADD:          s9=0
-ADD_2:        rxq     findBufferGetXSaveL
+ADD_2:        rxq     findIntegerBufferGetXSaveL
               switchBank 2
               st=0    Flag_Overflow ; prepare overflow flag
               ?st=1   Flag_2        ; unsigned mode?
@@ -1935,7 +1936,7 @@ ADD_2:        rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "CLXI"
-CLXI:         rxq     findBufferUserFlags
+CLXI:         rxq     findIntegerBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
@@ -1951,7 +1952,7 @@ CLXI:         rxq     findBufferUserFlags
 ;;; **********************************************************************
 
               .name   "ABSI"
-ABSI:         rxq     findBufferGetXSaveL
+ABSI:         rxq     findIntegerBufferGetXSaveL
               st=0    Flag_Overflow
               ?st=1   Flag_2        ; unsigned mode?
               gonc    putX_J0       ; yes, done
@@ -1970,7 +1971,7 @@ ABSI:         rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "NEG"
-NEG:          rxq     findBufferGetXSaveL
+NEG:          rxq     findIntegerBufferGetXSaveL
 NEG10:        st=0    Flag_Overflow ; assume no overflow
               ?st=1   Flag_2        ; signed mode?
               goc     5$            ; yes
@@ -2019,7 +2020,7 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 ;;; **********************************************************************
 
               .name   "NOT"
-NOT:          rxq     findBufferGetXSaveL
+NOT:          rxq     findIntegerBufferGetXSaveL
               bcex    x
               c=-c-1  x
               bcex    x
@@ -2040,7 +2041,7 @@ CB:           nop
               nop
               gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1
               goto    SB10
 
@@ -2055,9 +2056,9 @@ SB:           nop
               nop
               gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
-SB10:         rxq     findBufferGetXSaveL
+SB10:         rxq     findIntegerBufferGetXSaveL
               rxq     bitMask_G
               ?s9=1                 ; SB?
               gonc    10$           ; yes
@@ -2095,7 +2096,7 @@ SB10:         rxq     findBufferGetXSaveL
               nop
               gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               rxq     loadX
               acex
               regn=c  X
@@ -2124,7 +2125,7 @@ MASKR:        nop
               nop
               gosub   argument
               .con    8 + 0x100     ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
               goto    MASK10
 
@@ -2139,7 +2140,7 @@ MASKL:        nop
               nop
               gosub   argument
               .con    8 + 0x100     ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1                  ; (S9 is affected by argumentValueG)
 MASK10:       rxq     liftStackS11
               rxq     bitMask_G
@@ -2200,7 +2201,7 @@ MASK10:       rxq     liftStackS11
 
               .section Code, reorder
               .name   "LASTXI"
-LASTXI:       rxq     findBufferUserFlags_liftStackS11
+LASTXI:       rxq     findIntegerBufferUserFlags_liftStackS11
               c=b
               rcr     10
               c=c+1   x
@@ -2221,7 +2222,7 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
 ;;; **********************************************************************
 
               .name   "X<>YI"
-SWAPI:        rxq     findBufferUserFlags
+SWAPI:        rxq     findIntegerBufferUserFlags
               c=b
               rcr     10
               c=c+1   x             ; point to trailer reg
@@ -2256,7 +2257,7 @@ putX11:       s11=1
 ;;;
 ;;; **********************************************************************
 
-RollDown:     rxq     findBufferUserFlags
+RollDown:     rxq     findIntegerBufferUserFlags
 
 RollDown1:    c=b
               rcr     10
@@ -2392,7 +2393,7 @@ RL:           nop                   ;  Prelude for prompting function
               lc      Bit_Rotate
 leftShift:    switchBank 2
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
@@ -2401,7 +2402,7 @@ leftShift:    switchBank 2
               c=b
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56_rom2
+              rxq     findIntegerBufferGetXSaveL56_rom2
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
               stk=c
@@ -2578,7 +2579,7 @@ RR:           nop                   ; Prelude for prompting function
               lc      Bit_Rotate
 rightShift:   switchBank 2
               bcex    s             ; B.S=configuration
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
@@ -2587,7 +2588,7 @@ rightShift:   switchBank 2
               c=b                   ; C[9]= configuration nibble
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56_rom2
+              rxq     findIntegerBufferGetXSaveL56_rom2
               c=0     x             ; test for zero input
               pt=     0
               c=g
@@ -2749,7 +2750,7 @@ displayXB10:  c=b
               goto    dis10
 
               .align  4
-displayX:     rxq     findBuffer
+displayX:     rxq     findIntegerBuffer
 dis10:        c=data
               n=c                   ; save header in N
               rxq     loadX         ; load and mask X
@@ -3007,7 +3008,7 @@ maskABx:      .macro
 ;;;      argumentValueG:
 ;;;        G - value
 ;;;
-;;; NOTE: Must have called findBuffer to have B[12:10] and M properly set up!
+;;; NOTE: Must have called findIntegerBuffer to have B[12:10] and M properly set up!
 ;;;       But should not save anything to L before coming here as we may
 ;;;       report argument error!
 ;;;
@@ -3434,8 +3435,8 @@ ERRDE_rom2:   switchBank 1
               golong  ERRDE
 
               .section Code, reorder
-findBufferUserFlags_argumentValueG_rom1:
-              rxq     findBufferUserFlags
+findIntegerBufferUserFlags_argumentValueG_rom1:
+              rxq     findIntegerBufferUserFlags
 argumentValueG_rom1:
               switchBank 2
               rxq     argumentValueG
@@ -3482,7 +3483,7 @@ maskABx_rom1: maskABx
 
               .section Code, reorder
               .name   "ENTERI"
-ENTERI:       rxq     findBuffer
+ENTERI:       rxq     findIntegerBuffer
               s11=0                 ; disable stack lift
               rxq     liftStack
               rgo     exitNoUserST
@@ -3499,8 +3500,8 @@ ENTERI:       rxq     findBuffer
 ;;; ----------------------------------------------------------------------
 
               .section Code, reorder
-findBufferUserFlags_liftStackS11:
-              rxq     findBufferUserFlags
+findIntegerBufferUserFlags_liftStackS11:
+              rxq     findIntegerBufferUserFlags
 liftStackS11: ?s11=1                ; push flag?
               goc     liftStack     ; yes
               s11=1                 ; no, set it and do not lift stack
@@ -3543,7 +3544,7 @@ liftStack:    c=b                   ; get buffer address to A.X
 ;;; ----------------------------------------------------------------------
 
               .name   "WSIZE?"
-`WSIZE?`:     rxq     findBufferUserFlags_liftStackS11
+`WSIZE?`:     rxq     findIntegerBufferUserFlags_liftStackS11
               c=b
               rcr     10
               dadd=c
@@ -3572,7 +3573,7 @@ WSIZE:        nop
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
               switchBank 2
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               rxq     argumentValueG ; handle indirect, check 64 range
               c=0
               pt=     0
@@ -3703,7 +3704,7 @@ WINDOW:       nop                   ; no programmable
               acex    x
               pt=     0
               g=c
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -3726,7 +3727,7 @@ PWINDOW:      nop
               ldi     8             ; allow up to 7
               ?a<c    x
               gonc    WSZ_DE
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -3751,7 +3752,7 @@ LDI:          nop
               nop
               gosub   argument
               .con    Operand00     ; LDI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadG_rom1
 LDI10:        acex
               n=c                   ; save value in N
@@ -3773,7 +3774,7 @@ STI:          nop
               nop
               gosub   argument
               .con    Operand00     ; LDI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadX
               switchBank 2
               rxq     saveG
@@ -3791,7 +3792,7 @@ INCI:         nop
               nop
               gosub   argument
               .con    Operand00     ; INCI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a+1
@@ -3813,7 +3814,7 @@ DECI:         nop
               nop
               gosub   argument
               .con    Operand00     ; DECI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a-1
@@ -3841,7 +3842,7 @@ DSZI:         nop
               nop
               gosub   argument
               .con    Operand00     ; DSZI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a-1                 ; decrement
@@ -3875,7 +3876,7 @@ CLRI:         nop
               nop
               gosub   argument
               .con    Operand00     ; CLRI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               a=0
               b=0     x
@@ -3895,10 +3896,10 @@ SEX:          nop
               gosub   argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               a=a-1   x
               golc    ERRDE         ; 0 gives DATA ERROR
-              rxq     findBufferGetXSaveL
+              rxq     findIntegerBufferGetXSaveL
               pt=     0             ; load argument
               c=0     x
               c=g
@@ -3950,7 +3951,7 @@ BITSUM:       nop
               nop
               gosub   argument
               .con    OperandX
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadG_rom1
               c=0
               acex
@@ -3980,7 +3981,7 @@ ALDI:         nop
               nop
               gosub   argument
               .con    OperandX      ; ALDI X is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rcr     -4
               pt=     7
@@ -4152,7 +4153,7 @@ TST:          nop
               nop
               gosub   argument
               .con    Operand00     ; TST 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               rxq     setFlagsABx
@@ -4171,7 +4172,7 @@ CMP:          nop
               nop
               gosub   argument
               .con    OperandY
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               st=0    Flag_CY
@@ -4370,7 +4371,7 @@ DMUL:         s11=1                 ; want double result
 
               .name   "MUL"
 MUL:          s11=0                 ; want single result
-mulCommon:    rxq     findBufferGetXSaveL0no11
+mulCommon:    rxq     findIntegerBufferGetXSaveL0no11
               switchBank 2
               ?st=1   Flag_2
               gonc    2$
@@ -4746,7 +4747,7 @@ divCommon:    rcr     2
               bcex    s             ; B.S= variant
 
               s0=1                  ; check for division by 0
-              rxq     findBufferGetXSaveL0
+              rxq     findIntegerBufferGetXSaveL0
               switchBank 2
 
 ;;; We always want the low part of dividend to be in Y.
@@ -6005,7 +6006,7 @@ deepWake2:    enrom1
 
 deepWake:     n=c
               c=0     x             ; we look for buffer # 0
-              gosub   chkbuf
+              gosub   findBuffer
               goto    pollret       ; (P+1) not found
               c=data                ; (P+2) reclaim it
               cstex
