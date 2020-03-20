@@ -17,7 +17,7 @@
             (bank 1) (address (#x0 . #xFFF))
             (section (BoostFAT #x0) BoostCode BoostTable Lib41Code
                      BoostSecondary BoostSecondary1
-                     RPN (BoostFC6 #xFC6) (BoostPoll #xFE0))
+                     RPN (BoostFC2 #xFC2) (BoostPoll #xFE0))
             (checksum #xFFF hp41)
             (fill 0))
     ;; Mainframe
