@@ -5937,14 +5937,14 @@ decpos:       b=0     xs            ; clear flag for digits above
 ;;; ----------------------------------------------------------------------
 
 BankSwitchers: .macro
+              rtn                   ; not using bank 3
+              rtn
+              rtn                   ; not using bank 4
+              rtn
               enrom1
               rtn
               enrom2
               rtn
-              nop                   ; not using bank 3
-              nop
-              nop                   ; not using bank 4
-              nop
               .endm
 
               .section BankSwitchers1

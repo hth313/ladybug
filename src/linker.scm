@@ -2,7 +2,7 @@
   '((memory Ladybug1 (position independent)
             (bank 1) (address (#x0 . #xFFF))
             (section (FAT #x0) Code Code1 KeyTable
-                     (BankSwitchers1 #xFC7)
+                     (BankSwitchers1 #xFC3)
                      (Legal7 #xCDD)
                      (Shell #xC00)
                      (Tail #xFDF))
@@ -10,6 +10,6 @@
             (fill 0))
     (memory Ladybug2 (position independent)
             (bank 2) (address (#x0 . #xFFF))
-            (section (Bank2Header #x0) Code2 (BankSwitchers2 #xFC7) (Tail2 #xFF4))
+            (section (Bank2Header #x0) Code2 (BankSwitchers2 #xFC3) (Tail2 #xFF4))
             (checksum #xFFF hp41)
             (fill 0))))
