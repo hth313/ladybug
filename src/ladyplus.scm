@@ -56,7 +56,8 @@
             (checksum #x4FFF hp41)
             (fill 0))
     (memory OS4-2 (bank 2) (address (#x4000 . #x4FFF))
-            (section code2
+            (section (Header4_2 #x4000)
+                     code2
                      (OS4BankSwitchers2 #x4fc3)
                      (TailOS4_2 #x4ffb))
             (checksum #x4FFF hp41)
