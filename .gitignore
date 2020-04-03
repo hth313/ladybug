@@ -2,6 +2,7 @@ _build
 *.lst
 *.o
 *.mod
+*.mod2
 src/ladybug
 test/lb-test
 dist
