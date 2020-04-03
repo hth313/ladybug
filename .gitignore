@@ -6,3 +6,4 @@ src/ladybug
 test/lb-test
 dist
 doc/ReleaseNotes.html
+*.elf
