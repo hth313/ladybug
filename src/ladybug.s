@@ -2038,7 +2038,7 @@ putX_J0:      rgo     putX
 CB:           nop
               nop
               gosub   argument
-              .con    Operand00 + 0x100 ; no ST
+              .con    Operand00 + SEMI_MERGED_NO_STACK
               rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1
               goto    SB10
@@ -2053,7 +2053,7 @@ CB:           nop
 SB:           nop
               nop
               gosub   argument
-              .con    Operand00 + 0x100 ; no ST
+              .con    Operand00 + SEMI_MERGED_NO_STACK
               rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
 SB10:         rxq     findIntegerBufferGetXSaveL
@@ -2093,7 +2093,7 @@ SB10:         rxq     findIntegerBufferGetXSaveL
 `B?`:         nop
               nop
               gosub   argument
-              .con    Operand00 + 0x100 ; no ST
+              .con    Operand00 + SEMI_MERGED_NO_STACK
               rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               rxq     loadX
               acex
@@ -2122,7 +2122,7 @@ SB10:         rxq     findIntegerBufferGetXSaveL
 MASKR:        nop
               nop
               gosub   argument
-              .con    8 + 0x100     ; no ST
+              .con    8 + SEMI_MERGED_NO_STACK
               rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
               goto    MASK10
@@ -2137,7 +2137,7 @@ MASKR:        nop
 MASKL:        nop
               nop
               gosub   argument
-              .con    8 + 0x100     ; no ST
+              .con    8 + SEMI_MERGED_NO_STACK
               rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1                  ; (S9 is affected by argumentValueG)
 MASK10:       rxq     liftStackS11
@@ -2354,7 +2354,7 @@ SL:           nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               c=0     s
               goto    leftShift
 
@@ -2369,7 +2369,7 @@ RLC:          nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               pt=     13
               lc      Bit_ThroughCarry
               goto    leftShift
@@ -2385,7 +2385,7 @@ RL:           nop                   ;  Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               pt=     13
               lc      Bit_Rotate
 leftShift:    switchBank 2
@@ -2524,7 +2524,7 @@ SR:           nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               c=0     s
               goto    rightShift
 
@@ -2539,7 +2539,7 @@ ASR:          nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               pt=     13
               lc      Bit_Arithmetic
               goto    rightShift
@@ -2555,7 +2555,7 @@ RRC:          nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               pt=     13
               lc      Bit_ThroughCarry
               goto    rightShift
@@ -2571,7 +2571,7 @@ RR:           nop                   ; Prelude for prompting function
               nop
               gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
-              .con    Operand01 + 0x100
+              .con    Operand01 + SEMI_MERGED_NO_STACK
               pt=     13
               lc      Bit_Rotate
 rightShift:   switchBank 2
@@ -3568,7 +3568,7 @@ WSIZE:        nop
               nop
               gosub   argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
-              .con    Operand16 + 0x100
+              .con    Operand16 + SEMI_MERGED_NO_STACK
               switchBank 2
               rxq     findIntegerBufferUserFlags_rom2
               rxq     argumentValueG ; handle indirect, check 64 range
