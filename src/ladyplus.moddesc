@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModFile FileFormat="MOD1" Title="Ladybug" Version="0B" PartNumber="" Author="Håkan Thörngren" Copyright="Håkan Thörngren" License="BSD 3" Comments="" Category="7" Hardware="3" MemoryModules="4" XMemoryModules="2">
+  <Page Name="Ladybug1" Identity="LB0B" Page="Any" PageGroup="1" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="Ladybug2" Identity="LB0B" Page="Any" PageGroup="1" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="OS4" Identity="OS4A" Page="4" PageGroup="1" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="OS4-2" Identity="OS4A" Page="4" PageGroup="1" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="Boost" Identity="BO1A" Page="Any" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="NUT0" Identity="I" Page="0" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="NUT1" Identity="F" Page="1" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="NUT2" Identity="G" Page="2" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="XFUNS3" Identity="EF4A" Page="3" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="TIME" Identity="TM3A" Page="5" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="XFUNS5" Identity="TMXC" Page="5" PageGroup="0" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+</ModFile>
+

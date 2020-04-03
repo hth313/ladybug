@@ -33,8 +33,8 @@
 
     Operations (like add and shifts) uses a variant of 'FindBuffer' that
     sets up the user flags (such as sign mode, carry and zero flags).
-    Examples of such routines are 'findBufferUserFlags' and
-    'findBufferGetXSaveL'.
+    Examples of such routines are 'findIntegerBufferUserFlags' and
+    'findIntegerBufferGetXSaveL'.
     These are similar to 'FindBuffer', but as said, they set up user flags
     instead of the internal flag set.
 
@@ -49,14 +49,7 @@
 ;;; **********************************************************************
 #endif
 
-
-#define LFE(x)  `FAT entry: \x`
-#define FATOFF(x) (LFE(x) - FatStart) / 2
-
-;;; Make it easy to populate the key table
-KeyEntry:     .macro  fun
-              .con   FATOFF(fun)
-              .endm
+#include "OS4.h"
 
 ;;; Create a FAT entry with an appropriate label.
 ;;; The purpose of this label is to allow us to refer to the entry point,
@@ -104,7 +97,7 @@ XROMno:       .equ    16
               .con    (FatEnd - FatStart) / 2 ; number of entry points
 
 FatStart:
-              .fat    Header        ; ROM header
+              .fat    LadyHeader    ; ROM header
               FAT     Literal
               FAT     FLOAT         ; mode change
               .fat    Integer
@@ -162,7 +155,6 @@ FatStart:
               FAT     LE?
               FAT     LT?
               FAT     BITSUM
-              FAT     PSEI
 FatEnd:       .con    0,0
 
 
@@ -171,21 +163,17 @@ FatEnd:       .con    0,0
 ;;; Buffer layout. The state is kept in a buffer with the following
 ;;; layout:
 ;;;
-;;; pspfTTZZYYXXLL
-;;; HHSSAD00I2WSII
+;;; 1000TTZZYYXXLL
+;;; HHSS0D00I2WSII
 ;;;
 ;;;   where
 ;;;     HH - buffer number
 ;;;     SS - size of buffer
-;;;     A  - #space indentation of LCD
+;;;     0  - currently not used
 ;;;      D - window display
-;;;     I2 - secondary internal flags
+;;;     00 - currently not used
 ;;;     WS - Word size (1-64)
 ;;;     II - internal flags
-;;;
-;;;     pf - Default postfix byte for current prompting instruction.
-;;;     ps - The pause timer set (must not be 00 to ensure the trailer
-;;;          register is non-zero).
 ;;;
 ;;; **********************************************************************
 
@@ -204,20 +192,12 @@ FatEnd:       .con    0,0
 ;;;
 ;;; Can also be used to check if a entered digit is in range.
 
-IF_DigitEntry: .equ   4             ; Integer mode digit entry ongoing flag
-IF_Argument:  .equ    5             ; argument entry in progress
-                                    ;  (must not be flag 4 due to SST flag in
-                                    ;   Argument handler using that flag)
-IF_Integer:   .equ    6             ; Integer mode active
-
-;;; Set when displaying integer X.
-;;; This is basically the message flag as seen but the integer mode.
-IF_Message: .equ 7
-
-
-;;; Secondary internal flags
-IF2_Pause:    .equ    3             ; Pause flag (position is very specific
-                                    ; here to make it fast in I/O poll)
+;;; Integer mode digit entry ongoing flag.
+;;; This is a cached copy of the system digit entry flag, used as it
+;;; is easier to have single flag set internally.
+;;; The overall state is that the system digit entry and active shell
+;;; tells who is doing digit entry.
+IF_DigitEntry: .equ   4
 
 
 ;;; ----------------------------------------------------------------------
@@ -263,7 +243,6 @@ OperandX:     .equ    115
 OperandY:     .equ    114
 OperandIndX:  .equ    Indirect + OperandIND
 
-
 ;;; Macro to switch to given bank on the fly.
 switchBank:   .macro  n
               enrom\n
@@ -272,7 +251,6 @@ switchBank:   .macro  n
               .shadow 10$
               .endm
 
-
 ;;; ************************************************************
 ;;;
 ;;; ROM header.
@@ -280,10 +258,31 @@ switchBank:   .macro  n
 ;;; ************************************************************
 
               .section Code, reorder
+              .name   "-LADYBUG 1A"  ; The name of the module
+LadyHeader:   rtn
 
-              .name   "-LADYBUG 0B"  ; The name of the module
-Header:       rtn
+;;; ************************************************************
+;;;
+;;; ladybugShell - the application shell definition
+;;;
+;;; This record describes to OS4 that we are an application
+;;; with suitable key and display handlers.
+;;;
+;;; ************************************************************
 
+              .section Shell, reorder
+              .align  4
+ladybugShell: .con    AppShell
+              .con    .low12 displayX
+              .con    .low12 keyHandler ; standard keys
+              .con    .low12 keyHandler ; user keys
+              .con    0                 ; alpha keys, use default
+              .con    .low12 myName
+              .con    0                 ; no timeouts
+
+              .section Code
+              .align  4
+myName:       .messl  "LADYBUG"
 
 ;;; ************************************************************
 ;;;
@@ -301,66 +300,64 @@ Header:       rtn
 
               .section Code, reorder
               .name   "#LIT"
-Literal:      ?s13=1                ; running?
+Literal:      gosub   xargument     ; mark as special form
+              goto    20$           ; display it
+              ?s13=1                ; running?
               goc     10$           ; yes
               ?s4=1                 ; no, single stepping?
               rtn nc                ; no, do nothing
-10$:          rxq     findBufferUserFlags_liftStackS11
+10$:          rxq     findIntegerBufferUserFlags_liftStackS11
               rxq     fetchLiteral
               regn=c  X
               gosub   PUTPCA        ; we already have chip 0 selected
               rgo     putXnoFlags
 
+;;; Display literal in program mode.
+20$:          c=0     x
+              gosub   findBuffer
+              rtn                   ; (P+1) no integer b uffer
+              acex                  ; C= buffer address
+              cmex
+              a=c                   ; A[3:0]= address of literal
+              rxq     fetchLiteralA ; fetch the literal
+              c=m
+              dadd=c                ; select buffer header
+              rgo     displayPrgmLiteral
 
-;;; **********************************************************************
-;;;
-;;; Keyboard handler. This routine is the keyboard takeover code which
-;;; is done by faking a partial key sequence that is to be handled here,
-;;; but in reality we will just implement a different keyboard layout.
-;;;
-;;; Code here heavily borrowed from NEWFCN in mainframe, at least for
-;;; the first part.
-;;;
-;;; **********************************************************************
 
 XROMi:        .equ    160 + (XROMno / 4)
 XROMj:        .equ    64 * (XROMno % 4)
 
-              .section Code, reorder
+;;; During digit entry, we use flag 9 to keep track of programming mode
+Flag_PRGM:    .equ    9
 
-clearDigitEntryMStop:
-              c=m                   ; C.X= key
-              a=c     x
-              ldi     5
-              ?a#c    x             ; STOP key?
-              goc     clearDigitEntry ; no
-              rxq     chkbuf        ; yes
-              goto    clearDigitEntry20 ; (P+1) should not happen
-              rcr     4
-              cstex                 ; reset PSEI flag
-              ?st=1   IF2_Pause     ; pause flag?
-              goc     10$           ; yes
-              cstex                 ; no
-              rcr     -4
-              goto    clearDigitEntry10
+;;; **********************************************************************
+;;;
+;;; The keyboard handler. We provide handlers for digit entry and ending
+;;; digit entry and point to the keyboard table to use.
+;;; Do not support auto assigned top keys, it slows things down too much and
+;;; we rely on it for hexadecimal digit entry which should be fast.
+;;;
+;;; **********************************************************************
 
-10$:          st=0    IF2_Pause     ; reset pause
-              cstex
-              rcr     -4
-              data=c                ; update buffer header
-              c=0     x             ; set system pause to get proper STOP
-              dadd=c                ;  handling
-              s1=1
-              gosub   STOST0
-              ;; Fall in to clearDigitEntry, this saves 4 words at the
-              ;; cost of some execution time. However, this only happens
-              ;; when PSEI is executing and the user press STOP, so it
-              ;; should not be any big harm.
+              .section Code
+              .align  4
+keyHandler:   gosub   keyKeyboard   ; does not return
+              .con    0             ; flags
+              .con    .low12 doDigit ; handle a digit
+              .con    .low12 clearDigitEntry ; end digit entry
+              .con    .low12 keyTable
+                                    ; no transient termination entry needed
+                                    ; we do not have keyboard secondaries
+
+              .section Code
+              .align  4
 clearDigitEntry:
-              rxq     chkbuf
+              c=0     x
+              gosub   findBuffer
               goto    clearDigitEntry20 ; (P+1) should not happen
-clearDigitEntry10:
-              cstex
+              c=data                ; get full header
+              cstex                 ; clear internal digit entry flag
               st=0    IF_DigitEntry
               cstex
               pt=     8
@@ -370,155 +367,12 @@ clearDigitEntry10:
                                     ;   mode)
               data=c
 clearDigitEntry20:
-              c=0                   ; select chip 0
-              dadd=c
-              rtn
-
-              .section CodeQ0
-
-RAK60J1:      rxq     clearDigitEntry ; handle reassigned keys
-              golong  RAK60
-
-;;; During digit entry, we use flag 9 to keep track of programming mode
-Flag_PRGM:    .equ    9
-
-keyHandler:   nop                   ; ignore back arrow entry (deal with it as any key)
-              c=n                   ; move logical keycode
-              a=c     x             ; to A[2:1]
-              gosub   LDSST0
-              rcr     1
-              st=c
-              s5=0                  ; clear PKSEQ
-              c=st
-              rcr     -1
-              regn=c  14
-              rcr     6             ; put up SS3
-              st=c
-              ?s4=1                 ; user mode?
-              gonc    10$           ; no
-              gosub   TBITMP        ; yes, test bit map
-              ?c#0                  ; key reassigned?
-              goc     RAK60J1       ; yes
-
-;;; Auto assignment tests are here, but since we heavily depend on the upper
-;;; part of the keyboard, it just takes too long. Entering hex digits slows
-;;; down, as well as switching between different bases. These are quite central
-;;; functions, so it was decided to disable this.
-;;; If it is to be put back, then there should probably be a flag to control
-;;; it, but it really makes things slow and these are so central I think
-;;; we are better without them here.
-
-#if 0
-              c=regn  14            ; put up SS0
-              st=c
-              ?s3=1                 ; prgm mode?
-              goc     10$           ; yes, skip auto-assign tests
-              c=n
-              c=0     m
-              rcr     2             ; logical row to C.S
-              a=c     x             ; logical col to A.X
-              ldi     0x66          ; row 0 offset
-              c=c-1   s             ; row 0?
-              goc     5$            ; yes
-              pt=     0
-              lc      11            ; set up for row 1 test
-              ?c#0    s
-              gonc    5$            ; row 1
-              pt=     1
-              lc      7             ; shifted row 0 test
-              c=c+1   s
-              c=c+c   s             ; shifted?
-              gonc    10$           ; no
-              ?c#0    s             ; not shifted row 0?
-              goc     10$           ; not auto assigned
-5$:           c=a+c   x             ; C.X = implied local label
-              m=c                   ; save operand in M
-              a=c                   ; set up A[1:0] for search
-              gosub   SEARCH
-              ?c#0                  ; found?
-              gonc    10$           ; no
-              cmex                  ; yes
-              rxq     clearDigitEntry
-              golong  PARS60+1      ; skip cmex at start of PARS60
-#endif
-
-10$:                                ; key not reassigned
-              c=n                   ; retrieve logical keycode
-              a=c                   ; to A[2:1]
-
-              ?s1=1                 ; doing catalog?
-              gonc    11$           ; no
-
-              c=0     s             ; check if we are running on a 41CX
-              c=c+1   s
-              gosub   SWPMD8
-              ?c#0    s
-              goc     11$           ; not 41CX
-
-              ldi     0x030         ; yes, logical keycode for ENTER
-              ?a#c    x             ; ENTER pressed?
-              goc     11$           ; no
-              asr     x             ; A[0]= 3 (for call to 0x38e8)
-              golong 0x38e8
-11$:          c=regn  14
-              st=c
-              pt=     3
-              lc      0xc           ; default table starts at ?C00
-              a=c     m             ; build CLK-
-              asl                   ;  CLK--
-              asl                   ; CLK---
-              gosub   PCTOC
-              lc      3             ; C[2]= 3  (for shiftUser below)
-              pt=     5
-              acex    wpt           ; merge final table address
-              cxisa                 ; and fetch
-              c=c-1   xs            ; a local XROM function?
-              goc     KeyH20        ; yes
-              c=c-1   xs            ; numeric entry key?
-              goc     numEntry      ; yes
-              m=c                   ; no, same function as normal keyboard
-              c=c-1   xs
-              gonc    shiftUser     ; does not clear digit entry
-              rxq     clearDigitEntryMStop
-PARS56_M:     c=m                   ;  restore keycode
-              golong  PARS56
-
-shiftUser:    rxq     chkbuf
-              goto    PARS56_M      ; (P+1)
-              rcr     -4            ; (P+2) found buffer
-              a=c     s             ; LCD indentation
-              gosub   ENLCD
-10$:          a=a-1   s
-              goc     11$
-              flsabc                ; realign display
-              goto    10$
-11$:          gosub   LDSST0        ; select chip 0, load flags
-              c=c+c   xs            ; digit entry?
-              c=c+c   xs
-              gonc    PARS56_M
-              rxq     takeOverKeyboard ; yes, need to plant take over
-              goto    PARS56_M
-
-keyCLXI:      ldi     CLXI_Code
-KeyH20:       cmex                  ; handle XROM code in C[1:0]
-              rxq     clearDigitEntry
-              cmex
-              acex    x
-              a=0     xs            ; move to A[2:0]
-              pt=     3             ; build complete 2 byte XROM instruction
-              lc      XROMi >> 4
-              lc      XROMi & 15
-              lc      XROMj >> 4
-              lc      XROMj & 15
-              c=a+c   x
-              s13=0                 ; reset borrowed key release flag
-              golong  RAK70
+              golong  clearSystemDigitEntry
 
 ;;; Handle numeric entry
-numEntry:     releaseKey
-              pt=     0
-              g=c                   ; save digit number in G
-              rxq     findBuffer    ; buffer address to B[12:10]
+              .align  4
+doDigit:      releaseKey
+              rxq     findIntegerBuffer ; buffer address to B[12:10]
               c=st                  ; restore C[1:0]
               acex    x             ; base - 1 to A[0]
               pt=     0             ; get digit to C[2:0]
@@ -551,8 +405,6 @@ numEntry:     releaseKey
               acex                  ; (P+2) ongoing digit entry
               goto    dig40
 
-keyCLXIJ1:    goto    keyCLXI       ; relay
-
 runMode:      st=0    Flag_PRGM
               ?st=1   IF_DigitEntry ; start digit entry?
               goc     dig37         ; no
@@ -571,12 +423,7 @@ dig35:        c=regn  14
               goto    dig40
 
 digAbort:     gosub   BLINK         ; not accepted key, blink
-              gosub   LDSST0        ; check digit entry
-              c=c+c   xs
-              c=c+c   xs
-              gonc    10$
-              rxq     takeOverKeyboard ; digit entry set, need this
-10$:          s13=0                 ; reset borrowed flag
+              s13=0                 ; reset borrowed flag
               golong  NFRKB
 
 backSpaceJ1:  goto    backSpace     ; relay
@@ -602,8 +449,6 @@ hexDigit:     acex    s             ; prepare for a new hex digit
               bcex    x
               asl
               goto    dig50
-
-keyCLXIJ2:    goto    keyCLXIJ1     ; relay
 
 octDigit:     rxq     shift1
               rxq     shift1
@@ -631,59 +476,25 @@ dig50:        c=0
               cstex
               rcr     -2
               regn=c  14
-kbDoneJ1:     goto    kbDone
-
-keyCLXIJ3:    goto    keyCLXIJ2     ; relay
+              goto    kbDone
 
 ;;; Backspace is pressed, we have four cases.
-;;; 1. In program mode, delete the current instruction
-;;; 2. If showing a message, cancel it by showing the integer X register instead.
-;;; 3. If entering digits, rub out one (do CLXI if deleting to 0)
-;;; 4. Perform CLXI
+;;; 1. If entering digits, rub out one (do CLXI if deleting to 0)
+;;; 2. Perform CLXI
 backSpace:    c=regn  14
-              rcr     6
-              cstex
-              ?s1=1                 ; catalog flag?
-              goc     2$            ; yes
-              cstex
-              rcr     6
+              rcr     -2
               c=c+c   xs            ; program mode?
               gonc    10$           ; no
-              ?st=1   IF_DigitEntry ; digit entry in progress?
-              gonc    5$            ; no, program mode delete line
-
               releaseKey
               rxq     fetchLiteral  ; yes, pick up current number
               st=1    Flag_PRGM
               a=c
               goto    digBSP10J1
 
-;;; Showing catalog, clear catalog and message flag, then drop out of here
-;;; and let the poll vector sort it out.
-2$:           s1=0                  ; clear catalog flag
-              cstex
-              rcr     -6
-              cstex
-              s5=0                  ; clear message flag
-              cstex
-              regn=c  14
-              s13=0                 ; reset borrowed key release flag
-              golong  NFRKB
-
-5$:           c=regn  14
-              st=c                  ; bring up SS0 for PARS56
-              s5=0                  ; clear message flag to get display update
-              c=st
-              regn=c  14
-              ldi     11            ; program mode delete
-              s13=0                 ; reset borrowed key release flag
-              golong  PARS56
-
 10$:          st=0    Flag_PRGM
-              ?st=1   IF_DigitEntry ; doing digit entry
-              goc     digBSP
-              ?st=1   IF_Message    ; showing a message?
-keyCLXIJ4:    gonc    keyCLXIJ3     ; no, do CLXI
+              ?st=1   IF_DigitEntry ; doing digit entry?
+              goc     digBSP        ; yes
+              goto    keyCLXIJ1     ; no, do CLXI
 
 kbDone:       releaseKey
               ?st=1   Flag_PRGM
@@ -696,9 +507,8 @@ kbDone:       releaseKey
               golc    NFRKB         ; return via reset keyboard
                                     ;  if not released
 6$:           s13=0                 ; reset S13
-              rxq     takeOverKeyboard ; due to shortcut below
               chk kb
-              golc    0x1a6         ; shortcut to key handler
+              golc    fastDigitEntry ; shortcut to key handler
               golong  NFRC          ; return without resetting keyboard
 10$:          rxq     displayPrgmLiteralDE
               goto    5$
@@ -718,7 +528,7 @@ bspNot0:      ?st=1   Flag_PRGM
 10$:          rxq     saveLiteral
               goto    kbDone
 
-keyCLXIJ5:    goto    keyCLXIJ4     ; relay
+keyCLXIJ1:    goto    keyCLXI            ; relay
 
 ;;; Back arrow in digit entry
 digBSP:       releaseKey
@@ -769,7 +579,14 @@ dig20:        ?st=1   Flag_PRGM     ; in program mode?
               s11=0                 ; clear push flag in case user NULL the CLXI !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-              goto    keyCLXIJ5
+keyCLXI:      rxq     clearDigitEntry
+              pt=     3             ; build complete 2 byte XROM instruction
+              lc      XROMi >> 4
+              lc      XROMi & 15
+              lc      (XROMj + CLXI_Code) >> 4
+              lc      (XROMj + CLXI_Code) & 15
+              s13=0                 ; reset borrowed key release flag
+              golong  RAK70
 
 ;;; Back space doing hexadecimal input
 hexBSP:       asr                   ; delete hex digit
@@ -801,7 +618,7 @@ octBSP:       c=b     x             ; oct, upper part
 
 dig25:        rxq     clearDigitEntry ; clear digit entry flags
               gosub   DATOFF        ; clear flags
-              rxq     NXBYTP        ; clean up in program memory
+              gosub   NXBYTP        ; clean up in program memory
               rcr     -1
               c=c+1   xs            ; text wrapper
               gonc    15$           ; no
@@ -814,7 +631,6 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
               gosub   PUTPC
               s13=0                 ; reset borrowed flag
               golong  ERR120        ; back up and show previous program line
-
 
               .section Code, reorder
 ;;; **********************************************************************
@@ -858,7 +674,7 @@ prgmDigent:   ?s12=1                ; private?
               pt=     0
               g=c                   ;  entered char
 
-              rxq     findBuffer    ; restore M, ST
+              rxq     findIntegerBuffer ; restore M, ST
 
               c=0                   ; start out with 0
               b=0     x
@@ -871,10 +687,9 @@ prgmDigent:   ?s12=1                ; private?
               c=c+1   m
               stk=c
 
-
-fetchLiteral: gosub GETPC
+fetchLiteral: gosub   GETPC
 fetchLiteralA:
-              rxq     NXBYT
+              gosub   NXBYT
               b=0     x             ; clear upper part
               rcr     -1
               c=c+1   xs            ; text wrapper?
@@ -1010,12 +825,10 @@ lineAndBaseLCD:
 44$:          slsabc
               golong  ENCP00
 
-
               .section Code2
               .shadow putXnoFlags - 1
 putXnoFlags_rom2:
               enrom1
-
 
               .section Code2
               .shadow putXDrop - 1
@@ -1033,10 +846,9 @@ exitUserST_rom2:
               enrom1
 
               .section Code2
-exitNoUserST_B10_rom2:
-              .shadow exitNoUserST_B10 - 1
+exitNoUserST_rom2:
+              .shadow exitNoUserST - 1
               enrom1
-
 
 ;;; **********************************************************************
 ;;;
@@ -1068,44 +880,13 @@ exitUserST:   c=0
               c=st                  ; write out user flags
               rcr     -12
               regn=c  14
-              c=b
-              rcr     10
-              goto    exitNoUserST1
 
-;;; Exit and show display of X register in integer mode if
-;;; appropriate. This will give a steadier display as it sets
-;;; the message flag, compared to going out on an arbitrary
-;;; operation (which all other non-integer mode instructions do).
-;;; You will get the integer display in such cases too, but it
-;;; will temporarily show the float X before the I/O poll routine
-;;; kicks in and changes it. Going out here give a steadier result.
-;;;
-;;; Assume header address is in A.X
-exitNoUserST_B10:
-              c=b
-              rcr     10
-              goto    exitNoUserST1
-exitNoUserST: acex
-exitNoUserST1:
-              dadd=c
-              acex
-              c=data                ; load buffer header
-              cstex                 ; load internal flags
-              ?st=1   IF_Integer    ; float mode?
-              gonc    1$            ; yes, done
-              ?s13=1                ; running?
-              goc     1$            ; yes, done
-              gosub   LDSST0        ; load SS0
-              ?s3=1                 ; Program mode?
-              goc     1$            ; yes, no display of X
-              ?s7=1                 ; alpha mode?
-              goc     1$            ; yes, no display of X
-              acex    x             ; select buffer header, for DisplayX
-              dadd=c
-              acex    x
-              rxq     displayX      ; default display of integer X register
-1$:           golong  NFRC
-
+;;; Exit and show appropriate display depending on the active
+;;; shell. This will display the X register early and set
+;;; the message flag, avoiding temporary default X register
+;;; update, producing a steadier result.
+exitNoUserST: gosub   shellDisplay
+              golong  NFRC
 
 ;;; ************************************************************
 ;;;
@@ -1122,14 +903,13 @@ exitNoUserST1:
 Binary:       ldi     1
 BaseHelper:   rcr     1
               bcex    s
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               cstex
               rcr     1
               bcex    s
               rcr     -1
               data=c
-exit:         rgo     exitNoUserST_B10
-
+exit:         goto    exitNoUserST
 
 ;;; ************************************************************
 ;;;
@@ -1142,18 +922,18 @@ exit:         rgo     exitNoUserST_B10
               .name   "INTEGER"
 Integer:      nop                   ; non-programmable
                                     ;  (allow mode switch in program mode)
-              rxq     chkbuf
-              goto    createBuf     ; create buffer
-              cstex
-              st=1    IF_Integer    ; enter integer mode
-              cstex                 ; updated internal flags
-              data=c
+              c=0     x             ; buffer ID 0
+              gosub   findBuffer
+              goto    createBuf     ; (P+1) create buffer
+                                    ; (P+2) buffer exists
 
-exitNoUserSTR0:                     ; assume header address in A.X
+activateExit: ldi     .low12 ladybugShell
+              gosub   activateShell
+              goto    10$           ; (P+1) out of memory
+                                    ; (P+2) success
+                                    ; assume header address in A.X
               goto    exitNoUserST
-
-exitS11:      s11=1                 ; enable stack lift
-              goto    exit
+10$:          golong  noRoom
 
               .name   "OCTS"
 Octal:        ldi   7
@@ -1167,10 +947,13 @@ Decimal:      ldi     9
 Hex:          ldi     15
               goto    BaseHelper
 
-
 ;;; **********************************************************************
 ;;;
 ;;; Create the integer buffer
+;;;
+;;; In:  A.X - address of first free register in buffer area
+;;; Out: A.X - address of first buffer register
+;;;      N.X - address of first buffer register
 ;;;
 ;;; **********************************************************************
 
@@ -1182,7 +965,7 @@ createBuf:    acex    x             ; save address of first free register
               a=c     x             ; buffer
               ldi     BufSize
               ?a<c    x
-              goc     noRoom        ; no
+              golc    noRoom        ; no
 
               c=n                   ; yes, create it
               c=c+1   x             ; select upper part register
@@ -1197,103 +980,37 @@ createBuf:    acex    x             ; save address of first free register
               acex    x             ; A[2:0]= buffer header address
 
               c=0
-              pt=     13
-              lc      1             ; build header
-              lc      BufNumber
-              lc      0
+              c=c+1   s             ; build header
+              pt=     10
               lc      BufSize
               pt=     3
               lc      1             ; word size = 16
-              pt=     1
-              lc      (1 << IF_Integer - 4)
-              lc      15            ; hex
+              ldi     15            ; hex
               data=c                ; write buffer header
 
 exitNoUserSTR1:
-              goto    exitNoUserSTR0
-
-noRoom:       rxq     errorMessage
-              .messl  "NO ROOM"
-              rgo     errorExit
-
-errorMessage: gosub   ERRSUB
-              gosub   CLLCDE
-              golong  MESSL
-
+              goto    activateExit
 
 ;;; **********************************************************************
 ;;;
-;;; Restore float mode operation
+;;; FLOAT - restore float mode operation
+;;;
+;;; Essentially we just disable our own shell (if it exists).
 ;;;
 ;;; **********************************************************************
 
               .section Code, reorder
               .name   "FLOAT"
-FLOAT:        nop                   ; non-programmable (allow mode switch in program mode)
-              rxq     chkbuf
-              rtn                   ; (P+1) no buffer
-              cstex                 ; (P+2)
-              st=0    IF_Integer    ; clear integer flag
-              cstex
-              data=c
-              rtn
+FLOAT:        nop                   ; non-programmable
+                                    ;  (allow  mode switch in program mode)
+              ldi     .low12 ladybugShell
+              gosub   exitShell     ; must be a gosub to provide page address
+              golong  NFRPU         ; must golong as exitShell uses +3 levels
 
-
-              .section CodeF00
-              .align  256
-;;; **********************************************************************
-;;;
-;;; Locate the integer buffer
-;;;
-;;; If not found, return to (PC+1)
-;;; If found, return to (PC+2) with:
-;;;   C - buffer header register
-;;;   A.X = address of buffer start register
-;;;
-;;; **********************************************************************
-
-chkbuf:       ldi     BufNumber
-              rcr     2             ; buffer number to C[12]
-              pt=     12
-              ldi     191           ; One below first register
-              a=c
-1$:           a=a+1   x             ; Start of search loop
-2$:           c=0     x             ; Select chip 0
-              dadd=c
-              c=regn  c             ; find chain head .END.
-              ?a<c    x             ; have we reached chain-head?
-              rtn nc                ; yes, return to (P+1), not found
-              acex    x             ; no, select and load register
-              dadd=c
-              acex    x
-              c=data                ; read next register
-              ?c#0                  ; if it is empty, then we reached end
-              rtn nc                ; of buffer area, return to not found
-                                    ; location
-              c=c+1   s             ; is it a key assignment register
-                                    ; (KAR)?
-              goc     1$            ; yes, move to next register
-              ?a#c    pt            ; no, must be a buffer, have we found
-                                    ; the buffer we are searching for?
-              goc     3$            ; no
-              c=stk                 ; yes, fix (P+2) as return point
-              c=c+1   m
-              stk=c
-              c=data                ; Load header register to C
-              rtn
-
-3$:           rcr     10            ; wrong buffer, skip to next
-              c=0     xs
-              a=a+c   x
-              goto    2$
-
-noBuf:        rxq     errorMessage
+              .section Code, reorder
+noBuf:        gosub   errorMessage
               .messl  "NO INTGR BUF"
-errorExit:    gosub   LEFTJ
-              s8=1
-              gosub   MSG105
-              golong  ERR110
-
+              golong  errorExit
 
 ;;; **********************************************************************
 ;;;
@@ -1318,7 +1035,9 @@ errorExit:    gosub   LEFTJ
 ;;;
 ;;; **********************************************************************
 
-findBuffer:   gosub   GSB256        ; chkbuf
+findIntegerBuffer:
+              c=0     x
+              gosub   findBuffer
               goto    noBuf         ; (P+1)
 carryToM:     acex    x             ; (P+2)  C.X= buffer address
               rcr     -10
@@ -1388,26 +1107,24 @@ carryToM:     acex    x             ; (P+2)  C.X= buffer address
 
 
               .section Code, reorder
-findBufferUserFlags:
+findIntegerBufferUserFlags:
               c=regn  14            ; bring up user flags
               rcr     12
               st=c
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               cstex                 ; bring up user flags
               rtn
 
-
               .section Code2, reorder
-findBufferUserFlags_rom2:
+findIntegerBufferUserFlags_rom2:
               c=regn  14            ; bring up user flags
               rcr     12
               st=c
               switchBank 1
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               switchBank 2
               cstex                 ; bring up user flags
               rtn
-
 
 ;;; **********************************************************************
 ;;;
@@ -1432,10 +1149,10 @@ findBufferUserFlags_rom2:
 Flag_56:      .equ    9             ; set when word size is 56
 
               .section Code2, reorder
-findBufferGetXSaveL56_rom2:
+findIntegerBufferGetXSaveL56_rom2:
               st=0    Flag_56
               switchBank 1
-              rxq     findBufferGetXSaveL
+              rxq     findIntegerBufferGetXSaveL
               switchBank 2
               c=m
               ?c#0
@@ -1444,12 +1161,22 @@ findBufferGetXSaveL56_rom2:
               rtn
 
               .section Code, reorder
-findBufferGetXSaveL:
+findIntegerBufferGetXSaveL56:
+              st=0    Flag_56
+              rxq     findIntegerBufferGetXSaveL
+              c=m
+              ?c#0
+              rtn c
+              st=1    Flag_56
+              rtn
+
+              .section Code, reorder
+findIntegerBufferGetXSaveL:
               s0=0                  ; no division by 0 check
-findBufferGetXSaveL0:
+findIntegerBufferGetXSaveL0:
               s11=1                 ; set push flag (enable stack lift)
-findBufferGetXSaveL0no11:
-              rxq     findBuffer
+findIntegerBufferGetXSaveL0no11:
+              rxq     findIntegerBuffer
               cstex                 ; restore header
               n=c                   ; save header
               rxq     loadX
@@ -1511,7 +1238,6 @@ findBufferGetXSaveL0no11:
 ;;;       have to lower bits in Y.
 ;;;
 ;;; **********************************************************************
-
 
 getSignsMakePositive:
               s6=0
@@ -1665,13 +1391,11 @@ signPositive: rxq     getSign_rom2  ; get the sign
               cnex
               goto    150$
 
-
               .section Code2, reorder
 bitMask_rom2: switchBank 1
               rxq     bitMask
               switchBank 2
               rtn
-
 
               .section Code, reorder
 ;;; IN: A.X - bit number (0-64)
@@ -1706,7 +1430,6 @@ bitMask10:    rcr     -3
               rtn c                 ; done
               c=c+c   x
               goto    15$
-
 
               .section Code, reorder
 ;;; ----------------------------------------------------------------------
@@ -1752,7 +1475,6 @@ dropZN10:     c=b                   ; select upper part register
               regn=c  Z             ; Z = T
               rtn
 
-
               .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -1793,7 +1515,6 @@ saveUpperPart:
               data=c
               rtn
 
-
 ;;; New value in B[2:0] and A
 acceptAndSave:
               c=m                   ; make mask of bits outside word
@@ -1825,7 +1546,6 @@ acceptAndSave:
               rtn c
               goto    2$
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Save literal in program mode.
@@ -1844,7 +1564,7 @@ acceptAndSave:
 saveLiteral:  acex
               n=c                   ; save lower part of number
 
-              rxq     NXBYTP        ; inspect program memory
+              gosub   NXBYTP        ; inspect program memory
               rcr     -1
               c=c+1   xs            ; is it a text wrapper?
               gonc    4$            ; no
@@ -1923,7 +1643,6 @@ saveLiteral:  acex
 20$:          rcr     -2            ; align lower part
               goto    12$
 
-
              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -1973,14 +1692,12 @@ setSignFlag:  st=0    Flag_Sign
               goc     1$
               rtn
 
-
               .section Code2, reorder
 setSignFlag_rom2:
               switchBank 1
               rxq     setSignFlag
               switchBank 2
               rtn
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -2024,7 +1741,6 @@ setFlagsABx:  rxq     maskABx_rom2
               goc     20$
               rtn
 
-
               .section Code, reorder
 ;;; **********************************************************************
 ;;;
@@ -2033,7 +1749,7 @@ setFlagsABx:  rxq     maskABx_rom2
 ;;; **********************************************************************
 
               .name   "XOR"
-XOR:          rxq     findBufferGetXSaveL
+XOR:          rxq     findIntegerBufferGetXSaveL
               c=b                   ; save buf ptr on stack
               rcr     6
               stk=c
@@ -2063,7 +1779,6 @@ aoxfix_0:     abex    x             ; A[1:0] - upper part of X
 aoxfix:       bcex    x             ; B[1:0] - upper result
 aoxfix_2:     rgo     putXDrop
 
-
 ;;; **********************************************************************
 ;;;
 ;;; OR - Entry point for OR between X and Y.
@@ -2071,7 +1786,7 @@ aoxfix_2:     rgo     putXDrop
 ;;; **********************************************************************
 
               .name   "OR"
-OR:           rxq     findBufferGetXSaveL
+OR:           rxq     findIntegerBufferGetXSaveL
               c=regn  Y             ; OR lower part of X with Y
               c=c|a
               regn=c  X             ; write back
@@ -2090,7 +1805,7 @@ OR:           rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "AND"
-AND:          rxq     findBufferGetXSaveL
+AND:          rxq     findIntegerBufferGetXSaveL
               c=regn  Y             ; AND lower part of X with Y
               c=c&a
               regn=c  X             ; write back
@@ -2104,7 +1819,6 @@ AND:          rxq     findBufferGetXSaveL
               c=n                   ;  do upper part
               rcr     4             ; C[1:0] - upper part of Y
               goto    aoxfix_0
-
 
 ;;; **********************************************************************
 ;;;
@@ -2124,7 +1838,7 @@ SUB:          s9=1
 
               .name   "ADD"
 ADD:          s9=0
-ADD_2:        rxq     findBufferGetXSaveL
+ADD_2:        rxq     findIntegerBufferGetXSaveL
               switchBank 2
               st=0    Flag_Overflow ; prepare overflow flag
               ?st=1   Flag_2        ; unsigned mode?
@@ -2195,7 +1909,6 @@ ADD_2:        rxq     findBufferGetXSaveL
               c=0     s
               goto  22$
 
-
 ;;; Do not try to negate Y and use ADD for subtracting, it does not work
 ;;; with the overflow flag if Y is the smallest negative number, as it
 ;;; cannot be negated without overflow. Instead we actually use subtract
@@ -2213,7 +1926,6 @@ ADD_2:        rxq     findBufferGetXSaveL
               abex
               goto    15$
 
-
               .section Code, reorder
 ;;; **********************************************************************
 ;;;
@@ -2222,14 +1934,13 @@ ADD_2:        rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "CLXI"
-CLXI:         rxq     findBufferUserFlags
+CLXI:         rxq     findIntegerBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
               b=0     x
               s11=0                 ; disable stack lift
               rgo     putXnoFlags
-
 
               .section Code, reorder
 ;;; **********************************************************************
@@ -2239,7 +1950,7 @@ CLXI:         rxq     findBufferUserFlags
 ;;; **********************************************************************
 
               .name   "ABSI"
-ABSI:         rxq     findBufferGetXSaveL
+ABSI:         rxq     findIntegerBufferGetXSaveL
               st=0    Flag_Overflow
               ?st=1   Flag_2        ; unsigned mode?
               gonc    putX_J0       ; yes, done
@@ -2247,7 +1958,6 @@ ABSI:         rxq     findBufferGetXSaveL
               ?c#0    s
               gonc    putX_J0       ; positive
               goto    NEG10         ; negative, negate it
-
 
 ;;; **********************************************************************
 ;;;
@@ -2259,7 +1969,7 @@ ABSI:         rxq     findBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "NEG"
-NEG:          rxq     findBufferGetXSaveL
+NEG:          rxq     findIntegerBufferGetXSaveL
 NEG10:        st=0    Flag_Overflow ; assume no overflow
               ?st=1   Flag_2        ; signed mode?
               goc     5$            ; yes
@@ -2301,7 +2011,6 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 12$:          st=1    Flag_Overflow ; yes, overflow
               goto    putX_J0
 
-
 ;;; **********************************************************************
 ;;;
 ;;; NOT - Entry point for bit-not.
@@ -2309,7 +2018,7 @@ NEG10:        st=0    Flag_Overflow ; assume no overflow
 ;;; **********************************************************************
 
               .name   "NOT"
-NOT:          rxq     findBufferGetXSaveL
+NOT:          rxq     findIntegerBufferGetXSaveL
               bcex    x
               c=-c-1  x
               bcex    x
@@ -2317,7 +2026,6 @@ NOT:          rxq     findBufferGetXSaveL
               c=-c-1
               regn=c  X
 putX_J0:      rgo     putX
-
 
               .section Code, reorder
 ;;; **********************************************************************
@@ -2329,12 +2037,11 @@ putX_J0:      rgo     putX
               .name   "CB"
 CB:           nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1
               goto    SB10
-
 
 ;;; **********************************************************************
 ;;;
@@ -2345,11 +2052,11 @@ CB:           nop
               .name   "SB"
 SB:           nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
-SB10:         rxq     findBufferGetXSaveL
+SB10:         rxq     findIntegerBufferGetXSaveL
               rxq     bitMask_G
               ?s9=1                 ; SB?
               gonc    10$           ; yes
@@ -2375,7 +2082,6 @@ SB10:         rxq     findBufferGetXSaveL
 30$:          bcex    x
 35$:          rgo     putX
 
-
 ;;; **********************************************************************
 ;;;
 ;;; B? - Test a bit.
@@ -2386,9 +2092,9 @@ SB10:         rxq     findBufferGetXSaveL
               .name   "B?"
 `B?`:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00 + 0x100 ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               rxq     loadX
               acex
               regn=c  X
@@ -2405,7 +2111,6 @@ SB10:         rxq     findBufferGetXSaveL
 10$:          c=b     x
               goto    5$
 
-
 ;;; **********************************************************************
 ;;;
 ;;; MASKR - build right aligned bit mask.
@@ -2416,12 +2121,11 @@ SB10:         rxq     findBufferGetXSaveL
               .name   "MASKR"
 MASKR:        nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    8 + 0x100     ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=0
               goto    MASK10
-
 
 ;;; **********************************************************************
 ;;;
@@ -2432,9 +2136,9 @@ MASKR:        nop
               .name   "MASKL"
 MASKL:        nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    8 + 0x100     ; no ST
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               s9=1                  ; (S9 is affected by argumentValueG)
 MASK10:       rxq     liftStackS11
               rxq     bitMask_G
@@ -2487,7 +2191,6 @@ MASK10:       rxq     liftStackS11
 22$:          regn=c  X
               rgo     putXnoFlags_rom2
 
-
 ;;; **********************************************************************
 ;;;
 ;;; LASTXI - Recall L register.
@@ -2496,7 +2199,7 @@ MASK10:       rxq     liftStackS11
 
               .section Code, reorder
               .name   "LASTXI"
-LASTXI:       rxq     findBufferUserFlags_liftStackS11
+LASTXI:       rxq     findIntegerBufferUserFlags_liftStackS11
               c=b
               rcr     10
               c=c+1   x
@@ -2510,7 +2213,6 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
               c=regn  L             ; load lower part of L
               goto    SWAPIExit
 
-
 ;;; **********************************************************************
 ;;;
 ;;; SWAPI - Swap IX and IY.
@@ -2518,7 +2220,7 @@ LASTXI:       rxq     findBufferUserFlags_liftStackS11
 ;;; **********************************************************************
 
               .name   "X<>YI"
-SWAPI:        rxq     findBufferUserFlags
+SWAPI:        rxq     findIntegerBufferUserFlags
               c=b
               rcr     10
               c=c+1   x             ; point to trailer register
@@ -2547,14 +2249,13 @@ SWAPIExit:    regn=c  X
 putX11:       s11=1
               rgo     putXnoFlags
 
-
 ;;; **********************************************************************
 ;;;
 ;;; RollDown - Helper routine to roll down the stack
 ;;;
 ;;; **********************************************************************
 
-RollDown:     rxq     findBufferUserFlags
+RollDown:     rxq     findIntegerBufferUserFlags
 
 RollDown1:    c=b
               rcr     10
@@ -2579,7 +2280,6 @@ RollDown1:    c=b
 
               golong  RDNSUB         ; rotate normal stack
 
-
 ;;; **********************************************************************
 ;;;
 ;;; RDNI - Roll stack down.
@@ -2600,7 +2300,6 @@ RDNExit:      c=b
               dadd=c
               goto    putX11
 
-
 ;;; **********************************************************************
 ;;;
 ;;; IR^ - Roll stack up.
@@ -2612,7 +2311,6 @@ RUPI:         rxq     RollDown
               rxq     RollDown1
               rxq     RollDown1
               goto    RDNExit
-
 
               .section Code, reorder
 ;;; **********************************************************************
@@ -2645,7 +2343,6 @@ isThroughCarry:  .macro
               c=c+c   s
               .endm
 
-
 ;;; ----------------------------------------
 ;;;
 ;;; Shift left
@@ -2655,7 +2352,7 @@ isThroughCarry:  .macro
               .name   "SL"
 SL:           nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               c=0     s
@@ -2670,7 +2367,7 @@ SL:           nop                   ; Prelude for prompting function
               .name "RLC"
 RLC:          nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
@@ -2686,14 +2383,14 @@ RLC:          nop                   ; Prelude for prompting function
               .name   "RL"
 RL:           nop                   ;  Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
 leftShift:    switchBank 2
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
@@ -2702,7 +2399,7 @@ leftShift:    switchBank 2
               c=b
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56_rom2
+              rxq     findIntegerBufferGetXSaveL56_rom2
               c=b     m             ; save buffer address on stack
               rcr     10 - 3
               stk=c
@@ -2815,7 +2512,6 @@ leftShift:    switchBank 2
               gonc    64$
               goto    100$
 
-
               .section Code, reorder
 ;;; ----------------------------------------
 ;;;
@@ -2826,7 +2522,7 @@ leftShift:    switchBank 2
               .name   "SR"
 SR:           nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               c=0     s
@@ -2841,7 +2537,7 @@ SR:           nop                   ; Prelude for prompting function
               .name   "ASR"
 ASR:          nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
@@ -2857,7 +2553,7 @@ ASR:          nop                   ; Prelude for prompting function
               .name   "RRC"
 RRC:          nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
@@ -2873,15 +2569,14 @@ RRC:          nop                   ; Prelude for prompting function
               .name   "RR"
 RR:           nop                   ; Prelude for prompting function
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to count 1, prevent ST input, but allow IND
               .con    Operand01 + 0x100
               pt=     13
               lc      Bit_Rotate
-rightShift:
-              switchBank 2
+rightShift:   switchBank 2
               bcex    s             ; B.S=configuration
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               bcex    s
               rcr     4
               pt=     9
@@ -2890,7 +2585,7 @@ rightShift:
               c=b                   ; C[9]= configuration nibble
               rcr     -4
               bcex    s             ; B.S= configuration nibble
-              rxq     findBufferGetXSaveL56_rom2
+              rxq     findIntegerBufferGetXSaveL56_rom2
               c=0     x             ; test for zero input
               pt=     0
               c=g
@@ -3001,15 +2696,14 @@ rightShift:
               regn=c  X
 12$:          rgo     putX_rom2
 
-
               .section Code, reorder
 ;;; **********************************************************************
 ;;;
-;;; displayX - Display the X register
+;;; displayX - Shell entry to display integer X register
 ;;;
-;;; In: As after chkbuf, we know the integer buffer exists.
-;;;     A[2:0] buffer header address (CarryToM will move it to B[12:10])
-;;;     buffer header selected
+;;; This is the main display entry point routine. We make no assumptions
+;;; other that the integer buffer exists (otherwise we will not be in
+;;; integer mode).
 ;;;
 ;;; **********************************************************************
 
@@ -3027,14 +2721,13 @@ displayPrgmLiteralDE:
               c=data
               c=st
               data=c
-              goto disPRGM10
+              goto    disPRGM10
 
 ;;; Entry point to show program literal from poll vector
 ;;; IN: B.X-N - literal
 displayPrgmLiteral:
-              c=m
-              dadd=c                ; select buffer header
               c=data
+              st=c
 disPRGM10:    st=1    Flag_PRGM
               pt=     3             ; set word size
               lc      4
@@ -3051,16 +2744,12 @@ displayXB10:  c=b
               rcr     10
               dadd=c
               a=c     x
-              c=data
               goto    dis10
 
-displayX:     c=data                ; get buffer header
-              st=c                  ; bring up internal flags
-dis10:        st=0    IF_Message
-              c=st
-              data=c
+              .align  4
+displayX:     rxq     findIntegerBuffer
+dis10:        c=data
               n=c                   ; save header in N
-              rxq     carryToM      ; get carry mask
               rxq     loadX         ; load and mask X
               st=0    Flag_PRGM
 
@@ -3265,121 +2954,7 @@ display2:     c=n                   ; check window#
 60$:          frsabc
 ;;; Done with characters, not put in base
 61$:          a=0     x             ; no line# compensation
-              rxq     lineAndBaseLCD
-              gosub   LDSST0        ; Set message flag to prevent the normal float
-              s5=1                  ; display of X from corrupting what we really want
-              c=st                  ; to see.
-              regn=c  14
-
-              ;; Fall into takeOverKeyboard below
-
-;;; ************************************************************
-;;;
-;;; Take over keyboard.
-;;;
-;;; This is done by setting partial key sequence flag and storing
-;;; our own keyboard handler on stack.
-;;; Depending on when and if I/O poll vector is done or if a key
-;;; press skips it, we may already have set up. This condition
-;;; is checked by inspecting the partial key flag.
-;;;
-;;; ************************************************************
-
-;;; NOTE: Fall through from above! If making changes in this routine,
-;;;       also check that it is consistent with its use from above!
-takeOverKeyboard:
-              c=stk                 ; save return address in A
-              a=c     m
-              c=0     x             ; Load flag register
-              dadd=c
-              c=regn  14
-              rcr     1
-              st=c
-              ?s5=1                 ; PKSEQ already set?
-              goc     50$           ; yes, do not plant take over address
-              s5=1                  ; no, set PKSEQ
-              c=st
-              rcr     -1
-              regn=c  14            ; write updated flag back
-              gosub   PCTOC         ; put KeyHandler return address on stack
-              rcr     3             ; for dispatching from (faked) partial key sequence
-              ldi     .low10 keyHandler
-              rcr     -3
-              stk=c
-              acex    m
-              stk=c
-
-;;; Partial key sequence will right shift the LCD. There is nothing we can
-;;; do to prevent it. This causes the following problems:
-;;; 1. If the LCD is all spaces, it will enter an infinite loop. This will
-;;;    happen if you CLA AVIEW.
-;;; 2. Any arbitrary message may be shown with leading and trailing spaces,
-;;;    such information is lost and the LCD becomes right justified.
-;;;    This is not normally a problem, as the next key usually cause new
-;;;    contents for the LCD, but pressing SHIFT or USER will not rewrite
-;;;    contents and the display becomes right justified.
-;;;
-;;; We work around these problems by checking the display before we hand it
-;;; off to the key sequence parser. If the display have a non-space character
-;;; in the rightmost position, it is safe.
-;;; Otherwise we count the number of spaces starting from left and store
-;;; the count in the buffer. The KeyHandler can then make use of this to
-;;; recreate the display if needed.
-;;; If the display contains all spaces, we store a single small '.' in the
-;;; rightmost position to prevent an infinite loop.
-;;;
-;;; Note: It should be possible to work around original displays by putting
-;;;       a character outside its character set in the rightmost position.
-;;;       Such character should look like a blank and test as a non-space,
-;;;       unfortunately Halfnut displays does not have a character with
-;;;       property. Rather than trying to keep the displays apart, I
-;;;       settled for a single solution and have to assume the display
-;;;       behave like on a Halfnut.
-
-              rxq     chkbuf
-              rtn                   ; (P+1) should not happen
-              pt=     9             ; (P+2) clean LCD indentation
-              lc      0
-              data=c
-              b=a     x             ; save buffer address
-
-              gosub   ENLCD
-              ldi     ' '
-              a=c     x
-              frsabc                ; check rightmost position
-              ?a#c    x
-              goc     8$            ; not a space, safe
-
-              a=0     s
-5$:           a=a+1   s
-              goc     7$
-              frsabc
-              ?a#c    x
-              gonc    5$
-
-15$:          b=a     s             ; save counter
-16$:          flsabc                ; realign display
-              a=a-1   s
-              gonc  16$
-
-20$:          c=0     x             ; unselect LCD
-              pfad=c
-              c=b     x
-              dadd=c                ; select buffer
-              c=data
-              rcr     -4
-              c=b     s             ; save indentation in buffer
-              rcr     4
-              data=c
-              goto    9$
-
-7$:           ldi     0x60          ; '.'
-8$:           slsabc
-9$:           golong   ENCP00
-
-50$:          acex    m
-              gotoc
-
+              rgo     lineAndBaseLCD
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3413,7 +2988,6 @@ maskABx:      .macro
               rtn
               .endm
 
-
 ;;; **********************************************************************
 ;;;
 ;;; loadG - load register value by postfix argument
@@ -3431,7 +3005,7 @@ maskABx:      .macro
 ;;;      argumentValueG:
 ;;;        G - value
 ;;;
-;;; NOTE: Must have called findBuffer to have B[12:10] and M properly set up!
+;;; NOTE: Must have called findIntegerBuffer to have B[12:10] and M properly set up!
 ;;;       But should not save anything to L before coming here as we may
 ;;;       report argument error!
 ;;;
@@ -3542,7 +3116,7 @@ classNibble:  c=b                   ; select header register
 ;;; Last register is within range and exists (also selected).
               rtn
 
-ERRNE_J1:     rgo  ERRNE_rom2
+ERRNE_J1:     rgo     ERRNE_rom2
 
 argumentValueG:
               pt=     0
@@ -3601,7 +3175,6 @@ loadST:       gosub   GSB256        ; classify
               rxq     classNibble
               s9=0                  ; only indirect once
 
-
 ;;;  C.X= first register address
 ;;;  C.S= nibble offset in first register
 ;;;  B.S= number of registers needed - 1
@@ -3659,7 +3232,6 @@ loadST:       gosub   GSB256        ; classify
 75$:          ?s9=1
               goc     120$
 maskABx_rom2: maskABx
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3851,7 +3423,6 @@ saveG:        c=0     x             ; select chip 0
 
 58$:          golong  ENCP00
 
-
               .section Code2, reorder
 ERRNE_rom2:   switchBank 1
               golong  ERRNE
@@ -3861,8 +3432,8 @@ ERRDE_rom2:   switchBank 1
               golong  ERRDE
 
               .section Code, reorder
-findBufferUserFlags_argumentValueG_rom1:
-              rxq     findBufferUserFlags
+findIntegerBufferUserFlags_argumentValueG_rom1:
+              rxq     findIntegerBufferUserFlags
 argumentValueG_rom1:
               switchBank 2
               rxq     argumentValueG
@@ -3874,7 +3445,6 @@ loadG_rom1:   switchBank 2
               rxq     loadG
               switchBank 1
               rtn
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3902,24 +3472,21 @@ loadX:        c=b
 maskCBx:      a=c
 maskABx_rom1: maskABx
 
-
-              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; ENTERI- Integer stack enter.lift.
 ;;;
 ;;; **********************************************************************
 
+              .section Code, reorder
               .name   "ENTERI"
-ENTERI:       rxq     findBuffer
+ENTERI:       rxq     findIntegerBuffer
               s11=0                 ; disable stack lift
               rxq     liftStack
-              rgo     exitNoUserST_B10
+              rgo     exitNoUserST
                                     ; flags are not affected by ENTERI as
                                     ; we keep the same value in X
 
-
-              .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Lift the stack.
@@ -3929,8 +3496,9 @@ ENTERI:       rxq     findBuffer
 ;;;
 ;;; ----------------------------------------------------------------------
 
-findBufferUserFlags_liftStackS11:
-              rxq     findBufferUserFlags
+              .section Code, reorder
+findIntegerBufferUserFlags_liftStackS11:
+              rxq     findIntegerBufferUserFlags
 liftStackS11: ?s11=1                ; push flag?
               goc     liftStack     ; yes
               s11=1                 ; no, set it and do not lift stack
@@ -3965,7 +3533,6 @@ liftStack:    c=b                   ; get buffer address to A.X
 
               rtn
 
-
               .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3974,7 +3541,7 @@ liftStack:    c=b                   ; get buffer address to A.X
 ;;; ----------------------------------------------------------------------
 
               .name   "WSIZE?"
-`WSIZE?`:     rxq     findBufferUserFlags_liftStackS11
+`WSIZE?`:     rxq     findIntegerBufferUserFlags_liftStackS11
               c=b
               rcr     10
               dadd=c
@@ -3989,7 +3556,6 @@ liftStack:    c=b                   ; get buffer address to A.X
               b=0     x
               rgo     putX
 
-
               .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4000,11 +3566,11 @@ liftStack:    c=b                   ; get buffer address to A.X
               .name   "WSIZE"
 WSIZE:        nop
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
               switchBank 2
-              rxq     findBufferUserFlags_rom2
+              rxq     findIntegerBufferUserFlags_rom2
               rxq     argumentValueG ; handle indirect, check 64 range
               c=0
               pt=     0
@@ -4110,8 +3676,7 @@ WSIZE:        nop
               rcr     4
               data=c
 90$:
-WSZ_OK:       rgo     exitNoUserST_B10_rom2
-
+WSZ_OK:       rgo     exitNoUserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4136,7 +3701,7 @@ WINDOW:       nop                   ; no programmable
               acex    x
               pt=     0
               g=c
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -4145,7 +3710,9 @@ WINDOW:       nop                   ; no programmable
                                     ;          after a command, here it is safe
                                     ;          to set it to 0)
               data=c
-WINEXIT:      rgo     exitNoUserST_B10
+WINEXIT:      rxq     displayXB10
+              gosub   displayDone
+              golong  NFRC
 
 
 #if  0
@@ -4157,7 +3724,7 @@ PWINDOW:      nop
               ldi     8             ; allow up to 7
               ?a<c    x
               gonc    WSZ_DE
-              rxq     findBuffer
+              rxq     findIntegerBuffer
               c=st                  ; restore C[1:0]
               pt=     8
               c=g                   ; C[8]= window#
@@ -4168,7 +3735,6 @@ PWINDOW:      nop
               data=c
               goto    WINEXIT
 #endif
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4181,9 +3747,9 @@ PWINDOW:      nop
               .name   "LDI"
 LDI:          nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; LDI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadG_rom1
 LDI10:        acex
               n=c                   ; save value in N
@@ -4191,7 +3757,6 @@ LDI10:        acex
               c=n
               regn=c  X
               rgo     putX
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4204,14 +3769,13 @@ LDI10:        acex
               .name   "STI"
 STI:          nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; LDI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadX
               switchBank 2
               rxq     saveG
-              rgo     exitNoUserST_B10_rom2
-
+              rgo     exitNoUserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4223,9 +3787,9 @@ STI:          nop
               .name   "INCI"
 INCI:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; INCI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a+1
@@ -4234,7 +3798,6 @@ INCI:         nop
               c=c+1   x
               bcex    x
 10$:          rgo     DECI00
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4246,9 +3809,9 @@ INCI:         nop
               .name   "DECI"
 DECI:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; DECI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a-1
@@ -4264,7 +3827,6 @@ DECI00:       c=a
               rxq     saveG
               rgo     exitUserST_rom2
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; DSZI - decrement register, skip on zero.
@@ -4275,9 +3837,9 @@ DECI00:       c=a
               .name   "DSZI"
 DSZI:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; DSZI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               a=a-1                 ; decrement
@@ -4299,7 +3861,6 @@ DSZI:         nop
               golc    NOSKP         ; yes
               golong  SKP
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; CLRI - clear an integer register value
@@ -4310,15 +3871,14 @@ DSZI:         nop
               .name   "CLRI"
 CLRI:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; CLRI 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               a=0
               b=0     x
               rxq     saveG
-              rgo     exitNoUserST_B10_rom2
-
+              rgo     exitNoUserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4330,13 +3890,13 @@ CLRI:         nop
               .name   "SEX"
 SEX:          nop
               nop
-              rxq     Argument
+              gosub   argument
               ;; Defaults to word size 16, prevent ST input, but allow IND
               .con    Operand16 + 0x100
-              rxq     findBufferUserFlags_argumentValueG_rom1
+              rxq     findIntegerBufferUserFlags_argumentValueG_rom1
               a=a-1   x
               golc    ERRDE         ; 0 gives DATA ERROR
-              rxq     findBufferGetXSaveL
+              rxq     findIntegerBufferGetXSaveL
               pt=     0             ; load argument
               c=0     x
               c=g
@@ -4376,7 +3936,6 @@ SEX:          nop
               bcex    x
               goto    5$
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; BITSUM - Count bits in register operand.
@@ -4387,9 +3946,9 @@ SEX:          nop
               .name   "BITSUM"
 BITSUM:       nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    OperandX
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               rxq     loadG_rom1
               c=0
               acex
@@ -4406,83 +3965,6 @@ BITSUM:       nop
               goto    11$
 20$:          rgo     LDI10
 
-
-;;; ----------------------------------------------------------------------
-;;;
-;;; PSEI - Pause function similar to the built in one, but that works
-;;;        in the integer mode.
-;;;
-;;; This is needed as the internal pause handler does not give a chance
-;;; to set up the keyboard take over.
-;;;
-;;; Note: Making your own pause is not fully supported by mainframe.
-;;;       As we take over the keyboard, the built in PSE does not work
-;;;       properly as there is no way to change the keyboard routine.
-;;;       To make it work we need to do the actual pause mechanism in the
-;;;       I/O poll.
-;;;       Problems/limitations with this approach is that the system may
-;;;       want to reset the pause flag at certain times, and we do not
-;;;       know when that happens. After some studying of the mainframe,
-;;;       it seems that the following problems exist:
-;;;       - An error that happens during pause does not stop execution,
-;;;         instead it resumes after the pause as if it had not happened.
-;;;         The error is displayed for the pause time though, but is
-;;;         cleared when execution resumes. Probably not a major problem
-;;;         as it means the user keys in things during pause and then cause
-;;;         an error doing so.
-;;;       - STOP (R/S) will not stop execution during pause when using the
-;;;         float keyboard. We can work around this in our own key handler,
-;;;         but that is for integer mode only. For this reason, we block
-;;;         PSEI if not in integer mode.
-;;;
-;;; ----------------------------------------------------------------------
-
-              .section Code, reorder
-              .name   "PSEI"
-PSEI:         nop
-              nop
-              rxq     Argument
-              ;; Default is 00 which is easy to remember. If we have 00, then
-              ;; we actually use 7, which is about 1.07 seconds
-              .con    Operand00
-              rxq     findBuffer
-              ?st=1   IF_Integer    ; integer mode?
-              goc     1$            ; yes
-              rxq     errorMessage
-              .messl  "FLOAT MODE"
-              rgo     errorExit
-1$:           switchBank 2
-              rxq     argumentValueG
-              ?s13=1                ; running?
-              gonc    10$           ; no
-              c=b
-              rcr     10            ; C.X= buffer address
-              a=c     x
-              c=c+1   x             ; point to trailer
-              dadd=c
-              c=data                ; load trailer
-              pt=     12
-              c=g                   ; C[13:12]= argument
-              ?c#0    pt            ; C[12] non zero?
-              goc     2$            ; yes
-              ?c#0    s             ; C[13] non zero?
-              goc     2$            ; yes
-              lc      7             ; C[13:12] is zero, use 7 instead
-2$:           data=c                ; write back updated trailer
-              acex    x             ; C.X= address of header
-              dadd=c                ; select it
-              c=data
-              rcr     4
-              cstex                 ; bring up secondary flags
-              st=1    IF2_Pause
-              cstex
-              rcr     -4
-              data=c
-10$:          s13=0
-              switchBank 1
-              rtn
-
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; ALDI - Alpha load integer, either from nibble memory, status register or
@@ -4494,9 +3976,9 @@ PSEI:         nop
               .name   "ALDI"
 ALDI:         nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    OperandX      ; ALDI X is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rcr     -4
               pt=     7
@@ -4640,7 +4122,7 @@ ALDI:         nop
               a=c     x             ; next digit size
               c=c-1   m
               gonc    40$
-              rgo     exitNoUserST_B10_rom2
+              rgo     exitNoUserST_rom2
 
 ;;; Display in base 10
 60$:          s1=1                  ; we are coming from ALDI
@@ -4654,8 +4136,7 @@ ALDI:         nop
               c=stk
               rcr     -7
               bcex    m
-              rgo     exitNoUserST_B10
-
+              rgo     exitNoUserST
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4667,14 +4148,13 @@ ALDI:         nop
               .name   "TST"
 TST:          nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    Operand00     ; TST 00 is default
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               rxq     setFlagsABx
               rgo     exitUserST_rom2
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4687,9 +4167,9 @@ TST:          nop
               .name   "CMP"
 CMP:          nop
               nop
-              rxq     Argument
+              gosub   argument
               .con    OperandY
-              rxq     findBufferUserFlags
+              rxq     findIntegerBufferUserFlags
               switchBank 2
               rxq     loadG
               st=0    Flag_CY
@@ -4712,7 +4192,7 @@ CMP:          nop
               bcex    x
               c=0     x
               dadd=c
-              rxq     getSign_rom2 ; C.S= sign of X
+              rxq     getSign_rom2  ; C.S= sign of X
               abex    s
               ?a#c    s             ; same sign?
               gonc    2$            ; yes, cannot overflow
@@ -4750,7 +4230,6 @@ CMP:          nop
 20$:          rxq     setFlagsABx   ; set sign and zero flags
               rgo     exitUserST_rom2
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; LT? GT? LE? GE? - relative compares after CMP or SUB
@@ -4780,7 +4259,6 @@ LT3:          ?st=1   Flag_Overflow
               gonc    noSkip
               goto    skip
 
-
               .name   "GE?"
 `GE?`:        c=regn  14
               rcr     12
@@ -4800,7 +4278,6 @@ GE3:          ?st=1   Flag_Overflow
               goc     noSkip
               goto    skip
 
-
               .name   "LE?"
 `LE?`:        c=regn  14
               rcr     12
@@ -4817,7 +4294,6 @@ LE2:          ?st=1   Flag_Zero     ; Z==1, or (N != V)
               goc     noSkip
               goto    LT2
 
-
               .name   "GT?"
 `GT?`:        c=regn  14
               rcr     12
@@ -4832,7 +4308,6 @@ LE2:          ?st=1   Flag_Zero     ; Z==1, or (N != V)
 GT2:          ?st=1   Flag_Zero     ; Z==0 and (N == V)
               goc     skip
               goto    GE2
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4893,7 +4368,7 @@ DMUL:         s11=1                 ; want double result
 
               .name   "MUL"
 MUL:          s11=0                 ; want single result
-mulCommon:    rxq     findBufferGetXSaveL0no11
+mulCommon:    rxq     findIntegerBufferGetXSaveL0no11
               switchBank 2
               ?st=1   Flag_2
               gonc    2$
@@ -5244,7 +4719,6 @@ mulCommon:    rxq     findBufferGetXSaveL0no11
 82$:          st=0    Flag_Zero
 85$:          rgo     exitUserST
 
-
               .section Code, reorder
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -5270,7 +4744,7 @@ divCommon:    rcr     2
               bcex    s             ; B.S= variant
 
               s0=1                  ; check for division by 0
-              rxq     findBufferGetXSaveL0
+              rxq     findIntegerBufferGetXSaveL0
               switchBank 2
 
 ;;; We always want the low part of dividend to be in Y.
@@ -5295,7 +4769,6 @@ divCommon:    rcr     2
                                     ; (for remainder we take the sign of the
                                     ; dividend, which already is in A.S)
 7$:
-
 
 ;;; Basic algorithm:
 ;;; 0. r = 0
@@ -5636,7 +5109,6 @@ divCommon:    rcr     2
               rxq     setSignFlag
               rgo     exitUserST
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; getSign - get the sign of given number
@@ -5691,7 +5163,6 @@ getSign:      .macro
 
               .section Code2, reorder
 getSign_rom2: getSign
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -5752,708 +5223,19 @@ forceSign:    c=m                   ; get carry mask
               lc      8
               goto    2$
 
-
-              .section Code, reorder
-;;; ----------------------------------------------------------------------
-;;;
-;;; Argument - Handle numerical arguments for functions in external
-;;; XROMs
-;;;
-;;; Start MCODE function as follows:
-;;; XADR  nop
-;;;       nop
-;;;       rxq     Argument
-;;;       con     DefaultOperand + modifiers
-;;;
-;;; IN: SS0 UP, CHIP0 selected
-;;; OUT:  st - numeric argument
-;;;       a[2:0] - numeric argument
-;;;       b.m - numeric argument
-;;;       g - numeric argument
-;;;
-;;; It is assumed here that processing of numbers to registers take
-;;; place later.
-;;;
-;;; Possible modifiers are:
-;;; 0x100 (sets S1), allow IND, but disallow ST
-;;;       (bit 9 of second char in a prompting name label)
-;;; 0x200 (sets S2), disallow IND and ST
-;;;       (bit 8 of first char in a prompting name label)
-;;;
-;;; ----------------------------------------------------------------------
-
-Argument:     ?s13=1                ; running?
-              goc     3$            ; yes
-              ?s4=1                 ; single step?
-              gonc    91$           ; no
-
-;;; We are executing the instruction from program memory
-3$:           rxq     NXBYTP        ; examine argument byte
-              b=a                   ; save address
-              a=c     x             ; save operand byte
-              st=0    IF_Argument   ; argument not known yet
-
-;;; Entry point for executing from keyboard, in which case IF_Argument
-;;; must be set and the argument is in A[1:0]
-50$:          c=stk
-              cxisa                 ; get default argument
-              m=c                   ; save for possible use
-              c=c+1   m             ; update return address (skip over default argument)
-              stk=c
-              ?st=1   IF_Argument   ; argument already known (before coming here)?
-              gonc    2$            ; no
-              c=n                   ; yes, move argument to C[1:0]
-              goto    8$
-
-91$:          goto    9$            ; relay
-
-2$:           ldi     Text1
-              ?a#c    x             ; argument?
-              gonc    7$            ; yes
-              c=m                   ; no, use default argument instead
-              goto    8$
-7$:           abex    wpt           ; argument follows in program
-              gosub   INCAD
-              gosub   PUTPC         ; store new PC (skip over Text1 instruction)
-              ?s4=1                 ; single step?
-              gonc    71$           ; no
-              c=regn  15            ; yes, bump line number
-              c=c+1   x
-              regn=c  15
-71$:          gosub   GTBYT         ; get argument
-8$:           pt=     0
-              g=c                   ; put in G
-              a=c                   ; and A
-              rcr     -3            ; and finally to
-              bcex    m             ; B.M
-              c=0
-              dadd=c                ; select chip 0
-              rtn
-
-51$:          goto    50$           ; relay
-
-88$:          spopnd
-              rgo     noBuf
-
-;;; ----------------------------------------------------------------------
-;;;
-;;; User executes the instruction from the keyboard
-;;;
-;;; ----------------------------------------------------------------------
-
-9$:           rxq     chkbuf
-              goto    88$           ; (P+1) no buf
-                                    ; (P+2)
-
-;;; Load IF_Argument flag to ST register. If it is set, then we are coming
-;;; here the second time knowing the argument byte.
-;;; In that case we also want to reset it as we are done with argument handing.
-;;; On the other hand, if it is cleared, we set it to signal that we are looking
-;;; for the argument.
-;;; All boils down to that we want the current value of the IF_Argument flag,
-;;; and want to store it back toggled.
-              st=c
-              ?st=1   IF_Argument   ; toggle flag
-              goc     12$
-              st=1    IF_Argument
-              goto    13$
-12$:          st=0    IF_Argument
-13$:          cstex
-              data=c                ; save back toggled flag
-              ?st=1   IF_Argument   ; (inspecting previous value of flag)
-              goc     51$           ; with IF_Argument set indicating found
-
-              acex    x             ; store default argument in trailer
-              c=c+1   x
-              dadd=c                ; select trailer register
-              c=stk
-              cxisa                 ; C[1:0] = default argument
-              n=c                   ; N[2:0]= modifier bits and default argument
-              c=c+1   m             ; bump return address
-              stk=c
-              pt=     0
-              g=c
-              c=data                ; get trailer
-              pt=     10
-              c=g                   ; put default argument into 'pf' field
-              data=c                ; write back
-
-              gosub   LDSST0        ; argument not obtained yet
-              ?s3=1                 ; program mode?
-              gonc    30$           ; no
-              gosub   INSSUB        ; prepare for insert
-              a=0     s             ; clear count of successful inserts
-              c=regn  10            ; insert instruction in program memory
-              rcr     3
-              gosub   INBYTC
-              c=regn  10
-              rcr     1
-              gosub   INBYTC
-              gosub   LDSST0
-
-;;; ************************************************************************
-;;;
-;;; If we are in program mode, fool the calculator that we are executing
-;;; <sigma>REG function. The IF_Argument flag has already been set above
-;;; to signal to the I/O interrupt to change the 0x99 byte to 0xf1 (text 1).
-;;; If not program mode, set up for prompting the current MCODE instruction
-;;; and re-execute it with argument bit set to indicate that argument
-;;; has been found.
-;;;
-;;; In other words, from the keyboard we will execute Argument twice, but
-;;; in program mode we insert the instruction immediately and make it appear
-;;; as we are executing <sigma>REG instead. Once that has been properly
-;;; inserted into the program, we alter it to be the postfix argument.
-;;;
-;;; The reason for using <sigma>REG is that it adds a bit of safety.
-;;; When a semi-merged instruction is inserted in a program, it is
-;;; actual made up of two instructions, first the XROM and then we start
-;;; entry of the <sigma>REG instruction behind the scene, showing it as
-;;; the prompting XROM instruction.
-;;; Later when the dust have settled, there are two possible outcomes.
-;;; Either the instruction was entered, or instruction entry was canceled.
-;;; In order to tell what happened, we check the instruction in program
-;;; memory. If this is <sigma>REG instruction, then we assume it is out
-;;; one and we can alter it to Text-1 (or delete it when it corresponds
-;;; to default behavior).
-;;;
-;;; We choose <sigma>REG for; this as it is rarely used in a program.
-;;; A Text-1 string literal is more likely to be in a program and we could
-;;; mistake it for being the postfix operand when the user actually canceled
-;;; the instruction. In that case the semi-merged instruction would hijack
-;;; the real Text-1!
-;;;
-;;; **********************************************************************
-
-30$:          c=regn  10
-              m=c
-              ?s3=1                 ; program mode?
-              gonc    40$           ; no
-              pt=     4             ; yes sigma<reg> byte
-              lc      9
-              lc      9
-              regn=c  10
-              clrst
-              s4=1                  ; insert bit
-              goto    45$
-40$:          clrst                 ; run mode
-              s5=1
-45$:          s0=1                  ; normal prompt
-              c=n                   ; get modifier bits from default prompt
-              c=c+c   xs
-              c=c+c   xs
-              c=c+c   xs
-              gonc    46$
-              s2=1
-46$:          c=c+c   xs
-              gonc    47$
-              s1=1
-47$:          pt=     0
-              c=st
-              g=c                   ; save PTEMP2
-              gosub   OFSHFT
-              c=regn  15            ; display line number
-              bcex    x
-              gosub   CLLCDE
-              ?s4=1
-              gonc    49$
-              abex    x
-              gosub   DSPLN+8       ; display line number
-49$:          c=m
-              rcr     1
-              gosub   GTRMAD
-              nop
-              acex
-              rcr     11
-              gosub   PROMF2        ; prompt string
-
-              pt=     0             ; restore PTEMP2
-              c=g
-              st=c
-              ?s4=1                 ; program mode?
-              golc    PAR110        ; yes, use ordinary prompt handler as we
-                                    ;  are really entering a SIGMA-REG
-                                    ;  instruction.
-
-              ?s2=1                 ; prompt that does not allow IND/ST?
-              golc    PAR110        ; yes, we can use the ordinary prompt
-                                    ;  handler
-
-;;; We may need to input stack registers. The mainframe code cannot handle
-;;; this for XROM instructions, it will overwrite the second byte with the
-;;; postfix byte, ruining the XROM instruction.
-;;; To make it work, we need to provide our own prompt handler that can do
-;;; it properly for 2-byte XROM instructions. We will in the end use the
-;;; alternative way of giving the argument in B.X so everything comes
-;;; together just fine.
-
-              gosub   NEXT2         ; prompt using 2 digits
-              goto    ABTSEQ_J1
-              ?s6=1                 ; shift?
-              goc     parseIndirect ; yes
-              ?s1=1
-              goc     10$
-              ?s7=1                 ; DP?
-              goc     parseStack    ; yes
-10$:          golong  PAR111 + 1
-
-ABTSEQ_J1:    golong  ABTSEQ
-
-parseIndirect:
-              gosub   ENCP00
-              pt=     0
-              c=g
-              cstex
-              s6=1
-              cstex
-              g=c
-              gosub   ENLCD
-              gosub   MESSL
-              .messl  "IND "
-20$:          gosub   NEXT2
-              goto    ABTSEQ_J1
-              ?s4=1                 ; A..J?
-              golc    AJ2           ; yes
-              ?s7=1                 ; DP?
-              goc     parseStack    ; yes
-              ?s3=1                 ; digit?
-              gonc    30$
-              gosub   FDIGIT
-30$:          gosub   BLINK
-              goto    20$
-
-parseStack:   gosub   MESSL
-              .messl  "ST "
-              gosub   NEXT1
-              goto    ABTSEQ_J1
-              ldi     ' '
-              srsabc
-              srsabc
-              srsabc
-              gosub   GTACOD        ; get alpha code
-              pt=     13
-              lc      4             ; set for LASTX
-              a=c                   ; A.S= register index, A.X=char
-              ldi     76
-              ?a#c    x
-              goc     20$
-05$:          gosub   MASK
-              gosub   LEFTJ
-              gosub   ENCP00
-              pt=     0             ; get PTEMP2
-              c=g
-              st=c
-;;; Compared to the mainframe version, we do not overwrite the postfix
-;;; byte of the instruction here, as it is part of the 2 byte XROM
-;;; opcode.
-              c=regn  10
-              acex                  ; A[4:1]= current instruction
-              lc      7
-              ?s6=1                 ; indirect?
-              gonc    10$           ; no
-              pt=     0
-              lc      15            ; yes
-10$:          rcr     -1
-              bcex    x             ; B.X=  postfix code
-              golong  NLT020
-
-15$:          gosub   BLINK
-              goto    parseStack
-
-20$:          ldi     'W'
-30$:          a=a-1   s
-              ?a#0    s
-              gonc    40$
-              c=c+1   x
-              ?a#c    x
-              goc     30$
-              goto    05$
-40$:          ldi     'T'
-              ?a#c    x
-              gonc    05$
-              goto    15$
-
-
-              .section Code, reorder
-;;; **********************************************************************
-;;;
-;;; Increment and get next byte from program memory.
-;;;
-;;; **********************************************************************
-
-NXBYTP:       gosub   GETPC
-NXBYT:        gosub   INCAD
-              gosub   GTBYT
-              c=0     xs
-              ?c#0    x
-              rtnc
-              goto    NXBYT         ; skip null
-
-
-              .section Code, reorder
-;;; **********************************************************************
-;;;
-;;; Right justify display
-;;;
-;;; Leaves rightmost char in C[2:0] and 32 in A[2:0] (blank)
-;;; Assume: LCD enabled
-;;; Uses: A[2:0], C[2:0], PT=1
-;;;
-;;; **********************************************************************
-
-RightJustify:
-              ldi     ' '
-              pt=     1
-              a=c     x
-1$:           frsabc
-              ?a#c    wpt
-              gonc    1$
-              flsabc
-              rtn
-
-;;; **********************************************************************
-;;;
-;;; I/O poll vector routines. This is where we overlay the look and
-;;;  behavior on the base HP-41. Basically we adjust the LCD to look as
-;;;  we want it to look and prepare the system for the next key press
-;;;  so that the correct keyboard handler will be used based on the mode.
-;;;
-;;; There are three main cases here:
-;;;
-;;; pollio - Normal run-mode handler. Sets up display and take over
-;;;          keyboard.
-;;; prgmio - Handles program mode. Sets up display and take over
-;;;          keyboard.
-;;; pauseio - Handle the pause timer. This entry may have partial key
-;;;           set, so we need to preserve 3 return levels.
-;;;           Runs the pause timer, if a key is pressed, handle it.
-;;;           If it times out, start running the program again.
-;;;
-;;; **********************************************************************
-
-              .section Code, reorder
-pauseio:      c=data
-              ?s3=1                 ; program mode?
-              goc     20$           ; yes
-              cstex
-              ?st=1   IF_Integer    ; in integer mode?
-              gonc    8$            ; no
-              cstex                 ; bring up SS0
-              ?s5=1                 ; message flag?
-              goc     5$            ; yes
-              rxq     displayX      ; no, show integer X
-              rxq     chkbuf
-              nop
-              goto    8$
-5$:           c=data                ; C= buffer header
-              cstex                 ; no showing X
-              st=1    IF_Message
-              cstex
-              data=c
-              rxq     takeOverKeyboard ; but take over keyboard
-8$:           c=a     x
-              c=c+1   x
-              dadd=c
-              c=data                ; load trailer
-              pt=     11            ; C[13:12]= pause counter byte
-              c=0     wpt
-              rcr     7             ; C.M= pause counter * 0x100
-              a=c     m
-              gosub   PGMAON
-10$:          chk kb
-              goc     reconstructReturnRomCheck
-              a=a-1   m
-              gonc    10$
-
-              ;; Timed out, reset the pause flag
-              acex    x
-              dadd=c
-              c=data
-              rcr     4
-              cstex
-              st=0    IF2_Pause
-              cstex
-              rcr     -4
-              cstex
-              st=0    IF_Argument
-              st=0    IF_DigitEntry
-              st=0    IF_Message
-              cstex
-              data=c
-
-              c=0     x
-              dadd=c
-              gosub   RSTSEQ
-              golong  RUN
-
-;;; Pause cancelled by pressing program mode
-20$:          rcr     4
-              cstex
-              st=0    IF2_Pause
-              cstex
-              rcr     -4
-              data=c
-              goto    romrtn
-
-pollio:       c=data                ; C= buffer header
-              cstex                 ; bring up internal flags
-              st=0    IF_Argument   ; reset argument flag (not being active)
-              st=0    IF_DigitEntry ; reset digit entry, we do not come
-                                    ;   here if system digit entry is active
-              cstex
-              data=c                ; write back to buffer
-              cstex                 ; bring up internal flags again
-              ?st=1   IF_Integer    ; in integer mode?
-              gonc    romrtn        ; no, ordinary floating point operating mode
-              cstex                 ; bring up SS0
-              ?s5=1                 ; message flag?
-              goc     takeOver      ; yes, do not touch the display
-              rxq     displayX      ; show integer display
-              goto    reconstructReturnRomCheck
-
-romrtn:       gosub   LDSST0
-romrtn2:      c=n
-              goto    RelayRMCK10
-
-takeOver:     cstex
-              st=1    IF_Message    ; not showing X
-              cstex
-              data=c
-takeOverKeyboardReconstruct:
-              rxq     takeOverKeyboard
-
-;;; We need to repair registers here for ROMCHK.
-;;;
-;;; Note: Normally mainframe checks keyboard before calling the I/O poll
-;;;       vector, if a key is pressed it will skip directly to handling
-;;;       the key. As a result we do not get a chance to set up the
-;;;       environment for taking over the keyboard. To work around this
-;;;       problem we have an OS extension that always call the I/O poll
-;;;       before checking keyboard. This however, puts a different
-;;;       return address than the default one, so we cannot just return
-;;;       to the default return address 0x18a, as we actually called it
-;;;       from page 4!!!!
-;;;       If we return to 0x18a, we will actually go to sleep without
-;;;       ever handling the key down!
-;;;       Other modules may play similar games, so to make it work,
-;;;       we need to check for a key down here and then go handling
-;;;       the key instead, always, no matter if we try to reset the
-;;;       return address or not, other modules may also do it!!
-;;;
-;;;       This is safe to do as normally we would not even have called
-;;;       the I/O poll vector if a key was down. The I/O poll vector
-;;;       will be called later when there are no keys to handle, just
-;;;       as the HP-41 mainframe normally behaves.
-;;;
-reconstructReturnRomCheck:
-              gosub   LDSST0        ; put up SS0
-              gosub   PCTOC         ; rtn to romcheck
-                                    ; since we had no place to
-              pt=     5             ; store c-reg, it must be
-              lc      0xF           ; constructed here!!
-              lc      0xF
-              lc      8
-              pt=     10
-              lc      0             ; rtn address
-              lc      1
-              lc      8
-              lc      0xA
-RelayRMCK10:  chk kb
-              golc    0x1a6         ; WKUP20 if key is down
-              golong  RMCK10        ; otherwise keep scanning I/O poll vectors
-
-;;; Program mode returns here with reconstruction of C register for RMCK10, but
-;;; first we need to plant the keyboard takeover, unless we are in alpha mode
-ProgramReturn: ?s9=1                ; in integer mode?
-              gonc    reconstructReturnRomCheck ; no
-              goto    takeOverKeyboardReconstruct
-
-;;; Program mode, we may need to adjust some instructions to look the way
-;;; they should.
-prgmio:       c=data                ; C= buffer header
-              rcr     4
-              cstex
-              st=0    IF2_Pause     ; always reset pause flag when entering
-                                    ;  program mode
-              cstex
-              rcr     -4
-              st=c
-              st=0    IF_Argument   ; reset argument flag
-              st=0    IF_DigitEntry ; reset digit entry, we do not come
-                                    ;   here if system digit entry is active
-              cstex                 ; keep old argument flag in ST
-              data=c                ; write back
-
-              ;; Use S9 for integer flag, as all registers are clobbered
-              ;; below. This seems to be the only bit left free, apart from
-              ;; the flag out (tone) register...
-              s9=0
-              cstex
-              ?st=1   IF_Integer
-              gonc    1$
-              s9=1
-1$:           cstex
-
-              acex                  ; get buffer address
-              n=c                   ; save in N for literal display
-              c=c+1   x             ; point to trailer register
-              dadd=c
-              c=data                ; get the default postfix byte
-              rcr     10
-              m=c                   ; save in M[1:0]
-
-              c=0     x             ; select chip 0
-              dadd=c
-              c=regn  15            ; Do not look for argument
-              c=c-1   x             ; if LINNUM=0
-              gonc    4$
-              goto    ProgramReturn ; get a relay
-
-8$:           gosub   GETPC         ; abort entry of semi-merged instruction
-              gosub   DELLIN        ;  remove the XROM instruction as well
-              gosub   PUTPC
-              gosub   BSTEP
-              gosub   DFRST8
-3$:           goto    ProgramReturn
-
-
-4$:           ?s10=1                ; ROM?
-              goc     10$           ; yes, no need to change it
-
-              ?st=1   IF_Argument   ; check if inserting prompt
-              gonc    10$           ; no
-
-;;; Now change byte from 0x99 to 0xf1!!
-              rxq     NXBYTP
-              b=a
-              a=c     x
-              ldi     0x99
-              ?a#c    x             ; MCODE prompt?
-              goc     8$            ; no - it was aborted
-              ldi     Text1
-              abex                  ; get address again
-              gosub   PTBYTA        ; store text1
-
-              gosub   INCADA        ; step forward to postfix byte
-              gosub   GTBYTA
-              acex
-              cmex
-              pt=     1
-              ?a#c    wpt           ; same as default?
-              goc     5$            ; no
-              cmex                  ; yes, restore address to postfix byte
-              a=c
-              c=0     x             ; null
-              gosub   PTBYTA        ; erase it
-              gosub   DECADA        ; address of text 1
-              c=0     x
-              gosub   PTBYTA        ; clear it too
-              gosub   PUTPC         ; go to previous line
-              gosub   BSTEP
-5$:           gosub   DFRST8        ; bring text1 line up
-
-;;; ***********************************************
-;;; See if current line is an MCODE prompt function
-;;; ***********************************************
-
-10$:          rxq     NXBYTP
-              b=a     wpt           ; B[3:0]= address
-              a=c     x             ; A.X= opcode
-              ldi     0xa4          ; XROM 16 (, 17, 18, or 19)
-              ?a#c    x
-              goc     90$           ; not any of my XROM functions
-              abex
-              gosub   INCAD
-              gosub   GTBYT         ; read next byte
-              c=0     xs
-              b=a     wpt           ; B[3:0]= address
-              a=c     x             ; A.X= second byte of XROM opcode
-              ldi     64
-              ?a<c    x
-90$:          gonc    3$            ; not XROM 16
-              ldi     Literal_Code
-              ?a#c    x             ; literal?
-                                    ;  (test here keeps branches within range)
-              gonc    80$           ; yes
-              pt=     2
-              lc      4             ; C[2]= 4
-              acex    wpt           ; C[2:0]= lower 1 & half bytes of XROM code
-              gosub   GTRMAD
-900$:         goto    90$           ; could not find it
-              ?s3=1
-              goc     90$           ; user code
-              acex
-              rcr     11
-              cxisa
-              ?c#0    x             ; check if 2 NOPs
-              goc     90$           ; no
-              c=c+1   m
-              cxisa
-              ?c#0    x
-              goc     90$
-
-;;; **********************************************************************
-;;;
-;;; We have found an MCODE function with postfix argument.
-;;; Now display it properly with its postfix argument.
-;;;
-;;; **********************************************************************
-
-              c=c+1   m             ; skip past rxq
-              c=c+1   m
-              c=c+1   m
-              c=c+1   m
-              cxisa                 ; get default argument
-              n=c                   ; save it in case we need it
-              gosub   DFRST8        ; display normal line
-              gosub   ENLCD
-              rxq     RightJustify
-              acex                  ; add a blank
-              slsabc
-              gosub   ENCP00
-              rxq     NXBYTP
-              gosub   INCAD
-              rxq     NXBYT         ; get next byte
-              b=a
-              a=c     x
-              ldi     Text1
-              ?a#c    x             ; is it a text 1?
-              gonc    35$           ; yes
-              c=n                   ; no, use default argument instead
-              goto    36$
-35$:          abex
-              gosub   INCAD
-              gosub   GTBYT         ; get argument
-36$:          gosub   ROW930        ; display argument
-              goto    900$
-
-
-;;; **********************************************************************
-;;;
-;;; This is the header function, which is how we implement literals.
-;;; The literal comes after it.
-;;;
-;;; **********************************************************************
-
-80$:          abex    wpt           ; A[3:0] program pointer
-              c=n                   ; get buffer address
-              m=c
-              rxq     fetchLiteralA ; fetch the literal
-              rxq     displayPrgmLiteral
-              goto    900$
-
-
               .section KeyTable, rodata
+              .align  4
 ;;; **********************************************************************
 ;;;
 ;;; Keyboard definition
 ;;;
 ;;; **********************************************************************
 
+keyTable:
               ;; Logical column 0
               .con    0x10a         ; SIGMA+  (A digit)
               .con    0x10f         ; X<>Y    (F digit here)
-              .con    0x30e         ; SHIFT
+              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
               KeyEntry ENTERI       ; ENTER^
               KeyEntry SUB          ; -
               KeyEntry ADD          ; +
@@ -6463,8 +5245,8 @@ prgmio:       c=data                ; C= buffer header
               ;; Logical column 0, shifted
               KeyEntry SL           ; SIGMA+
               KeyEntry SWAPI        ; X<>Y
-              .con    0x30e         ; SHIFT
-              .con    0x200         ; CATALOG
+              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
+              .con    0             ; CATALOG
               KeyEntry CMP          ; -
               KeyEntry TST          ; +
               KeyEntry DMUL         ; *
@@ -6473,7 +5255,7 @@ prgmio:       c=data                ; C= buffer header
               ;; Logical column 1
               .con    0x10b         ; 1/X  (B digit)
               KeyEntry Hex          ; RDN
-              .con    0x2e0         ; XEQ
+              .con    0             ; XEQ
               .con    0             ; right half of enter key
               .con    0x107         ; 7
               .con    0x104         ; 4
@@ -6483,9 +5265,9 @@ prgmio:       c=data                ; C= buffer header
               ;; Logical column 1, shifted
               KeyEntry SR           ; 1/X
               KeyEntry RDNI         ; RDN
-              .con    0x20f         ; ASN
+              .con    0             ; ASN
               .con    0             ; right half of enter key
-              .con    0x2a8         ; SF
+              .con    BuiltinKey(0xa8) ; SF
               KeyEntry SB           ; 4
               KeyEntry AND          ; 1  (FIX key)
               KeyEntry FLOAT        ; 0
@@ -6503,9 +5285,9 @@ prgmio:       c=data                ; C= buffer header
               ;; Logical column 2, shifted
               KeyEntry ASR          ; SQRT
               KeyEntry RMD          ; SIN
-              .con    0x2cf         ; LBL
+              .con    BuiltinKey(0xcf) ; LBL
               KeyEntry NOT          ; CHS
-              .con    0x2a9         ; CF
+              .con    BuiltinKey(0xa9) ; CF
               KeyEntry CB           ; 5
               KeyEntry OR           ; 2
               KeyEntry LASTXI       ; decimal point (LastX)
@@ -6518,14 +5300,14 @@ prgmio:       c=data                ; C= buffer header
               .con    0x109         ; 9
               .con    0x106         ; 6
               .con    0x103         ; 3
-              .con    0x205         ; R/S
+              .con    0             ; R/S
 
               ;; Logical column 3, shifted
               KeyEntry RL           ; LOG
               KeyEntry RLC          ; COS
-              .con    0x2d0         ; GTO
-              .con    0x285         ; EEX
-              .con    0x2ac         ; FS?
+              .con    0             ; GTO
+              .con    0             ; RTN
+              .con    BuiltinKey(0xac) ; FS?
               KeyEntry B?           ; 6
               KeyEntry XOR          ; 3
               KeyEntry WSIZE        ; R/S
@@ -6533,23 +5315,22 @@ prgmio:       c=data                ; C= buffer header
               ;; Logical column 4
               .con    0x10e         ; LN   (E digit)
               KeyEntry Binary       ; TAN
-              .con    0x208         ; SST
+              .con    0             ; SST
               .con    0x1ff         ; BACKARROW
-              .con    0x30c         ; MODE ALPHA
-              .con    0x20c         ; MODE PRGM
-              .con    0x30c         ; MODE USER
+              .con    BuiltinKey(0x0c) ; MODE ALPHA
+              .con    BuiltinKey(0x0c) ; MODE PRGM
+              .con    BuiltinKeyKeepDigitEntry(0x0c) ; MODE USER
               .con    0             ; OFF key special
 
               ;; Logical column 4, shifted
               KeyEntry RR           ; LN
               KeyEntry RRC          ; TAN
-              .con    0x207         ; BST
+              .con    0             ; BST
               KeyEntry CLXI         ; BACKARROW
               KeyEntry ALDI         ; MODE ALPHA
               KeyEntry MASKR        ; MODE PRGM
               KeyEntry MASKL        ; MODE USER
               .con    0             ; OFF key special
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -6775,7 +5556,6 @@ div10:        acex                  ; save n in P[9:8]:Q
               c=c+1   x
               bcex    x
               rtn
-
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -7129,7 +5909,6 @@ decpos:       b=0     xs            ; clear flag for digits above
               g=c
               golong  APNDNW
 
-
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; This NOP placed on address XCDD will allow the module to be used
@@ -7148,12 +5927,39 @@ decpos:       b=0     xs            ; clear flag for digits above
               .section Legal7
               nop
 
+;;; ----------------------------------------------------------------------
+;;;
+;;; Bank switchers allow external code to turn on specific banks.
+;;;
+;;; ----------------------------------------------------------------------
 
-;;; Switch back to bank 1 and fall into rpollio
+BankSwitchers: .macro
+              rtn                   ; not using bank 3
+              rtn
+              rtn                   ; not using bank 4
+              rtn
+              enrom1
+              rtn
+              enrom2
+              rtn
+              .endm
+
+              .section BankSwitchers1
+             BankSwitchers
+
+              .section BankSwitchers2
+             BankSwitchers
+
+
+;;; ----------------------------------------------------------------------
+;;;
+;;; Switch back to bank 1 and fall into deepWake
+;;;
+;;; ----------------------------------------------------------------------
+
               .section Code2
-              .shadow rpollio - 1
-rpollio2:     enrom1
-
+              .shadow deepWake - 1
+deepWake2:    enrom1
 
               .section Tail2
 ;;; **********************************************************************
@@ -7175,104 +5981,43 @@ rpollio2:     enrom1
               nop                   ; Running
               nop                   ; Wake w/o key
               nop                   ; Powoff
-              goto    rpollio2      ; I/O
-              nop                   ; Deep wake-up
+              nop                   ; I/O
+              goto    deepWake2     ; Deep wake-up
               nop                   ; Memory lost
                                     ; Identifier PR-1A
-              .con    2             ; B
-              .con    '0'           ; 0
+              .con    2             ; A
+              .con    '0'           ; 1
               .con    0x202         ; B (bank switched)
               .con    0x0c          ; L
               .con    0             ; checksum position
-
 
               .section Tail
 ;;; ----------------------------------------------------------------------
 ;;;
 ;;; Poll vector handling.
 ;;;
-;;; We need to reclaim our buffer at power on. Also reset all entry in
-;;; progress flags as all such things are reset when the HP41 goes to
-;;; sleep.
-;;;
-;;; We use the I/O poll vector to do several things. It maintains the
-;;; integer display when the previous event was not one of our own
-;;; actions. We also handle the program edit mode here, displaying
-;;; semi-merged steps as combined instructions as well as fixing up
-;;; entered semi-merged instructions.
-;;; As I/O poll is called during partial key entry, we are not allowed
-;;; to use more than one sub-routine level if partial key is active
-;;; (unless we decide to end it).
-;;; We take a first stage look at the situation here to judge the current
-;;; status. Return quickly partial key entry is active or some other
-;;; activity that we quickly can tell we do not need to do anything
-;;; further. Otherwise, we take a longer jump back to do the more in
-;;; depth processing.
+;;; We need to reclaim our buffer at power on and also the application
+;;; shell.
 ;;;
 ;;; ----------------------------------------------------------------------
 
 deepWake:     n=c
-              rxq     chkbuf
+              c=0     x             ; we look for buffer # 0
+              gosub   findBuffer
               goto    pollret       ; (P+1) not found
-              c=c+1   s             ; (P+2) reclaim it
-
+              c=data                ; (P+2) reclaim it
               cstex
-              st=0    IF_DigitEntry ; end digit entry
-              st=0    IF_Argument   ; not looking for argument
+              st=0    IF_DigitEntry ; clear digit entry
               cstex
-
-              rcr     4
-              cstex
-              st=0    IF2_Pause
-              cstex
-              rcr     -4
-
+              c=0     s
+              c=c+1   s
               data=c
-pollretC0:    c=0
-              dadd=c
+              ldi     .low12 ladybugShell
+              gosub   reclaimShell
+
+              gosub   LDSST0
 pollret:      c=n
 RMCK10_LJ:    golong  RMCK10
-
-rpollio:      ?s7=1                 ; alpha mode?
-              goc     RMCK10_LJ     ; yes
-              n=c                   ; save C for ROMCHK
-
-              c=regn  14
-              m=c                   ; M= system flags
-
-              ;; Need to check if we are doing pause, and that means we
-              ;; have to inspect buffer, and if partial key is set, we
-              ;; are only allowed to use one stack level.
-              ;; GSB256 only uses one level, despite what its comments says.
-              ;; We link so that 'chkbuf' is present at XF00, so GSB256
-              ;; will take us there.
-              gosub   GSB256        ; chkbuf
-              goto    pollretC0     ; (P+1) no integer buffer
-              pt=     4
-              c=c+c   pt            ; doing pause?
-              goc     20$           ; yes
-
-              c=m                   ; C= system flags
-              c=c+c   xs
-              c=c+c   xs
-              goc     pollretC0     ; data entry in progress
-              c=c+c   xs
-              goc     pollretC0     ; partial key entry in progress
-              ?s3=1                 ; program mode?
-              goc     10$           ; yes
-              rgo     pollio
-
-              ;; Program mode. Separated here so that we know that only
-              ;; the run-mode need to handle pausing.
-10$:          ?s12=1                ; private?
-              goc     pollretC0     ; yes
-              ?s5=1                 ; message flag (perhaps showing "ROM")
-              goc     pollretC0     ; yes
-              rgo     prgmio
-
-              ;; Handle pause timer.
-20$:          rgo     pauseio       ; the 'rgo' uses two levels!
-
 
 ;;; **********************************************************************
 ;;;
@@ -7284,8 +6029,8 @@ rpollio:      ?s7=1                 ; alpha mode?
               .con    0             ; Running
               .con    0             ; Wake w/o key
               .con    0             ; Powoff
-              goto    rpollio       ; I/O
+              .con    0             ; I/O
               goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "B0BL"        ; Identifier LB-0B
+              .text   "A1BL"        ; Identifier LB-1A
               .con    0             ; checksum position
