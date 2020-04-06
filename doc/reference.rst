@@ -826,33 +826,6 @@ Miscellaneous instructions
    None
 
 
-.. index:: pause operation, operations; pause
-
-.. object:: PSEI _ _
-
-   Integer pause instruction. Works very much like the existing
-   ``PSE`` instruction, but runs with the integer mode active. This
-   instruction takes an argument which controls the duration of the
-   pause.
-
-   The length of the pause in seconds is approximately the value
-   divided by 7. An argument of 00 behaves as 07 and gives a pause of
-   about 1 second, similar to the built in ``PSE`` instruction.
-
-   When a key is pressed, the pause is restarted. The pause length is
-   limited to 64 (about 9 seconds), which is probably longer than you
-   want in most cases.
-
-   .. describe:: Postfix argument
-
-   The pause duration, or a register indirection to a nibble register
-   which holds the pause duration. Valid range is 0--64.
-
-   .. describe:: Affected flags
-
-   None
-
-
 .. index:: window, display windows
 
 .. object:: WINDOW _

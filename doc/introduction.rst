@@ -2,7 +2,7 @@
 Introduction
 ************
 
-Welcome to Ladybug for the HP-41 calculator! Ladybug is a powerful
+Welcome to the Ladybug module for the HP-41 calculator! Ladybug is a powerful
 tool, intended to be useful when you are debugging or working with low
 level matters related to computers.
 
@@ -29,20 +29,15 @@ emulation hardware for this.
 
 It is also possible to use Ladybug on HP-41 emulators.
 
-The Ladybug image is a 3x4K module. Two banks occupies a single 4K
-page in the normal memory expansion space, together with a page 4
-(takeover ROM). It can be plugged into any of the expansion ports
-(7--F) of the HP-41 expansion space, but the page 4 image must be
-placed in address page 4.
+The Ladybug image is a 2x4K module. Two banks occupies a single 4K
+page in the normal memory expansion space (page 7--F).
 
+You must also load the separate OS4 module in page 4 for Ladybug to work.
 
 This release
 ============
 
-This version, 0C is a release to early adopters, in the hope to get
-feedback. The instruction allocation (XROM numbers) is currently
-considered preliminary and may change in the future.
-
+This version, 1A is the first that uses the new OS4 module.
 
 .. index:: buffer, I/O buffer, XROM number
 

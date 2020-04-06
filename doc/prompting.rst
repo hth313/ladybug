@@ -13,7 +13,7 @@ semi-merged because the instructions are not fully merged like the
 built in prompting instructions.
 
 
-Executing a prompting instruction will make it to prompt for its
+Executing a prompting instruction will cause it to prompt for its
 argument. Outside program mode, this is no problem as it was always
 supported. In program mode, the instruction and its postfix operand
 will be inserted in the program as a semi-merged instruction.
