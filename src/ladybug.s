@@ -5984,9 +5984,8 @@ deepWake2:    enrom1
               nop                   ; I/O
               goto    deepWake2     ; Deep wake-up
               nop                   ; Memory lost
-                                    ; Identifier PR-1A
-              .con    2             ; A
-              .con    '0'           ; 1
+              .con    1             ; A
+              .con    '1'           ; 1
               .con    0x202         ; B (bank switched)
               .con    0x0c          ; L
               .con    0             ; checksum position
@@ -6032,5 +6031,8 @@ RMCK10_LJ:    golong  RMCK10
               .con    0             ; I/O
               goto    deepWake      ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A1BL"        ; Identifier LB-1A
+              .con    1             ; A
+              .con    '1'           ; 1
+              .con    0x202         ; B (bank switched)
+              .con    0x0c          ; L
               .con    0             ; checksum position
