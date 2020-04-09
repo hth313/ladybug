@@ -11,7 +11,7 @@ VPATH = $(MAINFRAME):$(OS4):$(BOOST41)
 LADYPLUS = ladyplus.mod
 SRCS = ladybug.s bank2.s \
        core.s coreBank2.s buffer.s shell.s keyboard.s  catalog.s \
-       secondaryFAT.s semiMerged.s xmem.s  partial.s assignment.s timer.s \
+       secondaryFunctions.s semiMerged.s xmem.s  partial.s assignment.s timer.s \
        boost.s cat.s compile.s poll.s ramed.s tvm.s xmemory.s xeq.s \
        assign.s readrom16.s writerom16.s random.s partialKeys.s \
        compare.s \
