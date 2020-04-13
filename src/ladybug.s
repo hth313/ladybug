@@ -6009,13 +6009,13 @@ RMCK10_LJ:    golong  RMCK10
 ;;;
 ;;; **********************************************************************
 
-              .con    0             ; Pause
-              .con    0             ; Running
-              .con    0             ; Wake w/o key
-              .con    0             ; Powoff
-              .con    0             ; I/O
+              nop                   ; Pause
+              nop                   ; Running
+              nop                   ; Wake w/o key
+              nop                   ; Powoff
+              nop                   ; I/O
               goto    deepWake      ; Deep wake-up
-              .con    0             ; Memory lost
+              nop                   ; Memory lost
               .con    1             ; A
               .con    '1'           ; 1
               .con    0x202         ; B (bank switched)
