@@ -59,7 +59,7 @@ As the ``SL`` instruction is a two byte XROM instruction followed by a
 single letter ASCII constant, the whole instruction requires four
 bytes of program memory.
 
-When executed, the text literal is simply skipped and have no effect
+When executed, the text literal is simply skipped and has no effect
 on the alpha register.
 
 .. note::
@@ -76,7 +76,7 @@ on the alpha register.
 .. index:: default operands, operands; default
 
 Default operand
-===============
+---------------
 
 If the postfix operand is missing, the instruction reverts to a
 default behavior. For a shift instruction, it means shift one step:
