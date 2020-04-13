@@ -51,21 +51,6 @@
 
 #include "OS4.h"
 
-;;; Create a FAT entry with an appropriate label.
-;;; The purpose of this label is to allow us to refer to the entry point,
-;;; which is used for accessing the instruction (few uses) and setting
-;;; up the keyboard layout (many uses).
-;;; The first header entry doubles as the prefix to literals in programs,
-;;; which is handled automatically. However, there are a few places in the
-;;; code that hard-codes this XROM code without using the corresponding label
-;;; and XROM number, we simply assume it will be A4-00 in a few places.
-;;; If the XROM number or another entry point than 0 is used, some few
-;;; changes are also needed in the code.
-
-FAT:          .macro  entry
-LFE(entry):   .fat    `\entry`
-              .endm
-
 ;;; Define key code symbol for a function.
 KeyCode:      .macro  fun
 `\fun_Code`:  .equ    FATOFF(fun)
