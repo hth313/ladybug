@@ -14,4 +14,4 @@ $(MOD): $(OBJS) linker.scm ladybug.moddesc
 	lnnut -g $(OBJS) --list-file=linker.lst linker.scm ladybug.moddesc
 
 clean:
-	-rm $(OBJS) $(MOD) ladybug
+	-rm $(OBJS) $(MOD) ladybug.elf
