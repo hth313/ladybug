@@ -12,7 +12,7 @@ LADYPLUS = ladyplus.mod
 SRCS = ladybug.s bank2.s \
        core.s coreBank2.s buffer.s shell.s keyboard.s  catalog.s \
        secondaryFunctions.s semiMerged.s xmem.s  partial.s assignment.s timer.s \
-       boost.s cat.s compile.s poll.s ramed.s tvm.s xmemory.s xeq.s \
+       boost.s cat.s compile.s poll.s ramed.s xmemory.s xeq.s \
        assign.s readrom16.s writerom16.s random.s partialKeys.s \
        compare.s \
        cn0b.s cn1b.s cn2b.s cn3b.s cn4b.s cn5b.s cn6b.s \
