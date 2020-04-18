@@ -141,6 +141,7 @@ FatStart:
               FAT     LE?
               FAT     LT?
               FAT     BITSUM
+              .fat    Prefix2
 FatEnd:       .con    0,0
 
 
@@ -244,6 +245,39 @@ switchBank:   .macro  n
               .section Code, reorder
               .name   "-LADYBUG 1A"  ; The name of the module
 LadyHeader:   rtn
+
+;;; **********************************************************************
+;;;
+;;; Secondary FATs
+;;;
+;;; **********************************************************************
+
+              .section Code, reorder
+              .name   "(LBFX2)"
+Prefix2:      gosub   runSecondary
+              .con    58            ; XROM 16,58
+
+              .section LadybugFC2
+              .con    .low12 secondary2 ; Root pointer for secondary FAT headers
+
+;;; Secondary FAT header, serving bank 2
+              .section LadybugSecondary1, reorder
+              .align  4
+secondary2:   .con    0      ; pointer to next table
+              .con    (FAT2End - FAT2Start) / 2
+              .con    58            ; prefix XROM (XROM 16,58 - (LBFX2))
+              .con    0             ; start index
+              .con    .low12 FAT2Start
+              switchBank 2          ; this one is in bank 2
+              rtn
+
+              .section LadybugSecondary2
+              .align  4
+FAT2Start:    .fat    IEQ
+              .fat    INE
+              .fat    ILT
+              .fat    ILE
+FAT2End:      .con    0,0
 
 ;;; ************************************************************
 ;;;
@@ -5888,10 +5922,121 @@ decpos:       b=0     xs            ; clear flag for digits above
               a=c
               goto    86$
 
-
 90$:          ldi     '0'
               g=c
               golong  APNDNW
+
+;;; ************************************************************
+;;;
+;;; Generic two argument compare functions.
+;;;
+;;; ************************************************************
+
+              .section Code2
+              .name   "I="
+IEQ:          nop
+              nop
+              gosub   dualArgument
+              .con    "?"
+              rxq     loadDualArguments
+              abex    x
+              ?a#c    x
+              goc     toSKP
+              abex    x
+              c=n
+              ?a#c
+              goc     toSKP
+toNOSKP:      enrom1                ; followed by golong NOSKP in bank1
+              nop                   ; filler (to align with golong in bank 1)
+toSKP:        enrom1                ; followed by golong SKP in bank1
+
+              .name "I≠"
+INE:          nop
+              nop
+              gosub   dualArgument
+              .con    "?"
+              rxq     loadDualArguments
+              abex    x
+              ?a#c    x
+              goc     toNOSKP
+              abex    x
+              c=n
+              ?a#c
+              goc     toNOSKP
+              goto    toSKP
+
+              .name   "I<"
+ILT:          nop
+              nop
+              gosub   dualArgument
+              .con    "?"
+              rxq     loadDualArguments
+              abex    x
+              acex    x
+              ?a<c    x
+              goc     toNOSKP
+              ?a#c    x
+              goc     toSKP
+              acex    x
+              abex    x
+              c=n
+              acex
+              ?a<c
+              goc     toNOSKP
+              goto    toSKP
+
+              .name   "I<="
+ILE:          nop
+              nop
+              gosub   dualArgument
+              .con    "?"
+              rxq     loadDualArguments
+              abex    x
+              ?a<c    x
+              goc     toSKP
+              ?a#c    x
+              goc     toNOSKP
+              abex    x
+              c=n
+              ?a<c
+              goc     toSKP
+              goto    toNOSKP
+
+              .section Code1
+              .shadow toNOSKP + 1
+              golong  NOSKP
+
+              .section Code1
+              .shadow toSKP + 1
+              golong  SKP
+
+;;; * Out: C.X - upper part of first argument
+;;; *      N   - lower part of first argument
+;;; *      B.X - upper part of second argument
+;;;        A   - lower part of second argument
+
+              .section Code2, reorder
+loadDualArguments:
+              acex
+              pt=     2
+              g=c
+              regn=c  9
+              rxq     findIntegerBufferUserFlags_rom2
+              rxq     loadG
+              c=regn  10
+              bcex    x
+              regn=c  10            ; REG10.X= upper part
+              c=regn   9
+              pt=     0
+              g=c
+              acex
+              regn=c  9
+              rxq     loadG
+              c=regn  9
+              n=c
+              c=regn  10
+              s7=0                  ; YES/NO
+              rtn
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -6018,5 +6163,5 @@ RMCK10_LJ:    golong  RMCK10
               .con    1             ; A
               .con    '1'           ; 1
               .con    0x202         ; B (bank switched)
-              .con    0x0c          ; L
+              .con    0x20c         ; L (has secondaries)
               .con    0             ; checksum position
