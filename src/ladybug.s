@@ -273,10 +273,10 @@ secondary2:   .con    0      ; pointer to next table
 
               .section LadybugSecondary2
               .align  4
-FAT2Start:    .fat    IEQ
-              .fat    INE
-              .fat    ILT
-              .fat    ILE
+FAT2Start:    .fat    EQ
+              .fat    NE
+              .fat    LT
+              .fat    LE
 FAT2End:      .con    0,0
 
 ;;; ************************************************************
@@ -5933,8 +5933,8 @@ decpos:       b=0     xs            ; clear flag for digits above
 ;;; ************************************************************
 
               .section Code2
-              .name   "I="
-IEQ:          nop
+              .name   "=I"
+EQ:           nop
               nop
               gosub   dualArgument
               .con    "?"
@@ -5950,8 +5950,8 @@ toNOSKP:      enrom1                ; followed by golong NOSKP in bank1
               nop                   ; filler (to align with golong in bank 1)
 toSKP:        enrom1                ; followed by golong SKP in bank1
 
-              .name "I≠"
-INE:          nop
+              .name "≠I"
+NE:           nop
               nop
               gosub   dualArgument
               .con    "?"
@@ -5965,8 +5965,8 @@ INE:          nop
               goc     toNOSKP
               goto    toSKP
 
-              .name   "I<"
-ILT:          nop
+              .name   "<I"
+LT:           nop
               nop
               gosub   dualArgument
               .con    "?"
@@ -5985,8 +5985,8 @@ ILT:          nop
               goc     toNOSKP
               goto    toSKP
 
-              .name   "I<="
-ILE:          nop
+              .name   "<=I"
+LE:           nop
               nop
               gosub   dualArgument
               .con    "?"
