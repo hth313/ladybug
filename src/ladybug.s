@@ -49,6 +49,7 @@
 ;;; **********************************************************************
 #endif
 
+#include "mainframe.h"
 #include "OS4.h"
 
 ;;; Define key code symbol for a function.
@@ -208,8 +209,6 @@ Flag_UpperHalf: .equ  8             ; set when word size is more than 56
 
 BufNumber:    .equ    0             ; Try with 0! Otherwise 4 might be used?
 BufSize:      .equ    2
-
-#include "mainframe.i"
 
 SWPMD8:       .equlab 0x3fe0
 DSPLN:        .equlab 0xFC7

@@ -1,4 +1,4 @@
-#include "mainframe.i"
+#include "mainframe.h"
 
 ;;; Just make it look empty in case the bank is left enabled.
               .section Bank2Header
