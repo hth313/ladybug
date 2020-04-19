@@ -277,6 +277,7 @@ FAT2Start:    .fat    EQ
               .fat    NE
               .fat    LT
               .fat    LE
+              .fat    EXCHANGE
 FAT2End:      .con    0,0
 
 ;;; ************************************************************
@@ -6036,6 +6037,94 @@ loadDualArguments:
               n=c
               c=regn  10
               s7=0                  ; YES/NO
+              rtn
+
+;;; ************************************************************
+;;;
+;;; <>I - register exchange
+;;;
+;;; Note: This routing allocates scratch from free area as the
+;;;       saveG routine destroys everything
+;;;
+;;; ************************************************************
+
+              .section Code2
+              .name   "<>I"
+EXCHANGE:     nop
+              nop
+              gosub   dualArgument
+              .con    0
+              acex
+              n=c                   ; N[3:0]= register arguments
+              ldi     2
+              gosub   allocScratch
+              goto    100$          ; (P+1) out of memory
+              bcex    x
+              dadd=c
+              c=n
+              rcr     -3            ; C[6:3]= register arguments
+              pt=     5
+              g=c                   ; G= first argument
+              data=c                ; Scratch0[6:3]= register arguments
+              rxq     findIntegerBufferUserFlags_rom2
+              rxq     200$
+              pt=     3
+              g=c                   ; G= second argument
+              rcr     -3            ; C.X= address of Scratch1
+              dadd=c                ; select Scratch1
+              c=n                   ; C= lower bits
+              data=c                ; Scratch1= lower bits
+              rxq     200$
+              rcr     -3
+              dadd=c                ; select Scratch1
+              bsr     wpt
+              bsr     wpt
+              bsr     wpt           ; B.X= upper part
+              c=data
+              a=c                   ; A= lower part
+              c=n
+              data=c
+              rxq     saveG
+              rxq     findIntegerBufferUserFlags_rom2
+                                    ; set up M register again
+              gosub   scratchArea
+              c=c+1   x             ; C.X= pointer to Scratch1
+              bcex    x             ; B.X= pointer to Scratch1
+              c=data
+              pt=     5
+              g=c
+              bcex    x             ; B.X= upper part
+              dadd=c
+              c=data
+              a=c
+              rxq     saveG
+              gosub   clearScratch  ; remove scratch to give back space, but
+                                    ; also as we may have left zero in SCRATCH1,
+                                    ; and having zero inside a buffer is
+                                    ; considered unsafe (old card reader bug)
+              rgo     exitNoUserST_rom2
+
+100$:         golong  noRoom
+
+200$:         rxq     loadG         ; load argument
+              acex
+              n=c                   ; N= lower bits
+              c=b     x
+              rcr     -3
+              pt=     5
+              bcex    wpt           ; B[5:3]= upper bits
+              gosub   scratchArea
+              c=c+1   x
+              bcex    x             ; B.X= address of Scratch1
+              c=data                ; C= Scratch0
+              pt=     5
+              rcr     -3            ; C[5:3]= upper bits argument
+              bcex    wpt           ; B[5:3]= upper bits argument
+                                    ; C[5:3]= upper bits other argument
+              rcr     3
+              data=c                ; Scratch0[6:3]= register arguments
+              data=c                ; Scratch0[2:0]= upper bits argument 1
+                                    ; C[13:11]= address of Scratch1
               rtn
 
 ;;; ----------------------------------------------------------------------
