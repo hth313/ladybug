@@ -31,12 +31,12 @@
     is where such information is stored), and provide a much more elaborate
     setup compared to 'chkbuf'.
 
-    Operations (like add and shifts) uses a variant of 'FindBuffer' that
-    sets up the user flags (such as sign mode, carry and zero flags).
+    Operations (like add and shifts) uses a variant of 'findIntegerBuffer'
+    that sets up the user flags (such as sign mode, carry and zero flags).
     Examples of such routines are 'findIntegerBufferUserFlags' and
     'findIntegerBufferGetXSaveL'.
-    These are similar to 'FindBuffer', but as said, they set up user flags
-    instead of the internal flag set.
+    These are similar to 'findIntegerBuffer', but as mentioned, they set
+    up user flags instead of the internal flag set.
 
     Exiting needs to be matched with the variant of FindBuffer used. The
     exit routines depend a lot on the flag set that is active.
