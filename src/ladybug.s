@@ -278,6 +278,7 @@ FAT2Start:    .fat    EQ
               .fat    LT
               .fat    LE
               .fat    EXCHANGE
+              .fat    VIEWI
 FAT2End:      .con    0,0
 
 ;;; ************************************************************
@@ -1143,6 +1144,13 @@ findIntegerBufferUserFlags_rom2:
               rxq     findIntegerBuffer
               switchBank 2
               cstex                 ; bring up user flags
+              rtn
+
+              .section Code2, reorder
+findIntegerBuffer_rom2:
+              switchBank 1
+              rxq     findIntegerBuffer
+              switchBank 2
               rtn
 
 ;;; **********************************************************************
@@ -2771,7 +2779,7 @@ displayX:     rxq     findIntegerBuffer
 dis10:        c=data
               n=c                   ; save header in N
               rxq     loadX         ; load and mask X
-              st=0    Flag_PRGM
+dis20:        st=0    Flag_PRGM
 
 ;;; During digit entry, check for a key up after about 0.1 seconds (here).
 ;;; If key released, set S12 so that the key handler will not exit
@@ -6127,6 +6135,38 @@ EXCHANGE:     nop
               data=c                ; Scratch0[2:0]= upper bits argument 1
                                     ; C[13:11]= address of Scratch1
               rtn
+
+;;; ************************************************************
+;;;
+;;; VIEWI - show register value
+;;;
+;;; ************************************************************
+
+              .section Code2
+              .name   "VIEWI"
+VIEWI:        nop
+              nop
+              gosub   argument
+              .con    Operand00     ; LDI 00 is default
+              rxq     findIntegerBuffer_rom2
+              rxq     loadG
+              c=b
+              rcr     10
+              dadd=c
+              c=data
+              n=c                   ; N= buffer header
+              c=0
+              dadd=c
+              c=regn  14
+              cstex
+              s5=1                  ; set message flag, but not internal
+                                    ;  display override flag (not calling
+                                    ;  displayDone here, as we want backarrow
+                                    ;  to clear the display
+              cstex
+              regn=c  14
+              switchBank 1
+              rgo     dis20
 
 ;;; ----------------------------------------------------------------------
 ;;;
