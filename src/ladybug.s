@@ -1953,7 +1953,9 @@ ADD_2:        rxq     findIntegerBufferGetXSaveL
 ;;; **********************************************************************
 
               .name   "CLXI"
-CLXI:         rxq     findIntegerBufferUserFlags
+CLXI:         gosub   displayingMessage
+              goto    putX_J00      ; (P+1) clear shown message
+              rxq     findIntegerBufferUserFlags
               c=0                   ; load 0
               dadd=c
               regn=c  X
@@ -1961,7 +1963,6 @@ CLXI:         rxq     findIntegerBufferUserFlags
               s11=0                 ; disable stack lift
               rgo     putXnoFlags
 
-              .section Code, reorder
 ;;; **********************************************************************
 ;;;
 ;;; IABS - Integer ABS, make the number positive
@@ -1975,7 +1976,7 @@ ABSI:         rxq     findIntegerBufferGetXSaveL
               gonc    putX_J0       ; yes, done
               rxq     getSign       ; signed mode, check sign
               ?c#0    s
-              gonc    putX_J0       ; positive
+putX_J00:     gonc    putX_J0       ; positive
               goto    NEG10         ; negative, negate it
 
 ;;; **********************************************************************
