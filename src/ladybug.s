@@ -6155,6 +6155,9 @@ VIEWI:        nop
               dadd=c
               c=data
               n=c                   ; N= buffer header
+              pt=     8
+              lc      0             ; reset window display
+              data=c
               c=0
               dadd=c
               c=regn  14
