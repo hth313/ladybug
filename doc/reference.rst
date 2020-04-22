@@ -28,13 +28,19 @@ well.
 
 .. index:: float mode, mode; float
 
-.. object:: FLOAT
+.. object:: EXITAPP
 
-   Switch to floating point mode, leaving integer mode. This restores
-   the keyboard and display to its normal floating point behavior.
+   Leave integer mode by exiting Ladybug and switching back to
+   floating point mode. This restores the keyboard and display to its
+   normal floating point behavior.
 
-   Integer instructions in floating point mode still works, but will
-   not display or use the dedicated keyboard.
+   Technically it leaves the current active application shell and goes
+   back to the shell that was active before it. The very last such
+   shell is the standard calculator behavior.
+
+   Integer instructions still work when the Ladybug application is
+   inactive. What happens is that the Ladybug display and keyboard
+   overrides are no longer active.
 
 
 .. index:: binary base, base; binary

@@ -85,7 +85,7 @@ XROMno:       .equ    16
 FatStart:
               .fat    LadyHeader    ; ROM header
               FAT     Literal
-              FAT     FLOAT         ; mode change
+              FAT     EXITAPP       ; drop to previous App
               .fat    Integer
               FAT     Binary        ; base related instructions
               FAT     Octal
@@ -1013,19 +1013,16 @@ exitNoUserSTR1:
 
 ;;; **********************************************************************
 ;;;
-;;; FLOAT - restore float mode operation
+;;; EXITAPP - restore float mode operation
 ;;;
-;;; Essentially we just disable our own shell (if it exists).
+;;; In reality we exit the top application shell.
 ;;;
 ;;; **********************************************************************
 
               .section Code, reorder
-              .name   "FLOAT"
-FLOAT:        nop                   ; non-programmable
-                                    ;  (allow  mode switch in program mode)
-              ldi     .low12 ladybugShell
-              gosub   exitShell     ; must be a gosub to provide page address
-              golong  NFRPU         ; must golong as exitShell uses +3 levels
+              .name   "EXITAPP"
+EXITAPP:      gosub   exitApp
+              golong  NFRC
 
               .section Code, reorder
 noBuf:        gosub   errorMessage
@@ -5298,7 +5295,7 @@ keyTable:
               .con    BuiltinKey(0xa8) ; SF
               KeyEntry SB           ; 4
               KeyEntry AND          ; 1  (FIX key)
-              KeyEntry FLOAT        ; 0
+              KeyEntry WSIZE?       ; 0
 
               ;; Logical column 2
               .con    0x10c         ; SQRT  (C digit)
@@ -5355,9 +5352,9 @@ keyTable:
               KeyEntry RRC          ; TAN
               .con    0             ; BST
               KeyEntry CLXI         ; BACKARROW
-              KeyEntry ALDI         ; MODE ALPHA
-              KeyEntry MASKR        ; MODE PRGM
-              KeyEntry MASKL        ; MODE USER
+              KeyEntry MASKR        ; MODE ALPHA
+              KeyEntry MASKL        ; MODE PRGM
+              KeyEntry EXITAPP      ; MODE USER
               .con    0             ; OFF key special
 
 ;;; ----------------------------------------------------------------------

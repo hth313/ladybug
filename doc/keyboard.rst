@@ -26,9 +26,9 @@ Deactivation
 ============
 
 Once activated, the HP-41 stays in integer mode until you execute the
-``FLOAT`` instruction. This can be done by pressing the shift key
-followed by the PI (0 key). It is also possible to execute the
-``FLOAT`` instruction using the ``XEQ`` key and spell it out as
+``EXITAPP`` instruction. This can be done by pressing the shift key
+followed by the USER key. It is also possible to execute the
+``EXITAPP`` instruction using the ``XEQ`` key and spell it out as
 usual.
 
 Another way to disable Ladybug is to turn the calculator off and

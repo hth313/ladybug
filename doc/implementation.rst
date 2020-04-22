@@ -95,9 +95,10 @@ keyboard, so that also makes some sense.
 The logical operations are held together in the usual order you say
 them, AND, OR, XOR, which also is the alphabetical order.
 
-When you feel that you need to work with floating point numbers, you
-probably want to use that PI constant, so the ``FLOAT`` operation to
-switch to floating point mode is on the PI key.
-
 Sign extension is on the ``EEX`` key, which is almost spelled the
 same.
+
+The shifted ``USER`` key performs the ``EXITAPP`` function which
+exists the Ladybug shell and takes you back to the previous shell.
+This key was chosen as it is always free and the ``USER`` key is
+related to affecting the keyboard layout.
