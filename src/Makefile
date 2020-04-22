@@ -12,6 +12,7 @@ all: $(MOD)
 
 $(MOD): $(OBJS) linker.scm ladybug.moddesc
 	lnnut -g $(OBJS) --list-file=linker.lst linker.scm ladybug.moddesc
+	modtool --extract-module-export ladybug.mod
 
 clean:
 	-rm $(OBJS) $(MOD) ladybug.elf
