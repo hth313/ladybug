@@ -395,10 +395,26 @@ doDigit:      releaseKey
               rxq     findIntegerBuffer ; buffer address to B[12:10]
               c=st                  ; restore C[1:0]
               acex    x             ; base - 1 to A[0]
-              pt=     0             ; get digit to C[2:0]
-              c=0     x             ; C.XS= 0
+              c=0     x
               dadd=c                ; select chip 0
+              ;; Import data entry flag to our own to have it handy.
+              ;; We need to obey the global one which may be reset by an alarm,
+              ;; otherwise we may stay in digit entry after a control program
+              ;; have executed, changing the stack entirely!
+              st=0    IF_DigitEntry
+              st=0    Flag_PRGM
+              c=regn  14
+              c=c+c   xs
+              c=c+c   xs
+              gonc    10$           ; system digit entry not set
+              st=1    IF_DigitEntry
+10$:          rcr     -2
+              c=c+c   xs            ; are we in program mode?
+              gonc    11$           ; no
+              st=1    Flag_PRGM
+11$:          pt=     0             ; get digit to C[2:0]
               c=g
+              c=0     xs
               c=c-1   xs            ; test for backspace
               c=c+1   x
               goc     backSpaceJ1   ; backspace
@@ -406,29 +422,17 @@ doDigit:      releaseKey
               c=0     xs
               ?a<c    pt            ; digit out of range?
               goc     digAbort      ; yes, blink and return via reset keyboard
-              ;; Import data entry flag to our own to have it handy.
-              ;; We need to obey the global one which may be reset by an alarm,
-              ;; otherwise we may stay in digit entry after a control program
-              ;; have executed, changing the stack entirely!
-              c=regn  14
-              st=0    IF_DigitEntry
-              c=c+c   xs
-              c=c+c   xs
-              gonc    10$           ; system digit entry not set
-              st=1    IF_DigitEntry
-10$:          rcr     -2
-              c=c+c   xs            ; are we in program mode?
-              gonc    runMode       ; no
-              st=1    Flag_PRGM
+
+              ?st=1   Flag_PRGM
+              gonc    runMode
               rxq     prgmDigent    ; yes
               goto    dig35         ; (P+1) start digit entry
               acex                  ; (P+2) ongoing digit entry
               goto    dig40
 
-runMode:      st=0    Flag_PRGM
-              ?st=1   IF_DigitEntry ; start digit entry?
+runMode:      ?st=1   IF_DigitEntry ; start of digit entry?
               goc     dig37         ; no
-              rxq     liftStackS11  ; check if we should lift stack
+              rxq     liftStackS11  ; yes, check if we should lift stack
 
 ;;; Start entry with 0, clear digit cache
 dig35:        c=regn  14
@@ -498,12 +502,10 @@ dig50:        c=0
               regn=c  14
               goto    kbDone
 
-;;; Backspace is pressed, we have four cases.
+;;; Backspace is pressed, we have two cases.
 ;;; 1. If entering digits, rub out one (do CLXI if deleting to 0)
 ;;; 2. Perform CLXI
-backSpace:    c=regn  14
-              rcr     -2
-              c=c+c   xs            ; program mode?
+backSpace:    ?st=1   Flag_PRGM     ; program mode?
               gonc    10$           ; no
               releaseKey
               rxq     fetchLiteral  ; yes, pick up current number
@@ -511,8 +513,7 @@ backSpace:    c=regn  14
               a=c
               goto    digBSP10J1
 
-10$:          st=0    Flag_PRGM
-              ?st=1   IF_DigitEntry ; doing digit entry?
+10$:          ?st=1   IF_DigitEntry ; doing digit entry?
               goc     digBSP        ; yes
               goto    keyCLXIJ1     ; no, do CLXI
 
