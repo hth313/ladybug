@@ -5977,8 +5977,10 @@ LT:           nop
               nop
               gosub   dualArgument
               .con    "?"
-              rxq     loadDualArguments
-              abex    x
+              rxq     loadDualArgumentsRelational
+toNOSKP_0:    goto    toNOSKP       ; less than (signed-wise)
+toSKP_0:      goto    toSKP         ; greater than  (signed-wise)
+              abex    x             ; compare
               acex    x
               ?a<c    x
               goc     toNOSKP
@@ -5997,17 +5999,19 @@ LE:           nop
               nop
               gosub   dualArgument
               .con    "?"
-              rxq     loadDualArguments
-              abex    x
+              rxq     loadDualArgumentsRelational
+              goto    toNOSKP       ; less than (signed-wise)
+              goto    toSKP         ; greater than (signed-wise)
+              abex    x             ; compare
               ?a<c    x
-              goc     toSKP
+              goc     toSKP_0
               ?a#c    x
-              goc     toNOSKP
+              goc     toNOSKP_0
               abex    x
               c=n
               ?a<c
-              goc     toSKP
-              goto    toNOSKP
+              goc     toSKP_0
+              goto    toNOSKP_0
 
               .section Code1
               .shadow toNOSKP + 1
@@ -6017,13 +6021,27 @@ LE:           nop
               .shadow toSKP + 1
               golong  SKP
 
+swapDuals:    .macro
+              bcex    x
+              acex
+              cnex
+              acex
+              .endm
+
 ;;; * Out: C.X - upper part of first argument
 ;;; *      N   - lower part of first argument
 ;;; *      B.X - upper part of second argument
 ;;;        A   - lower part of second argument
 
               .section Code2, reorder
+loadDualArgumentsRelational:
+              c=0     s
+              c=c+1   s
+              bcex    s
+              goto    loadDualArguments10
 loadDualArguments:
+              b=0     s             ; equal / not-equals style
+loadDualArguments10:
               acex
               pt=     2
               g=c
@@ -6042,8 +6060,38 @@ loadDualArguments:
               c=regn  9
               n=c
               c=regn  10
-              s7=0                  ; YES/NO
-              rtn
+              s7=0                  ; show YES/NO in run mode
+              ?b#0    s             ; equal / not-equal?
+              rtnnc                 ; yes
+                                    ; no, relational compare (< or <=)
+              ?st=1   Flag_2        ; signed mode?
+30$:          golnc   RTNP3         ; no
+              rcr     -3
+              stk=c
+              rxq     getSign_rom2
+              bcex    s
+              c=stk
+              rcr     3
+              swapDuals
+              rcr     -3
+              stk=c
+              ?b#0    s
+              goc     10$           ; operand 2 negative
+              rxq     getSign_rom2  ; operand 2 positive
+              bcex    s
+              c=stk
+              rcr     3
+              ?b#0    s
+              rtnc                  ; operand 1 negative, operand 2 positive
+              swapDuals             ; both positive
+              goto    30$
+10$:          rxq     getSign_rom2
+              bcex    s
+              c=stk
+              rcr     3
+              ?b#0    s
+              golnc   RTNP2         ; operand 1 positive, operand 2 negative
+              goto    30$           ; compare with arguments swapped
 
 ;;; ************************************************************
 ;;;

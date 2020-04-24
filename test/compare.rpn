@@ -1,0 +1,177 @@
+;;; Dual argument relational compares
+
+#include "ladybug.h"
+
+LBL "TDUALCP"   ; Test DUAL ComPares
+
+;;; ****************************************
+;;; small 8-bit numbers
+WSIZE 8
+MASKL 8          ; 0xff
+integer 0x7f     ; 0x7f
+
+; Unsigned tests with:
+; Y = 0xff
+; X = 0x7f
+
+; Signed tests with:
+; Y = -1
+; X = 127
+XEQ 10
+
+;;; ****************************************
+;;; 56-bit numbers
+WSIZE 56
+
+WSIZE 56
+MASKL 56         ; 0xffffffffffffff
+integer 0x7f     ; 0x7fffffffffffff
+
+; Unsigned tests with:
+; Y = 0xffffffffffffff
+; X = 0x7fffffffffffff
+
+; Signed tests with:
+; Y = -1
+; X = 0x7fffffffffffff
+XEQ 10
+
+RDNI
+integer 0x7f
+SR 01
+; Unsigned tests with:
+; Y = 0xffffffffffffff
+; X = 0x7f
+
+; Signed tests with:
+; Y = -1
+; X = 127
+XEQ 10
+
+;;; 64-bit numbers
+
+WSIZE 64
+; only equal / not equal, mixed in upper lower
+
+integer 1
+SL 60
+integer 1
+XEQ 20
+
+X<>YI
+XEQ 20
+
+; only in lower
+
+integer 10
+integer 20
+
+XEQ 20
+
+; All tests
+
+MASKL 64         ; 0xffffffffffffff
+ENTERI
+SR 01            ; 0x7fffffffffffff
+
+; Unsigned tests with:
+; Y = 0xffffffffffffff
+; X = 0x7fffffffffffff
+
+; Signed tests with:
+; Y = -1
+; X = 0x7fffffffffffff
+XEQ 10
+
+RDNI
+integer 0x7f
+; Unsigned tests with:
+; Y = -1
+; X = 127
+
+; Signed tests with:
+; Y = -1
+; X = 127
+
+;;; All tests
+LBL 10
+CF 02
+
+<I X Y
+FS? 02
+SF 99
+
+<=I X Y
+FS? 02
+SF 99
+
+<I Y X
+SF 99
+
+<=I Y X
+SF 99
+
+<=I X X
+FS? 02
+SF 99
+
+;;; signed numbers
+SF 02
+
+<I X Y
+SF 99
+
+<=I X Y
+SF 99
+
+<I Y X
+FC? 02
+SF 99
+
+<=I Y X
+FC? 02
+SF 99
+
+<=I X X          ; equal positive numbers
+FC? 02
+SF 99
+
+<=I Y Y          ; equal negative numbers
+FC? 02
+SF 99
+
+;;; Equality tests
+LBL 20
+CF 02
+=I X Y           ; are they equal?
+SF 99            ; oops
+
+≠I Y Y           ; same value not equal?
+SF 99            ; yes - oops
+
+=I X X           ; same value equal?
+FS? 02           ; yes (inverted error logic)
+SF 99
+
+≠I X Y
+FS? 02           ; inverted error logic
+SF 99
+
+;;; signed numbers
+SF 02
+
+=I X Y           ; are they equal?
+SF 99            ; oops
+
+≠I Y Y           ; same value not equal?
+SF 99            ; yes - oops
+
+=I X X           ; same value equal?
+FC? 02           ; yes (inverted error logic)
+SF 99
+
+≠I X Y
+FC? 02           ; inverted error logic
+SF 99
+
+END

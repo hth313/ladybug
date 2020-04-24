@@ -70,10 +70,9 @@ XEQ "TBITSUM"
 AVIEW
 XEQ "TWSIZE"
 
-; Disabled as being unstable
-; "PSEI"
-; AVIEW
-; XEQ "TPSEI"
+"COMPARE"
+AVIEW
+XEQ "TDUALCP"
 
 "ALL OK"
 AVIEW
