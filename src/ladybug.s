@@ -545,9 +545,11 @@ bspNot0:      ?st=1   Flag_PRGM
               dadd=c
               acex
               regn=c  X
-              goto    kbDone
+              goto    20$
 10$:          rxq     saveLiteral
-              goto    kbDone
+20$:          ?st=1   IF_DigitEntry
+              goc     kbDone
+              goto    dig20
 
 keyCLXIJ1:    goto    keyCLXI            ; relay
 
@@ -593,6 +595,8 @@ dig10:        ?a#0                  ; zero result?
               goc     bspNot0       ; no
               ?b#0    x
               goc     bspNot0       ; no
+              st=0    IF_DigitEntry ; we rubbed out to last character
+              goto    bspNot0
 
               ;; Back arrow down to nothing left
 dig20:        ?st=1   Flag_PRGM     ; in program mode?

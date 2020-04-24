@@ -25,6 +25,20 @@ Major update, May 1, 2020.
 * The PSEI function is removed in this version and is replaced by the
   more generic PAUSE function in the Boost module.
 
+### Corrections
+
+* Starting entry of a number and then erasing digits up to the last
+  one and holding down the key displays CLXI and then NULL. This is a
+  somwehat strange situation in that we rubbed out the last character,
+  but decided not to do it. The standard behavior when entering
+  floating point numbers is to put 0 in X and enable stack lift, which
+  I believe is incorrect. It should either put 0 in X and disable
+  stack lift (so that the next number replaces the 0 which represent
+  the cancelled input), or it should leave the last digit and not exit
+  digit entry. Ladybug had another behavior in that it left the last
+  digit, disabled stack lift and ended digit entry. This has now been
+  changed so that 0 is put in X and stack lift is disabled.
+
 
 ## Version 0C
 
