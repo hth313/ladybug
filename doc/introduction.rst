@@ -37,7 +37,7 @@ You must also load the separate OS4 module in page 4 for Ladybug to work.
 This release
 ============
 
-This version, 1A is the first that uses the new OS4 module.
+This version, 1A is the first that uses the OS4 module.
 
 .. index:: buffer, I/O buffer, XROM number
 
@@ -103,8 +103,6 @@ License
 =======
 
 The Ladybug software and its manual is copyright by Håkan Thörngren.
-It was previously (2018-2019) released under the BSD 3-clause license,
-but it is changed with version 1A.
 
 MIT License
 
@@ -127,6 +125,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+.. note::
+
+   Ladybug was previously (2018-2019) released under the BSD 3-clause license,
+   but it changed starting with version 1A.
+
 
 The name
 ========

@@ -73,7 +73,7 @@ well.
 
 .. index:: word size; setting, setting; word size
 
-.. object:: WSIZE _ _
+.. object:: WSIZE _
 
    Set word size.
 
@@ -99,7 +99,7 @@ well.
    Enable unsigned mode (disable signed 2-complement mode).
 
 
-.. index:: zero fill mode, mode; zero fill, setting zero fill
+.. index:: zero fill mode, mode; zero fill, setting; zero fill
 
 .. object:: SF 05
 
@@ -375,7 +375,7 @@ Logical operations
 Shift operations
 ================
 
-.. object:: SL _ _
+.. object:: SL _
 
    Shift X left by the given number of steps. The most recently
    shifted out bit is placed in the carry bit.
@@ -392,7 +392,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: SR _ _
+.. object:: SR _
 
    Shift X right by the given number of steps. The most recently shifted out bit is placed in the carry bit.
 
@@ -408,7 +408,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: RL _ _
+.. object:: RL _
 
    Rotate X left by the given number of steps. Bits going out at the
    left end appear again at the right hand side. In other words, bits
@@ -427,7 +427,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: RR _ _
+.. object:: RR _
 
    Rotate X right by the given number of steps. Bits going out at the
    right end appear again at the left hand side. In other words, bits
@@ -446,7 +446,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: RLC _ _
+.. object:: RLC _
 
    Rotate X left by the given number of steps through carry. A bit
    that is rotated out goes to the carry, the previous carry is
@@ -464,7 +464,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: RRC _ _
+.. object:: RRC _
 
    Rotate X right by the given number of steps through carry. A bit
    that is rotated out goes to the carry, the previous carry is
@@ -482,7 +482,7 @@ Shift operations
    last shifted out bit.
 
 
-.. object:: ASR _ _
+.. object:: ASR _
 
    Aritmetic right shift. This duplicates the sign bit as the number
    is shifted right. The most recent shifted out bit is placed in the
@@ -506,7 +506,7 @@ Shift operations
 Bitwise operations
 ===================
 
-.. object:: MASKL _ _
+.. object:: MASKL _
 
    Create a left justified bit mask (all bits set), of the width
    specified in its argument.
@@ -524,7 +524,7 @@ Bitwise operations
    None
 
 
-.. object:: MASKR _ _
+.. object:: MASKR _
 
    Create a right justified bit mask (all bits set), of the width
    specified in its argument.
@@ -544,7 +544,7 @@ Bitwise operations
 
 .. index:: sign extension
 
-.. object:: SEX _ _
+.. object:: SEX _
 
    Sign extend the value in X by the word width specified in its argument.
 
@@ -565,7 +565,7 @@ Bitwise operations
    Sign and zero flags set according to the result.
 
 
-.. object:: CB _ _
+.. object:: CB _
 
    Clear a single bit in X as specified by the argument.
 
@@ -579,7 +579,7 @@ Bitwise operations
    Sign and zero flags set according to the result.
 
 
-.. object:: SB _ _
+.. object:: SB _
 
    Set a single bit in X as specified by the argument.
 
@@ -593,7 +593,7 @@ Bitwise operations
    Sign and zero flags set according to the result.
 
 
-.. object:: B? _ _
+.. object:: B? _
 
    Test if a bit of X is set, skip next instruction in a program if
    the bit is not set. In keyboard mode, the result is displayed as
@@ -609,7 +609,7 @@ Bitwise operations
    None
 
 
-.. object:: BITSUM _ _
+.. object:: BITSUM _
 
    Count the number of bits in X and place that number in X.
 
@@ -624,12 +624,14 @@ Bitwise operations
 
 .. index:: compare operations, operations; compares
 
-Comparisons
-===========
+Compare and test
+================
 
-Comparing values with Ladybug differs from what you may be used to on
-an HP calculator. Instead of comparing X to Y, or X to 0, you test
-flags set by the previous operation. There are three variants to this:
+Comparing values with Ladybug offers a way that is more like it works
+on machine instruction sets, which differs from what you may be used
+to on an HP calculator. Instead of comparing X to Y, or X to 0, you
+test flags set by the previous operation. There are three variants to
+this:
 
 #. To compare two numbers, use the ``CMP`` instruction which works
    similar to a compare  on a microprocessor. It performs a
@@ -644,10 +646,15 @@ flags set by the previous operation. There are three variants to this:
    according to the result, making it possible to just test suitable
    flags after such operation.
 
-Here are the provided instructions that are related to comparing values.
+There is now also a set of HP-41 compare instructions (``=I``, ``≠I``,
+``<I`` and ``<=I``). In program mode they either execute the following
+line or skips it, depending on the outcome of the test. In keyboard
+mode ``YES`` or ``NO`` is displayed. Current sign mode is obeyed.
+
+Here are the provided instructions that are related to comparing values:
 
 
-.. object:: CMP _ _
+.. object:: CMP _
 
    The argument specifies a register value that is subtracted
    from X. The result is dropped, but flags are set according to the
@@ -663,7 +670,7 @@ Here are the provided instructions that are related to comparing values.
    the subtraction.
 
 
-.. object:: TST _ _
+.. object:: TST _
 
    The argument specifies a register value that will affect the sign
    and zero flags. Useful for testing if any register value is zero,
@@ -726,13 +733,82 @@ Here are the provided instructions that are related to comparing values.
    None
 
 
+.. object:: =I _ _
+
+   Test if two register operands are equal
+
+   .. describe:: Two postfix arguments
+
+   This function performs an equality compare between two registers.
+   In program mode it skips over the next instruction if the two
+   operands are not equal. In keyboard mode it displays ``YES`` or
+   ``NO``.
+
+   .. describe:: Affected flags
+
+   None
+
+.. object:: ≠I _ _
+
+   Test if two register operands are not equal
+
+   .. describe:: Two postfix arguments
+
+   This function performs an equality compare between two registers.
+   In program mode it skips over the next instruction if the two
+   operands are equal. In keyboard mode it displays ``YES`` or
+   ``NO``.
+
+   .. describe:: Affected flags
+
+   None
+
+.. object:: <I _ _
+
+   Test if the first register operand is less than the second
+   register operand
+
+   .. describe:: Two postfix arguments
+
+   This function performs an less-than compare between two
+   registers, obeying current sign mode.
+   In program mode it skips over the next instruction if the test
+   is not true. In keyboard mode it displays ``YES`` or ``NO``.
+
+   .. describe:: Affected flags
+
+   None
+
+.. object:: <=I _ _
+
+   Test if the first register operand is less than or equal to the
+   second register operand
+
+   .. describe:: Two postfix arguments
+
+   This function performs an less-than-or-equal compare between two
+   registers, obeying current sign mode.
+   In program mode it skips over the next instruction if the test
+   is not true. In keyboard mode it displays ``YES`` or ``NO``.
+
+   .. describe:: Affected flags
+
+   None
+
+.. note::
+
+   The two operand compare operations takes allows for comparing two
+   arbitrary register operands. If you want to compare greater-than,
+   simply swap the operands and use the corresponding less-than function.
+
+
 .. index:: memory operations, operations; memory
 
 Memory related instructions
 ===========================
 
 
-.. object:: LDI _ _
+.. object:: LDI _
 
    Load X from the specified register.
 
@@ -745,7 +821,7 @@ Memory related instructions
    Sign and zero flags set according to the value loaded.
 
 
-.. object:: STI _ _
+.. object:: STI _
 
    Store X in the specified register.
 
@@ -757,8 +833,20 @@ Memory related instructions
 
    None
 
+.. object:: <>I _ _
 
-.. object:: DECI _ _
+   Exchange between two registers
+
+   .. describe:: Two postfix arguments
+
+   This function performs a register to register exchange, using
+   arbitrary registers, or register indirect operands.
+
+   .. describe:: Affected flags
+
+   None
+
+.. object:: DECI _
 
    Subtract one from the register specified in the argument.
 
@@ -771,7 +859,7 @@ Memory related instructions
    Sign and zero flags set according to the new value.
 
 
-.. object:: DSZI _ _
+.. object:: DSZI _
 
    Subtract one from the register specified in the argument, skip next
    instruction if the result is zero. This is useful for implementing
@@ -786,7 +874,7 @@ Memory related instructions
    None
 
 
-.. object:: INCI _ _
+.. object:: INCI _
 
    Add one to the register specified in the argument.
 
@@ -800,7 +888,7 @@ Memory related instructions
    Sign and zero flags set according to the new value.
 
 
-.. object:: CLRI _ _
+.. object:: CLRI _
 
    Clear the contents of the specified register.
 
@@ -818,7 +906,7 @@ Miscellaneous instructions
 
 .. index:: alpha register operations, operations; alpha register
 
-.. object:: ALDI _ _
+.. object:: ALDI _
 
    Append a register value to the alpha register obeying the current
    word size, selected base, active sign mode and zero fill flag.
@@ -845,5 +933,5 @@ Miscellaneous instructions
 
    .. describe:: Postfix argument
 
-   The window number, 0--7. The rightmost window is 0, this is also
-   what is shown by default.
+   The window number, 0--7. The rightmost window is 0, which is what
+   is shown by default.

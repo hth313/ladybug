@@ -207,18 +207,44 @@ htmlhelp_basename = 'ladybugdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
+latex_engine = 'xelatex'
+
+latex_show_urls = 'footnote'
+
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    'fncychap': '\\usepackage[Sonny]{fncychap}',
 
-# Latex figure (float) alignment
-#'figure_align': 'htbp',
+    # Additional stuff for the LaTeX preamble.
+    'preamble': '''
+% Enable unicode and use Courier New to ensure the card suit
+% characters that are part of the 'random' module examples
+% appear properly in the PDF output.
+\usepackage{fontspec}
+\setmonofont{Courier New}
+''',
+
+    # disable font inclusion
+    'fontpkg': '',
+    'fontenc': '',
+
+    # Fix Unicode handling by disabling the defaults for a few items
+    # set by sphinx
+    'inputenc': '',
+    'utf8extra': '',
+
+    # fix missing index entry due to RTD doing only once pdflatex after makeindex
+    'printindex': r'''
+\IfFileExists{\jobname.ind}
+             {\footnotesize\raggedright\printindex}
+             {\begin{sphinxtheindex}\end{sphinxtheindex}}
+''',
+
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

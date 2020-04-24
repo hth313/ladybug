@@ -106,7 +106,7 @@ registers. Indirection can also be done on any register, not just the
 single index register as on the HP-16C.
 
 
-.. index:: zero fill mode, mode; zero fill, setting zero fill
+.. index:: zero fill mode, mode; zero fill, setting; zero fill
 
 Zero fill mode
 ==============

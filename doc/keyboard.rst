@@ -1,11 +1,15 @@
 
 .. index:: keyboard layout
 
-********
-Keyboard
-********
+***********
+Application
+***********
 
-Ladybug redefines the HP-41 keyboard to look as follows:
+Ladybug makes use of the application shell concept from the OS4 module
+to redefine the HP-41 keyboard to be somewhat different compared to
+normal, while still retaining essentially all behavior you are used
+to. The default display behavior is also changed to display integer
+number in the selected base.
 
 .. image:: calculator.png
    :height: 560
