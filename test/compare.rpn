@@ -22,8 +22,6 @@ XEQ 10
 ;;; ****************************************
 ;;; 56-bit numbers
 WSIZE 56
-
-WSIZE 56
 MASKL 56         ; 0xffffffffffffff
 integer 0x7f     ; 0x7fffffffffffff
 
