@@ -9,7 +9,7 @@
 .postfix RR, RL, RRC, RLC, ASR, SL, SR             (semi-merged-postfix)
 .postfix MASKL, MASKR, BITSUM, TST                 (semi-merged-postfix)
 .postfix #LIT                                      (semi-merged-integer-literal)
-.postfix =I, ≠I, <I, <=I                           (semi-merged-dual)
+.postfix =I, ≠I, <I, <=I, <>I                      (semi-merged-dual)
 
 // Using an instruction with a # makes the C preprocessor complain, we hide
 // it using a macro.

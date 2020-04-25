@@ -1,0 +1,56 @@
+;;; Test exchange
+
+#include "ladybug.h"
+
+LBL "TEXCH"
+
+WSIZE 32
+integer 0xcccccccc
+STI 01
+STI 11
+
+SL 01
+STI 02
+STI 12
+
+<>I 02 01
+
+=I 01 02
+SF 99        ; they should not be same
+
+=I 01 11     ; not matching the stored values
+SF 99
+
+=I 02 12
+SF 99
+
+≠I 01 12     ; it was exchanged
+SF 99
+
+≠I 02 11
+SF 99
+
+integer 1
+ENTERI
+ADD           ; X = 2
+              ; L = 1
+
+<>I IND X  IND L   ; exchange using indirect
+
+=I 01 02
+SF 99        ; they should not be same
+
+≠I 01 11     ; it was exchanged
+SF 99
+
+≠I 02 12
+SF 99
+
+;;; Also test CLRI
+
+CLRI 01
+integer 0
+≠I X 01
+SF 99
+
+END
