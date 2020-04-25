@@ -6052,7 +6052,11 @@ loadDualArguments10:
               g=c
               regn=c  9
               rxq     findIntegerBufferUserFlags_rom2
-              rxq     loadG
+              s6=0
+              ?b#0    s             ; S6 tells if relational or not
+              gonc    5$
+              s6=1
+5$:           rxq     loadG
               c=regn  10
               bcex    x
               regn=c  10            ; REG10.X= upper part
@@ -6066,7 +6070,7 @@ loadDualArguments10:
               n=c
               c=regn  10
               s7=0                  ; show YES/NO in run mode
-              ?b#0    s             ; equal / not-equal?
+              ?s6=1                 ; equal / not-equal?
               rtnnc                 ; yes
                                     ; no, relational compare (< or <=)
               ?st=1   Flag_2        ; signed mode?
