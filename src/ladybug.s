@@ -643,15 +643,8 @@ octBSP:       c=b     x             ; oct, upper part
 
 dig25:        rxq     clearDigitEntry ; clear digit entry flags
               gosub   DATOFF        ; clear flags
-              gosub   NXBYTP        ; clean up in program memory
-              rcr     -1
-              c=c+1   xs            ; text wrapper
-              gonc    15$           ; no
-              gosub   GETPC
-              gosub   DELLIN        ; yes, remove it
-              gosub   PUTPC
               gosub   BSTEP
-15$:          gosub   GETPC         ; remove XROM literal
+              gosub   GETPC         ; remove XROM literal
               gosub   DELLIN
               gosub   PUTPC
               s13=0                 ; reset borrowed flag
