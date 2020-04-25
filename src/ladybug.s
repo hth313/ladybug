@@ -5941,7 +5941,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 EQ:           nop
               nop
               gosub   dualArgument
-              .con    "?"
+              .con    SEMI_MERGED_QMARK
               rxq     loadDualArguments
               abex    x
               ?a#c    x
@@ -5958,7 +5958,7 @@ toSKP:        enrom1                ; followed by golong SKP in bank1
 NE:           nop
               nop
               gosub   dualArgument
-              .con    "?"
+              .con    SEMI_MERGED_QMARK
               rxq     loadDualArguments
               abex    x
               ?a#c    x
@@ -5973,7 +5973,7 @@ NE:           nop
 LT:           nop
               nop
               gosub   dualArgument
-              .con    "?"
+              .con    SEMI_MERGED_QMARK
               rxq     loadDualArgumentsRelational
 toNOSKP_0:    goto    toNOSKP       ; less than (signed-wise)
 toSKP_0:      goto    toSKP         ; greater than  (signed-wise)
@@ -5995,7 +5995,7 @@ toSKP_0:      goto    toSKP         ; greater than  (signed-wise)
 LE:           nop
               nop
               gosub   dualArgument
-              .con    "?"
+              .con    SEMI_MERGED_QMARK
               rxq     loadDualArgumentsRelational
               goto    toNOSKP       ; less than (signed-wise)
               goto    toSKP         ; greater than (signed-wise)
