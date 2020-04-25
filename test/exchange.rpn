@@ -6,10 +6,21 @@ LBL "TEXCH"
 
 WSIZE 32
 integer 0xcccccccc
+SL 01
+LASTXI
+XEQ 10
+
+WSIZE 64
+integer 0xdeafbeef01234567
+SR 01
+LASTXI
+
+LBL 10
+
 STI 01
 STI 11
 
-SL 01
+RDNI
 STI 02
 STI 12
 
@@ -28,6 +39,9 @@ SF 99
 SF 99
 
 ≠I 02 11
+SF 99
+
+≠I 12 X      ; X is left undisturbed
 SF 99
 
 integer 1
@@ -51,6 +65,9 @@ SF 99
 CLRI 01
 integer 0
 ≠I X 01
+SF 99
+
+≠I 12 Z      ; prvious X , now Z is left undisturbed
 SF 99
 
 END
