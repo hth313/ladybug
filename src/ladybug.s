@@ -903,8 +903,7 @@ exitUserST:   c=0
 ;;; shell. This will display the X register early and set
 ;;; the message flag, avoiding temporary default X register
 ;;; update, producing a steadier result.
-exitNoUserST: gosub   shellDisplay
-              golong  NFRC
+exitNoUserST: golong  XNFRC
 
 ;;; ************************************************************
 ;;;
@@ -3506,7 +3505,7 @@ maskABx_rom1: maskABx
 ENTERI:       rxq     findIntegerBuffer
               s11=0                 ; disable stack lift
               rxq     liftStack
-              rgo     exitNoUserST
+              golong  XNFRC
                                     ; flags are not affected by ENTERI as
                                     ; we keep the same value in X
 
@@ -4159,7 +4158,7 @@ ALDI:         nop
               c=stk
               rcr     -7
               bcex    m
-              rgo     exitNoUserST
+              golong  XNFRC
 
 ;;; ----------------------------------------------------------------------
 ;;;
