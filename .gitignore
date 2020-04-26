@@ -8,3 +8,4 @@ test/lb-test
 dist
 doc/ReleaseNotes.html
 *.elf
+src/ladybug.modexport
