@@ -47,5 +47,5 @@ toSKP:        golong  SKP
               .con    0             ; I/O
               .con    0             ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A0TL"        ; Identifier LT-0A
+              .text   "A1TL"        ; Identifier LT-1A
               .con    0             ; checksum position

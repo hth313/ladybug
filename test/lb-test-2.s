@@ -12,5 +12,5 @@
               .con    0             ; I/O
               .con    0             ; Deep wake-up
               .con    0             ; Memory lost
-              .text   "A02T"        ; Identifier T2-0A
+              .text   "A12T"        ; Identifier T2-1A
               .con    0             ; checksum position
