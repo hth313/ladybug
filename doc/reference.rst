@@ -25,6 +25,10 @@ well.
    Switch to integer mode. The first time you enter integer mode the
    word size is set to 16 and the number base is 16 (hexadecimal).
 
+   .. describe:: Affected flags
+
+   Stack lift flag enabled.
+
 
 .. index:: float mode, mode; float
 
@@ -42,12 +46,20 @@ well.
    inactive. What happens is that the Ladybug display and keyboard
    overrides are no longer active.
 
+   .. describe:: Affected flags
+
+   Stack lift flag enabled.
+
 
 .. index:: binary base, base; binary
 
 .. object:: BINS
 
    Enable base 2, work with binary integers.
+
+   .. describe:: Affected flags
+
+   None (stack lift flag left unchanged).
 
 
 .. index:: octal base, base; octal
@@ -56,12 +68,20 @@ well.
 
    Enable base 8, work with octal integers.
 
+   .. describe:: Affected flags
+
+   None (stack lift flag left unchanged).
+
 
 .. index:: decimal base, base; decimal
 
 .. object:: DECS
 
    Enable base 10, work with decimal integers.
+
+   .. describe:: Affected flags
+
+   None (stack lift flag left unchanged).
 
 
 .. index:: hexadecimal base, base; hexadecimal
@@ -70,6 +90,10 @@ well.
 
    Enable base 16, work with hexadecimal integers.
 
+   .. describe:: Affected flags
+
+   None (stack lift flag left unchanged).
+
 
 .. index:: word size; setting, setting; word size
 
@@ -77,12 +101,20 @@ well.
 
    Set word size.
 
+   .. describe:: Affected flags
+
+   None (stack lift flag left unchanged).
+
 
 .. index:: word size; inspecting, inspecting word size
 
 .. object:: WSIZE?
 
    Return the active word size to X register.
+
+   .. describe:: Affected flags
+
+   Stack lift flag enabled.
 
 
 .. index:: 2-complement mode, mode; 2-complement, mode; signed, signed mode
@@ -158,7 +190,7 @@ takes the stack register extension parts in account.
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: LASTXI
@@ -167,7 +199,7 @@ takes the stack register extension parts in account.
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: RDNI
@@ -176,7 +208,7 @@ takes the stack register extension parts in account.
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: R^I
@@ -185,7 +217,7 @@ takes the stack register extension parts in account.
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. index:: arithmetic operations, operations; arithmetic
@@ -208,6 +240,7 @@ the top register (T) is duplicated.
    .. describe:: Affected flags
 
    Sign, zero, overflow and carry flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: SUB
@@ -217,6 +250,7 @@ the top register (T) is duplicated.
    .. describe:: Affected flags
 
    Sign, zero, overflow and carry flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: MUL
@@ -228,6 +262,7 @@ the top register (T) is duplicated.
    Sign, zero and overflow flags set according to the result. The sign
    flag will have the correct value of the real result. Carry is not
    affected.
+   Stack lift flag enabled.
 
 
 .. object:: DIV
@@ -239,6 +274,7 @@ the top register (T) is duplicated.
    Sign, zero and overflow flags set according to the result. The sign
    flag will have the correct value of the real result. Carry set if
    remainder is non-zero, cleared otherwise.
+   Stack lift flag enabled.
 
 
 .. object:: RMD
@@ -248,6 +284,7 @@ the top register (T) is duplicated.
    .. describe:: Affected flags
 
    Sign, zero and overflow flags set according to the result. Carry is not affected.
+   Stack lift flag enabled.
 
 
 .. object:: NEG
@@ -271,6 +308,7 @@ the top register (T) is duplicated.
    .. describe:: Affected flags
 
    Sign, zero and overflow flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: ABSI
@@ -287,6 +325,7 @@ the top register (T) is duplicated.
    .. describe:: Affected flags
 
    Sign, zero and overflow flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. index:: operations; double precision, double precision
@@ -304,6 +343,7 @@ Multiplication and divide are also available in double versions.
 
    Sign and zero flags set according to the result. The sign flag will
    have the correct value of the result. Overflow flag is cleared.
+   Stack lift flag enabled.
 
 
 .. object:: DDIV
@@ -316,6 +356,7 @@ Multiplication and divide are also available in double versions.
 
    Sign and zero flags set according to the result. Overflow flag is
    cleared. Carry set if remainder is non-zero, cleared otherwise.
+   Stack lift flag enabled.
 
 
 .. object:: DRMD
@@ -327,6 +368,7 @@ Multiplication and divide are also available in double versions.
    .. describe:: Affected flags
 
    Sign, zero and overflow flags set according to the result. Carry is not affected.
+   Stack lift flag enabled.
 
 
 .. index:: logical operations, operations; logical
@@ -341,6 +383,7 @@ Logical operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: OR
@@ -350,6 +393,7 @@ Logical operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: XOR
@@ -359,6 +403,7 @@ Logical operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: NOT
@@ -368,6 +413,7 @@ Logical operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. index:: rotation operations, shift operations, operations; shifts, operations; rotates
@@ -390,6 +436,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: SR _
@@ -406,6 +453,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: RL _
@@ -425,6 +473,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: RR _
@@ -444,6 +493,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: RLC _
@@ -462,6 +512,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: RRC _
@@ -480,6 +531,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 .. object:: ASR _
@@ -498,6 +550,7 @@ Shift operations
 
    Sign and zero flags set according to the result. Carry holds the
    last shifted out bit.
+   Stack lift flag enabled.
 
 
 
@@ -521,7 +574,7 @@ Bitwise operations
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: MASKR _
@@ -539,7 +592,7 @@ Bitwise operations
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. index:: sign extension
@@ -563,6 +616,7 @@ Bitwise operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: CB _
@@ -577,6 +631,7 @@ Bitwise operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: SB _
@@ -591,6 +646,7 @@ Bitwise operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. object:: B? _
@@ -606,7 +662,7 @@ Bitwise operations
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: BITSUM _
@@ -620,6 +676,7 @@ Bitwise operations
    .. describe:: Affected flags
 
    Sign and zero flags set according to the result.
+   Stack lift flag enabled.
 
 
 .. index:: compare operations, operations; compares
@@ -668,6 +725,7 @@ Here are the provided instructions that are related to comparing values:
 
    Sign, zero, overflow and carry flags are set according to result of
    the subtraction.
+   Stack lift flag enabled.
 
 
 .. object:: TST _
@@ -683,6 +741,7 @@ Here are the provided instructions that are related to comparing values:
    .. describe:: Affected flags
 
    Sign and zero flags set according to the value in the register.
+   Stack lift flag enabled.
 
 
 .. object:: GE?
@@ -694,7 +753,7 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: GT?
@@ -706,7 +765,7 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: LE?
@@ -718,7 +777,7 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: LT?
@@ -730,7 +789,7 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
 
 
 .. object:: =I _ _
@@ -746,7 +805,8 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. object:: ≠I _ _
 
@@ -761,7 +821,8 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. object:: <I _ _
 
@@ -777,7 +838,8 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. object:: <=I _ _
 
@@ -793,7 +855,8 @@ Here are the provided instructions that are related to comparing values:
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. note::
 
@@ -819,6 +882,7 @@ Memory related instructions
    .. describe:: Affected flags
 
    Sign and zero flags set according to the value loaded.
+   Stack lift flag enabled.
 
 
 .. object:: STI _
@@ -831,7 +895,8 @@ Memory related instructions
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. object:: <>I _ _
 
@@ -844,7 +909,8 @@ Memory related instructions
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 .. object:: DECI _
 
@@ -857,6 +923,7 @@ Memory related instructions
    .. describe:: Affected flags
 
    Sign and zero flags set according to the new value.
+   Stack lift flag enabled.
 
 
 .. object:: DSZI _
@@ -871,7 +938,8 @@ Memory related instructions
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 
 .. object:: INCI _
@@ -886,6 +954,7 @@ Memory related instructions
    .. describe:: Affected flags
 
    Sign and zero flags set according to the new value.
+   Stack lift flag enabled.
 
 
 .. object:: CLRI _
@@ -898,7 +967,8 @@ Memory related instructions
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 
 Miscellaneous instructions
@@ -917,7 +987,8 @@ Miscellaneous instructions
 
    .. describe:: Affected flags
 
-   None
+   Stack lift flag enabled.
+
 
 
 .. index:: window, display windows

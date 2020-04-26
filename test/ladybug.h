@@ -2,6 +2,7 @@
 #define __LADYBUG_H
 
 .import ladybug
+.import lb-test
 
 .postfix ALDI, PSEI, DSZI, DECI, INCI, WSIZE, CLRI (semi-merged-postfix)
 .postfix LDI, STI, CMP, SEX                        (semi-merged-postfix)

@@ -868,6 +868,28 @@ exitNoUserST_rom2:
               .shadow exitNoUserST - 1
               enrom1
 
+              .section Code1
+;;; Normal exit with loaded and modified user flags in ST.
+;;; This is the same as 'exitUserST', but it leads up to
+;;; XNFRPU, to enable stack lift.
+exitUserSTU:  c=0
+              dadd=c                ; select chip 0
+              c=regn  14
+              rcr     12
+              c=st                  ; write out user flags
+              rcr     -12
+              regn=c  14
+toXNFRPU:     golong  XNFRPU
+
+              .section Code2
+XNFRPU_UserST_rom2:
+              .shadow exitUserSTU - 1
+              enrom1
+
+              .section Code2
+XNFRPU_rom2:  .shadow toXNFRPU - 1
+              enrom1
+
 ;;; **********************************************************************
 ;;;
 ;;; PutX - Put back final X, update user flags accordingly
@@ -949,7 +971,7 @@ activateExit: ldi     .low12 ladybugShell
               goto    10$           ; (P+1) out of memory
                                     ; (P+2) success
                                     ; assume header address in A.X
-              goto    exitNoUserST
+              golong  XNFRPU
 10$:          golong  noRoom
 
               .name   "OCTS"
@@ -1018,8 +1040,7 @@ exitNoUserSTR1:
 
               .section Code, reorder
               .name   "EXITAPP"
-EXITAPP:      gosub   exitApp
-              golong  NFRC
+EXITAPP:      golong   exitApp
 
               .section Code, reorder
 noBuf:        gosub   errorMessage
@@ -3797,7 +3818,7 @@ STI:          nop
               rxq     loadX
               switchBank 2
               rxq     saveG
-              rgo     exitNoUserST_rom2
+              rgo     XNFRPU_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3847,7 +3868,7 @@ DECI00:       c=a
               c=n
               a=c
               rxq     saveG
-              rgo     exitUserST_rom2
+              rgo     XNFRPU_UserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -3900,7 +3921,7 @@ CLRI:         nop
               a=0
               b=0     x
               rxq     saveG
-              rgo     exitNoUserST_rom2
+              rgo     XNFRPU_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4144,7 +4165,7 @@ ALDI:         nop
               a=c     x             ; next digit size
               c=c-1   m
               gonc    40$
-              rgo     exitNoUserST_rom2
+              rgo     XNFRPU_rom2
 
 ;;; Display in base 10
 60$:          s1=1                  ; we are coming from ALDI
@@ -4158,7 +4179,7 @@ ALDI:         nop
               c=stk
               rcr     -7
               bcex    m
-              golong  XNFRC
+              golong  XNFRPU
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4176,7 +4197,7 @@ TST:          nop
               switchBank 2
               rxq     loadG
               rxq     setFlagsABx
-              rgo     exitUserST_rom2
+              rgo     XNFRPU_UserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -4250,7 +4271,7 @@ CMP:          nop
               st=0    Flag_Overflow
 15$:          abex    s             ; restore A.S
 20$:          rxq     setFlagsABx   ; set sign and zero flags
-              rgo     exitUserST_rom2
+              rgo     XNFRPU_UserST_rom2
 
 ;;; ----------------------------------------------------------------------
 ;;;
@@ -6157,7 +6178,7 @@ EXCHANGE:     nop
                                     ; also as we may have left zero in SCRATCH1,
                                     ; and having zero inside a buffer is
                                     ; considered unsafe (old card reader bug)
-              rgo     exitNoUserST_rom2
+              rgo     XNFRPU_rom2
 
 100$:         golong  noRoom
 

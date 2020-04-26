@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XROM Title="Ladybug test">
+  <Key Label="-LB TEST 1A" Kind="MCODE"/>
+  <Entry i="17" j="0"/>
+  <Key Label="LIFT?" Kind="MCODE"/>
+  <Entry i="17" j="1"/>
+  <Key Label="NOLIFT" Kind="MCODE"/>
+  <Entry i="17" j="3"/>
+  <Key Label="NOLIFT?" Kind="MCODE"/>
+  <Entry i="17" j="2"/>
+</XROM>
+

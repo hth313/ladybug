@@ -1,0 +1,344 @@
+;;; Test stack lift behavior
+
+#include "ladybug.h"
+
+LBL "TLIFT"
+
+;;; INTEGER should enable stack lift
+NOLIFT
+INTEGER
+NOLIFT?
+SF 99
+
+;;; WSIZE? should enable stack lift
+NOLIFT
+WSIZE?
+NOLIFT?
+SF 99
+
+;;; WSIZE is neutral
+WSIZE 16
+NOLIFT?
+SF 99
+
+NOLIFT
+WSIZE 16
+LIFT?
+SF 99
+
+;;; Numeric base change is neutral
+DECS
+NOLIFT?
+SF 99
+
+NOLIFT
+HEXS
+LIFT?
+SF 99
+
+;;; LASTXI enables stack lift
+LASTXI
+NOLIFT?
+SF 99
+
+;;; CLXI disables stack lift
+CLXI
+LIFT?
+SF 99
+
+;;; X<>YI enables stack lift
+X<>YI
+NOLIFT?
+SF 99
+
+;;; ENTERI disables stack lift
+ENTERI
+LIFT?
+SF 99
+
+;;; RDNI enables stack lift
+RDNI
+NOLIFT?
+SF 99
+
+;;; RUPI enables stack lift
+NOLIFT
+R^I
+NOLIFT?
+SF 99
+
+;;; ADD enables stack lift
+NOLIFT
+ADD
+NOLIFT?
+SF 99
+
+;;; SUB enables stack lift
+NOLIFT
+SUB
+NOLIFT?
+SF 99
+
+;;; MUL enables stack lift
+NOLIFT
+MUL
+NOLIFT?
+SF 99
+
+;;; DIV enables stack lift
+NOLIFT
+DIV
+NOLIFT?
+SF 99
+
+;;; RMD enables stack lift
+MASKR 04
+NOLIFT
+RMD
+NOLIFT?
+SF 99
+
+;;; ABSI enables stack lift
+NOLIFT
+ABSI
+NOLIFT?
+SF 99
+
+;;; NEG enables stack lift
+NOLIFT
+NEG
+NOLIFT?
+SF 99
+
+;;; NOT enables stack lift
+NOLIFT
+NOT
+NOLIFT?
+SF 99
+
+;;; AND enables stack lift
+NOLIFT
+AND
+NOLIFT?
+SF 99
+
+;;; OR enables stack lift
+NOLIFT
+OR
+NOLIFT?
+SF 99
+
+;;; XOR enables stack lift
+NOLIFT
+XOR
+NOLIFT?
+SF 99
+
+;;; SL enables stack lift
+NOLIFT
+SL 01
+NOLIFT?
+SF 99
+
+;;; SR enables stack lift
+NOLIFT
+SR 01
+NOLIFT?
+SF 99
+
+;;; RL enables stack lift
+NOLIFT
+RL 01
+NOLIFT?
+SF 99
+
+;;; RR enables stack lift
+NOLIFT
+RR 01
+NOLIFT?
+SF 99
+
+;;; SL enables stack lift
+NOLIFT
+SL 01
+NOLIFT?
+SF 99
+
+;;; RLC enables stack lift
+NOLIFT
+RLC 01
+NOLIFT?
+SF 99
+
+;;; RRC enables stack lift
+NOLIFT
+RRC 01
+NOLIFT?
+SF 99
+
+;;; ASR enables stack lift
+NOLIFT
+ASR 01
+NOLIFT?
+SF 99
+
+;;; DMUL enables stack lift
+NOLIFT
+DMUL
+NOLIFT?
+SF 99
+
+;;; DDIV enables stack lift
+MASKR 04
+NOLIFT
+DDIV
+NOLIFT?
+SF 99
+
+;;; DRMD enables stack lift
+MASKR 04
+NOLIFT
+DRMD
+NOLIFT?
+SF 99
+
+;;; B? enables stack lift
+MASKR 04
+NOLIFT
+B? 01
+NOLIFT?
+SF 99
+
+;;; CB enables stack lift
+NOLIFT
+CB 01
+NOLIFT?
+SF 99
+
+;;; SB enables stack lift
+NOLIFT
+SB 01
+NOLIFT?
+SF 99
+
+;;; MASKL enables stack lift
+NOLIFT
+MASKL 04
+NOLIFT?
+SF 99
+
+;;; MASKR enables stack lift
+NOLIFT
+MASKR 04
+NOLIFT?
+SF 99
+
+;;; LDI enables stack lift
+NOLIFT
+LDI 00
+NOLIFT?
+SF 99
+
+;;; STI enables stack lift
+NOLIFT
+STI 00
+NOLIFT?
+SF 99
+
+;;; ALDI enables stack lift
+NOLIFT
+ALDI X
+NOLIFT?
+SF 99
+
+;;; DECI enables stack lift
+NOLIFT
+DECI X
+NOLIFT?
+SF 99
+
+;;; INCI enables stack lift
+NOLIFT
+INCI X
+NOLIFT?
+SF 99
+
+;;; CLRI enables stack lift
+NOLIFT
+CLRI X
+NOLIFT?
+SF 99
+
+;;; DSZI enables stack lift
+NOLIFT
+DSZI X
+NOLIFT?
+SF 99
+
+;;; SEX enables stack lift
+NOLIFT
+SEX 08
+NOLIFT?
+SF 99
+
+;;; CMP enables stack lift
+NOLIFT
+CMP Z
+NOLIFT?
+SF 99
+
+;;; TST enables stack lift
+NOLIFT
+TST T
+NOLIFT?
+SF 99
+
+;;; BITSUM enables stack lift
+NOLIFT
+BITSUM X
+NOLIFT?
+SF 99
+
+;;; GE? enables stack lift
+integer 0x5
+integer 0x10
+CMP Y
+NOLIFT
+GE?
+NOLIFT?
+SF 99
+
+;;; GT? enables stack lift
+NOLIFT
+GE?
+NOLIFT?
+SF 99
+
+X<>YI
+CMP Y
+
+;;; LE? enables stack lift
+NOLIFT
+LE?
+NOLIFT?
+SF 99
+
+;;; LT? enables stack lift
+NOLIFT
+LT?
+NOLIFT?
+SF 99
+
+;;; <>I enables stack lift
+NOLIFT
+<>I Z T
+NOLIFT?
+SF 99
+
+;;; <I enables stack lift
+NOLIFT
+<I X Y
+NOLIFT?
+SF 99
+
+END
