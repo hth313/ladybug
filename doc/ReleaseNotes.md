@@ -8,11 +8,12 @@ supplied `.mod` file is properly configured for this, but if you
 extract the pages and do it manually, be careful!
 
 With version 1A you need to load the OS4 module in page 4 for Ladybug
-to work.
+to work. You will also need the Boost module to access the secondary
+functions in Ladybug.
 
 ## Version 1A
 
-Major update, May 1, 2020.
+Update to use OS4, May X, 2020.
 
 ### Notes
 
@@ -35,8 +36,8 @@ Major update, May 1, 2020.
   I believe is incorrect. It should either put 0 in X and disable
   stack lift (so that the next number replaces the 0 which represent
   the cancelled input), or it should leave the last digit and not exit
-  digit entry. Ladybug had another behavior in that it left the last
-  digit, disabled stack lift and ended digit entry. This has now been
+  digit entry. Ladybug had a third behavior in that it left the last
+  digit, ended digit entry and disabled stack lift. This has now been
   changed so that 0 is put in X and stack lift is disabled.
 
 
