@@ -20,6 +20,8 @@ cp src/ladybug.mod dist/
 cp -R doc/_build/html dist/doc
 cp doc/_build/latex/ladybug.pdf dist/doc
 cp doc/ReleaseNotes.html dist/
+mkdir dist/overlays
+cp overlays/i41CX+-retina.png dist/overlays/
 
 # Clean up some stuff we do not want
 rm -rf dist/doc/_sources
