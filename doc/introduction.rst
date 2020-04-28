@@ -34,6 +34,9 @@ page in the normal memory expansion space (page 7--F).
 
 You must also load the separate OS4 module in page 4 for Ladybug to work.
 
+The Boost module is also needed to access the secondary functions in
+Ladybug.
+
 This release
 ============
 
@@ -48,9 +51,12 @@ Ladybug allocates two registers from the free memory pool. Apart from
 this, it does not impose any restrictions on the environment and will
 run comfortable on any HP-41C, HP-41CV, HP-41CX or HP-41CL.
 
+Due to OS4 and Boost, some additional register space is needed to
+get it all properly running. You can expect that five registers are
+allocated by these three modules if you enable Ladybug integer mode.
+
 The XROM number used by this module is 16 and the private storage area
 is I/O buffer number 0.
-
 
 
 Using this guide
@@ -128,8 +134,8 @@ SOFTWARE.
 
 .. note::
 
-   Ladybug was previously (2018-2019) released under the BSD 3-clause license,
-   but it changed starting with version 1A.
+   Ladybug was previously (2017-2019) released under the BSD 3-clause license,
+   but it was changed starting with version 1A.
 
 
 The name

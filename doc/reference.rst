@@ -802,6 +802,7 @@ Here are the provided instructions that are related to comparing values:
    In program mode it skips over the next instruction if the two
    operands are not equal. In keyboard mode it displays ``YES`` or
    ``NO``.
+   This is a secondary function.
 
    .. describe:: Affected flags
 
@@ -818,6 +819,7 @@ Here are the provided instructions that are related to comparing values:
    In program mode it skips over the next instruction if the two
    operands are equal. In keyboard mode it displays ``YES`` or
    ``NO``.
+   This is a secondary function.
 
    .. describe:: Affected flags
 
@@ -835,6 +837,7 @@ Here are the provided instructions that are related to comparing values:
    registers, obeying current sign mode.
    In program mode it skips over the next instruction if the test
    is not true. In keyboard mode it displays ``YES`` or ``NO``.
+   This is a secondary function.
 
    .. describe:: Affected flags
 
@@ -852,6 +855,7 @@ Here are the provided instructions that are related to comparing values:
    registers, obeying current sign mode.
    In program mode it skips over the next instruction if the test
    is not true. In keyboard mode it displays ``YES`` or ``NO``.
+   This is a secondary function.
 
    .. describe:: Affected flags
 
@@ -906,10 +910,25 @@ Memory related instructions
 
    This function performs a register to register exchange, using
    arbitrary registers, or register indirect operands.
+   This is a secondary function.
 
    .. describe:: Affected flags
 
    Stack lift flag enabled.
+
+
+.. object:: VIEWI _
+
+   View the specified register without affecting the stack.
+
+   .. describe:: Postfix argument
+
+   A register, or a register indirection to a nibble register.
+   This is a secondary function.
+
+   .. describe:: Affected flags
+
+   None
 
 
 .. object:: DECI _

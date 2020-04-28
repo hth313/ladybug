@@ -37,3 +37,12 @@ usual.
 
 Another way to disable Ladybug is to turn the calculator off and
 unplug the module.
+
+Secondary functions
+===================
+
+Ladybug makes use of the secondary functions feature of OS4. To access
+these functions you need the Boost module installed which contains
+replacements for the ``XEQ`` and ``ASN`` functions to allow keyboard
+access to the secondary functions in the same way as ordinary
+functions.
