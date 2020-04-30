@@ -6330,6 +6330,8 @@ deepWake2:    enrom1
 ;;; ----------------------------------------------------------------------
 
 deepWake:     n=c
+              ldi     0x000         ; I need major version 0 at least
+              gosub   checkApiVersionOS4
               c=0     x             ; we look for buffer # 0
               gosub   findBuffer
               goto    pollret       ; (P+1) not found

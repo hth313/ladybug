@@ -6,7 +6,7 @@
                      (Legal7 #xCDD)
                      (Shell #xC00)
                      (LadybugFC2 #xFC2)
-                     (Tail #xFDF))
+                     (Tail #xFDB))
             (checksum #xFFF hp41)
             (fill 0))
     (memory Ladybug2 (position independent)
