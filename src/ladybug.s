@@ -59,9 +59,9 @@ KeyCode:      .macro  fun
 
 ;;; Define key code symbols we use
               KeyCode CLXI          ; create CLXI_Code symbol
-              KeyCode Literal       ; used for digit entry
+              KeyCode Literal       ; used for data entry
 
-;;; Macro to handle early key release during digit entry.
+;;; Macro to handle early key release during data entry.
 ;;; S13 (running flag) is borrowed here as we know we are not
 ;;; executing a program at the same time as we are entering
 ;;; numbers.
@@ -179,12 +179,12 @@ FatEnd:       .con    0,0
 ;;;
 ;;; Can also be used to check if a entered digit is in range.
 
-;;; Integer mode digit entry ongoing flag.
-;;; This is a cached copy of the system digit entry flag, used as it
+;;; Integer mode data entry ongoing flag.
+;;; This is a cached copy of the system data entry flag, used as it
 ;;; is easier to have single flag set internally.
-;;; The overall state is that the system digit entry and active shell
-;;; tells who is doing digit entry.
-IF_DigitEntry: .equ   4
+;;; The overall state is that the system data entry and active shell
+;;; tells who is doing data entry.
+IF_DataEntry: .equ    4
 
 
 ;;; ----------------------------------------------------------------------
@@ -348,15 +348,15 @@ Literal:      gosub   xargument     ; mark as special form
 XROMi:        .equ    160 + (XROMno / 4)
 XROMj:        .equ    64 * (XROMno % 4)
 
-;;; During digit entry, we use flag 9 to keep track of programming mode
+;;; During data entry, we use flag 9 to keep track of programming mode
 Flag_PRGM:    .equ    9
 
 ;;; **********************************************************************
 ;;;
-;;; The keyboard handler. We provide handlers for digit entry and ending
-;;; digit entry and point to the keyboard table to use.
+;;; The keyboard handler. We provide handlers for data entry and ending
+;;; data entry and point to the keyboard table to use.
 ;;; Do not support auto assigned top keys, it slows things down too much and
-;;; we rely on it for hexadecimal digit entry which should be fast.
+;;; we rely on it for hexadecimal data entry which should be fast.
 ;;;
 ;;; **********************************************************************
 
@@ -364,21 +364,21 @@ Flag_PRGM:    .equ    9
               .align  4
 keyHandler:   gosub   keyKeyboard   ; does not return
               .con    0             ; flags
-              .con    .low12 doDigit ; handle a digit
-              .con    .low12 clearDigitEntry ; end digit entry
+              .con    .low12 doDigit ; handle a data digit
+              .con    .low12 clearDataEntry ; end data entry
               .con    .low12 keyTable
                                     ; no transient termination entry needed
                                     ; we do not have keyboard secondaries
 
               .section Code
               .align  4
-clearDigitEntry:
+clearDataEntry:
               c=0     x
               gosub   findBuffer
-              goto    clearDigitEntry20 ; (P+1) should not happen
+              goto    clearDataEntry20 ; (P+1) should not happen
               c=data                ; get full header
-              cstex                 ; clear internal digit entry flag
-              st=0    IF_DigitEntry
+              cstex                 ; clear internal data entry flag
+              st=0    IF_DataEntry
               cstex
               pt=     8
               lc      0             ; clear window display
@@ -386,8 +386,8 @@ clearDigitEntry:
                                     ;   back to window 0 when leaving program
                                     ;   mode)
               data=c
-clearDigitEntry20:
-              golong  clearSystemDigitEntry
+clearDataEntry20:
+              golong  clearSystemDataEntry
 
 ;;; Handle numeric entry
               .align  4
@@ -399,15 +399,15 @@ doDigit:      releaseKey
               dadd=c                ; select chip 0
               ;; Import data entry flag to our own to have it handy.
               ;; We need to obey the global one which may be reset by an alarm,
-              ;; otherwise we may stay in digit entry after a control program
+              ;; otherwise we may stay in data entry after a control program
               ;; have executed, changing the stack entirely!
-              st=0    IF_DigitEntry
+              st=0    IF_DataEntry
               st=0    Flag_PRGM
               c=regn  14
               c=c+c   xs
               c=c+c   xs
-              gonc    10$           ; system digit entry not set
-              st=1    IF_DigitEntry
+              gonc    10$           ; system data entry not set
+              st=1    IF_DataEntry
 10$:          rcr     -2
               c=c+c   xs            ; are we in program mode?
               gonc    11$           ; no
@@ -426,15 +426,15 @@ doDigit:      releaseKey
               ?st=1   Flag_PRGM
               gonc    runMode
               rxq     prgmDigent    ; yes
-              goto    dig35         ; (P+1) start digit entry
-              acex                  ; (P+2) ongoing digit entry
+              goto    dig35         ; (P+1) start data entry
+              acex                  ; (P+2) ongoing data entry
               goto    dig40
 
-runMode:      ?st=1   IF_DigitEntry ; start of digit entry?
+runMode:      ?st=1   IF_DataEntry  ; start of data entry?
               goc     dig37         ; no
               rxq     liftStackS11  ; yes, check if we should lift stack
 
-;;; Start entry with 0, clear digit cache
+;;; Start entry with 0, clear data cache
 dig35:        c=regn  14
               rcr     8             ; set flag 22
               cstex
@@ -452,7 +452,7 @@ digAbort:     gosub   BLINK         ; not accepted key, blink
 
 backSpaceJ1:  goto    backSpace     ; relay
 
-;;; Ongoing digit entry, load X
+;;; Ongoing data entry, load X
 dig37:        rxq     loadX         ; load X to B.X-A
 dig40:        ?s1=1                 ; dispatch on base
               goc     hexoct        ; hex or octal
@@ -490,8 +490,8 @@ dig50:        c=0
 
 44$:          rxq     acceptAndSave ; Check if value is accepted, save it
               goto    digAbort      ; too big, blink and return
-              st=1    IF_DigitEntry
-              c=0     x             ; also set system digit entry
+              st=1    IF_DataEntry
+              c=0     x             ; also set system data entry
               dadd=c
               c=regn  14
               rcr     2
@@ -503,7 +503,7 @@ dig50:        c=0
               goto    kbDone
 
 ;;; Backspace is pressed, we have two cases.
-;;; 1. If entering digits, rub out one (do CLXI if deleting to 0)
+;;; 1. If entering data, rub out one digit (do CLXI if deleting to 0)
 ;;; 2. Perform CLXI
 backSpace:    ?st=1   Flag_PRGM     ; program mode?
               gonc    10$           ; no
@@ -513,7 +513,7 @@ backSpace:    ?st=1   Flag_PRGM     ; program mode?
               a=c
               goto    digBSP10J1
 
-10$:          ?st=1   IF_DigitEntry ; doing digit entry?
+10$:          ?st=1   IF_DataEntry  ; doing data entry?
               goc     digBSP        ; yes
               goto    keyCLXIJ1     ; no, do CLXI
 
@@ -529,7 +529,7 @@ kbDone:       releaseKey
                                     ;  if not released
 6$:           s13=0                 ; reset S13
               chk kb
-              golc    fastDigitEntry ; shortcut to key handler
+              golc    fastDataEntry ; short cut to key handler
               golong  NFRC          ; return without resetting keyboard
 10$:          rxq     displayPrgmLiteralDE
               goto    5$
@@ -547,13 +547,13 @@ bspNot0:      ?st=1   Flag_PRGM
               regn=c  X
               goto    20$
 10$:          rxq     saveLiteral
-20$:          ?st=1   IF_DigitEntry
+20$:          ?st=1   IF_DataEntry
               goc     kbDone
               goto    dig20
 
 keyCLXIJ1:    goto    keyCLXI            ; relay
 
-;;; Back arrow in digit entry
+;;; Back arrow in data entry
 digBSP:       releaseKey
               rxq     loadX
 digBSP10:     ?s1=1
@@ -595,7 +595,7 @@ dig10:        ?a#0                  ; zero result?
               goc     bspNot0       ; no
               ?b#0    x
               goc     bspNot0       ; no
-              st=0    IF_DigitEntry ; we rubbed out to last character
+              st=0    IF_DataEntry  ; we rubbed out to last character
               goto    bspNot0
 
               ;; Back arrow down to nothing left
@@ -604,7 +604,7 @@ dig20:        ?st=1   Flag_PRGM     ; in program mode?
               s11=0                 ; clear push flag in case user NULL the CLXI !!!
                                     ;  (this is not done in mainframe, but it
                                     ;   probably should have)
-keyCLXI:      rxq     clearDigitEntry
+keyCLXI:      rxq     clearDataEntry
               pt=     3             ; build complete 2 byte XROM instruction
               lc      XROMi >> 4
               lc      XROMi & 15
@@ -641,7 +641,7 @@ octBSP:       c=b     x             ; oct, upper part
               a=c     x
               goto    dig10
 
-dig25:        rxq     clearDigitEntry ; clear digit entry flags
+dig25:        rxq     clearDataEntry ; clear data entry flags
               gosub   DATOFF        ; clear flags
               gosub   BSTEP
               gosub   GETPC         ; remove XROM literal
@@ -653,7 +653,7 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
               .section Code, reorder
 ;;; **********************************************************************
 ;;;
-;;; Handle entry of digits in program mode.
+;;; Handle entry of data entry in program mode.
 ;;;
 ;;; Similar to XROMs with postfix arguments, we use an XROM function
 ;;; before the actual binary data embedded in a string literal.
@@ -665,7 +665,7 @@ dig25:        rxq     clearDigitEntry ; clear digit entry flags
 prgmDigent:   ?s12=1                ; private?
               golc    XMSGPR        ; yes
 
-              ?st=1   IF_DigitEntry ; start digit entry?
+              ?st=1   IF_DataEntry  ; start data entry?
               goc     50$           ; no
 
               pt=     0
@@ -2752,7 +2752,7 @@ rightShift:   switchBank 2
 
 Flag_LocalZeroFill: .equ   Flag_UpperHalf
 
-;;; Entry point to show program literal from digit entry. In this
+;;; Entry point to show program literal from data entry. In this
 ;;; case we want to fetch the literal from program memory (as we
 ;;; lost it when writing it), as well as saving internal flags.
 ;;; IN: B.X-N - literal
@@ -2782,7 +2782,7 @@ disPRGM10:    st=1    Flag_PRGM
               goto    display2
 
 ;;; Entry point with buffer address in B[12:10] and a need to save internal
-;;; flags. This is used by digit entry in run mode.
+;;; flags. This is used by data entry in run mode.
 displayXB10:  c=b
               rcr     10
               dadd=c
@@ -2796,12 +2796,12 @@ dis10:        c=data
               rxq     loadX         ; load and mask X
 dis20:        st=0    Flag_PRGM
 
-;;; During digit entry, check for a key up after about 0.1 seconds (here).
+;;; During data entry, check for a key up after about 0.1 seconds (here).
 ;;; If key released, set S12 so that the key handler will not exit
 ;;; via resetting keyboard, but instead allow for the next key to be
-;;; pressed while we are processing the current digit entry key.
+;;; pressed while we are processing the current data entry key.
 ;;; This is to allow for two rapid key presses.
-              ?st=1   IF_DigitEntry
+              ?st=1   IF_DataEntry
               gonc    12$
               releaseKey
 12$:
@@ -2932,9 +2932,9 @@ display2:     c=n                   ; check window#
               gonc    28$
 29$:          abex    x             ; restore A
 
-              ?st=1   IF_DigitEntry
+              ?st=1   IF_DataEntry
               gonc    31$
-              ldi     0x1f          ; show we are in digit entry mode
+              ldi     0x1f          ; show we are in data entry mode
               srsabc
 
               releaseKey
@@ -5278,7 +5278,7 @@ keyTable:
               ;; Logical column 0
               .con    0x10a         ; SIGMA+  (A digit)
               .con    0x10f         ; X<>Y    (F digit here)
-              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
+              .con    BuiltinKeyKeepDataEntry(0x0e) ; SHIFT
               KeyEntry ENTERI       ; ENTER^
               KeyEntry SUB          ; -
               KeyEntry ADD          ; +
@@ -5288,7 +5288,7 @@ keyTable:
               ;; Logical column 0, shifted
               KeyEntry SL           ; SIGMA+
               KeyEntry SWAPI        ; X<>Y
-              .con    BuiltinKeyKeepDigitEntry(0x0e) ; SHIFT
+              .con    BuiltinKeyKeepDataEntry(0x0e) ; SHIFT
               .con    0             ; CATALOG
               KeyEntry CMP          ; -
               KeyEntry TST          ; +
@@ -5362,7 +5362,7 @@ keyTable:
               .con    0x1ff         ; BACKARROW
               .con    BuiltinKey(0x0c) ; MODE ALPHA
               .con    BuiltinKey(0x0c) ; MODE PRGM
-              .con    BuiltinKeyKeepDigitEntry(0x0c) ; MODE USER
+              .con    BuiltinKeyKeepDataEntry(0x0c) ; MODE USER
               .con    0             ; OFF key special
 
               ;; Logical column 4, shifted
@@ -5752,9 +5752,9 @@ decpos:       b=0     xs            ; clear flag for digits above
               gonc    13$
               c=c+1   xs
 13$:          bcex    xs
-              ?st=1   IF_DigitEntry
+              ?st=1   IF_DataEntry
               gonc    150$
-              ldi     0x1f          ; show underscore if in digit entry
+              ldi     0x1f          ; show underscore if in data entry
               srsabc
 
               ?s13=1                ; key already released?
@@ -5767,7 +5767,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 
 ;;; Window set, we have to use 2 registers here which makes a bit slower,
 ;;; but the good news is that this is only used when asking for another
-;;; window explicitly, not when doing digit entry.
+;;; window explicitly, not when doing data entry.
 50$:          bcex                  ; B= lower part of binary number
                                     ; C[1:0] = upper part of binary number
               rcr     2
@@ -5886,7 +5886,7 @@ decpos:       b=0     xs            ; clear flag for digits above
 27$:          frsabc                ; space for positive
               goto    26$
 
-;;; Appending digits to alpha register
+;;; Append digits to alpha register
 ;;; M= lower part
 ;;; A= upper part
 80$:          sethex
@@ -6337,7 +6337,7 @@ deepWake:     n=c
               goto    pollret       ; (P+1) not found
               c=data                ; (P+2) reclaim it
               cstex
-              st=0    IF_DigitEntry ; clear digit entry
+              st=0    IF_DataEntry  ; clear data entry
               cstex
               c=0     s
               c=c+1   s
