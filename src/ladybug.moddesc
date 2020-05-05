@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ModFile FileFormat="MOD1" Title="Ladybug" Version="1A" PartNumber="" Author="Håkan Thörngren" Copyright="Håkan Thörngren" License="MIT" Comments="" Category="2" Hardware="0" MemoryModules="0" XMemoryModules="0">
-  <Page Name="Ladybug1" Identity="LB1A" Page="Any" PageGroup="1" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
-  <Page Name="Ladybug2" Identity="LB1A" Page="Any" PageGroup="1" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="Ladybug1" Identity="LB1A" Page="Any" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="Ladybug2" Identity="LB1A" Page="Any" PageGroup="0" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
 </ModFile>

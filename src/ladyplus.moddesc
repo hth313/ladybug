@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ModFile FileFormat="MOD1" Title="Ladybug" Version="1A" PartNumber="" Author="Håkan Thörngren" Copyright="Håkan Thörngren" License="MIT" Comments="" Category="7" Hardware="3" MemoryModules="4" XMemoryModules="2">
-  <Page Name="Ladybug1" Identity="LB1A" Page="Any" PageGroup="1" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
-  <Page Name="Ladybug2" Identity="LB1A" Page="Any" PageGroup="1" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
-  <Page Name="OS4" Identity="O41A" Page="4" PageGroup="1" Bank="1" BankGroup="2" RAM="0" WriteProtect="0" FAT="0"/>
-  <Page Name="OS4-2" Identity="O41A" Page="4" PageGroup="1" Bank="2" BankGroup="2" RAM="0" WriteProtect="0" FAT="0"/>
-  <Page Name="Boost1" Identity="BO1A" Page="Any" PageGroup="1" Bank="1" BankGroup="3" RAM="0" WriteProtect="0" FAT="1"/>
-  <Page Name="Boost2" Identity="BO1A" Page="Any" PageGroup="1" Bank="2" BankGroup="3" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="Ladybug1" Identity="LB1A" Page="Any" PageGroup="0" Bank="1" BankGroup="1" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="Ladybug2" Identity="LB1A" Page="Any" PageGroup="0" Bank="2" BankGroup="1" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="OS4" Identity="O41A" Page="4" PageGroup="0" Bank="1" BankGroup="2" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="OS4-2" Identity="O41A" Page="4" PageGroup="0" Bank="2" BankGroup="2" RAM="0" WriteProtect="0" FAT="0"/>
+  <Page Name="Boost1" Identity="BO1A" Page="Any" PageGroup="0" Bank="1" BankGroup="3" RAM="0" WriteProtect="0" FAT="1"/>
+  <Page Name="Boost2" Identity="BO1A" Page="Any" PageGroup="0" Bank="2" BankGroup="3" RAM="0" WriteProtect="0" FAT="0"/>
   <Page Name="NUT0" Identity="I" Page="0" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
   <Page Name="NUT1" Identity="F" Page="1" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
   <Page Name="NUT2" Identity="G" Page="2" PageGroup="0" Bank="1" BankGroup="0" RAM="0" WriteProtect="0" FAT="0"/>
