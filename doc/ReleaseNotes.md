@@ -40,6 +40,8 @@ Update to use OS4, May X, 2020.
   digit, ended digit entry and disabled stack lift. This has now been
   changed so that 0 is put in X and stack lift is disabled.
 
+* ALDI did not append anything to the alpha register if the value was
+  0, base was anything except decimal and zero-fill was inactive.
 
 ## Version 0C
 

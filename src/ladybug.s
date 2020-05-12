@@ -4160,6 +4160,8 @@ ALDI:         nop
 44$:          b=c     x             ; B.X= updated value
               ?st=1   Flag_ZeroFill
               goc     45$
+              ?c#0    m             ; last digit?
+              gonc    45$           ; yes, we always emit that one
               ?c#0    xs
               gonc    55$
               st=1    Flag_ZeroFill ; non-zero seen
