@@ -296,7 +296,7 @@ ladybugShell: .con    AppShell
               .con    .low12 displayX
               .con    .low12 keyHandler ; standard keys
               .con    .low12 keyHandler ; user keys
-              .con    0                 ; alpha keys, use default
+              .con    .low12 alphaKeys
               .con    .low12 myName
               .con    0                 ; no timeouts
 
@@ -369,6 +369,21 @@ keyHandler:   gosub   keyKeyboard   ; does not return
               .con    .low12 keyTable
                                     ; no transient termination entry needed
                                     ; we do not have keyboard secondaries
+
+              .section Code
+              .align 4
+alphaKeys:    gosub   keyKeyboard   ; does not return
+              .con    (1 << KeyFlagSparseTable) ; flags
+              .con    0             ; handle a digit
+              .con    0             ; end digit entry
+              .con    .low12 alphaKeyTable
+
+              .section Code
+              .align 4
+alphaKeyTable:
+              .con    58            ; RCL
+              KeyEntry ALDI
+              .con    0x100         ; end of table
 
               .section Code
               .align  4
