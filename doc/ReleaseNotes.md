@@ -20,6 +20,16 @@ Update to use OS4, May X, 2020.
 * The previous page 4 module is removed in this version. Instead you
   need to install the separate OS4 module in page 4.
 
+* The keyboard layout is slightly changed compared to version 0. You
+  now exit the integer mode by pressing shift-USER. The MASKL and MASKR
+  operations moved one step right and are now on the shifted PRGM and
+  ALPHA keys. The previous location for going back to float mode (PI
+  function on the normal keyboard) is now WSIZE?
+
+* The alpha keyboard in integer mode now has the ALDI instead of ARCL
+  and you can also exit integer mode while in alpha mode using
+  shift-USER.
+
 * Thanks to the new shell mechanism in OS4, the CLOCK function now
   works properly.
 
