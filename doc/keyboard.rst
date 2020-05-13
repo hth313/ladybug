@@ -14,6 +14,8 @@ number in the selected base.
 .. image:: calculator.png
    :height: 560
 
+The alpha mode keyboard is also slightly modified and hass the
+``ALDI`` function where ``ARCL`` normally is.
 
 .. index:: activation
 
@@ -37,6 +39,9 @@ usual.
 
 Another way to disable Ladybug is to turn the calculator off and
 unplug the module.
+
+The shifted USER key can also be used in alpha mode to exit integer
+mode.
 
 Secondary functions
 ===================

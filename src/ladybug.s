@@ -381,8 +381,10 @@ alphaKeys:    gosub   keyKeyboard   ; does not return
               .section Code
               .align 4
 alphaKeyTable:
-              .con    58            ; RCL
+              .con    58            ; shifted RCL, where ARCL usually is
               KeyEntry ALDI
+              .con    78            ; shifted USER
+              KeyEntry EXITAPP
               .con    0x100         ; end of table
 
               .section Code
