@@ -368,7 +368,6 @@ keyHandler:   gosub   keyKeyboard   ; does not return
               .con    .low12 clearDataEntry ; end data entry
               .con    .low12 keyTable
                                     ; no transient termination entry needed
-                                    ; we do not have keyboard secondaries
 
               .section Code
               .align 4
