@@ -23,6 +23,8 @@
                      (ExtensionHandlers #xF00)
                      (CAT7Shell #xF04)
                      (CatShell #xF0C)
+                     (DelayShell #xF14)
+                     (KeyInputShell #xF1C)
                      (BoostBankSwitchers1 #xFC3)
                      RPN (BoostFC2 #xFC2) (BoostPoll #xFDC))
             (checksum #xFFF hp41)

@@ -14,7 +14,7 @@ SRCS = ladybug.s bank2.s \
        secondaryFunctions.s semiMerged.s xmem.s  partial.s assignment.s timer.s \
        boost.s cat.s compile.s poll.s ramed.s xmemory.s xeq.s \
        assign.s readrom16.s writerom16.s random.s partialKeys.s \
-       compare.s \
+       compare.s delay.s \
        cn0b.s cn1b.s cn2b.s cn3b.s cn4b.s cn5b.s cn6b.s \
        cn7b.s cn8b.s cn9b.s cn10b.s cn11b.s \
        extfuns.s time.s extfuns2.s
