@@ -13,7 +13,7 @@ functions in Ladybug.
 
 ## Version 1A
 
-Update to use OS4, May X, 2020.
+Update to use OS4, May 2020.
 
 ### Notes
 
