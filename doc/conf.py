@@ -221,12 +221,25 @@ latex_elements = {
     'fncychap': '\\usepackage[Sonny]{fncychap}',
 
     # Additional stuff for the LaTeX preamble.
-    'preamble': '''
-% Enable unicode and use Courier New to ensure the card suit
-% characters that are part of the 'random' module examples
-% appear properly in the PDF output.
+    'preamble': r'''
 \usepackage{fontspec}
-\setmonofont{Courier New}
+% This gives lowered numbers, but I am not sure I like that, so it is disabled
+% \usepackage[osf,sups,scaled=.97]{XCharter} % osf for text, not math
+\usepackage{XCharter}
+% \usepackage{cabin} % sans serif
+% More distunguised lower-case L, no slash through 0
+\usepackage[varqu,varl,var0]{inconsolata} % sans serif typewriter
+\usepackage[libertine,bigdelims,vvarbb,scaled=1.03]{newtxmath} % bb from STIX
+\usepackage[cal=boondoxo]{mathalfa} % mathcal
+\usepackage{amssymb}
+\usepackage{newunicodechar}
+\newunicodechar{Σ}{$\Sigma$}
+\newunicodechar{μ}{$\mu$}
+\newunicodechar{÷}{$\div$}
+\newunicodechar{≤}{$\leq$}
+\newunicodechar{≠}{$\neq$}
+\newunicodechar{⊀}{$\measuredangle$}
+\newunicodechar{├}{$\vdash$}
 ''',
 
     # disable font inclusion
