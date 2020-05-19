@@ -332,7 +332,7 @@ texinfo_documents = [
 epub_title = u'Ladybug'
 epub_author = u'Håkan Thörngren'
 epub_publisher = u'hth313@gmail.com'
-epub_copyright = u'2018, Håkan Thörngren'
+epub_copyright = u'2020, Håkan Thörngren'
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'Ladybug'
