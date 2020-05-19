@@ -1,9 +1,8 @@
-The Ladybug module for the HP-41
-================================
+Ladybug for the HP-41
+=====================
 
-Welcome to the Ladybug module for the HP-41 calculator! Ladybug is a powerful
-tool, intended to be useful when you are debugging or working with low
-level matters related to computers.
+Ladybug is a powerful tool, intended to be useful when you are
+debugging or working with low level matters related to computers.
 
 Ladybug provides a new mode for you HP-41 calculator which allows it
 to work as a customizable integer binary calculator. It makes it easy
