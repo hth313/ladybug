@@ -597,7 +597,7 @@ Stack lift flag enabled.
 ASR _
 -----
 
-Aritmetic right shift. This duplicates the sign bit as the number
+Arithmetic right shift. This duplicates the sign bit as the number
 is shifted right. The most recent shifted out bit is placed in the
 carry.
 
