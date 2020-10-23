@@ -5447,26 +5447,26 @@ mul10:        gosub   GSB256        ; shift1   X * 2
               abex    x
               rtn
 
-;;; ----------------------------------------------------------------------
-;;;
-;;; div10 - divide by 10 using shifts.
-;;;
-;;; Algorithm (from Hacker's Delight):
-;;; http://www.hackersdelight.org/divcMore.pdf
-;;;
-;;; unsigned divu10(unsigned n) {
-;;;   unsigned q, r;
-;;;   q = (n >> 1) + (n >> 2);
-;;;   q = q + (q >> 4);
-;;;   q = q + (q >> 8);
-;;;   q = q + (q >> 16);
-;;;   q = q + (q >> 32);
-;;;   q = q >> 3;
-;;;   r = n - q*10;
-;;;   return q + ((r + 6) >> 4);
-;;; }
-;;;
-;;; ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+//
+// div10 - divide by 10 using shifts.
+//
+// Algorithm (from Hacker's Delight):
+// http://www.hackersdelight.org/divcMore.pdf
+//
+// unsigned divu10(unsigned n) {
+//   unsigned q, r;
+//   q = (n >> 1) + (n >> 2);
+//   q = q + (q >> 4);
+//   q = q + (q >> 8);
+//   q = q + (q >> 16);
+//   q = q + (q >> 32);
+//   q = q >> 3;
+//   r = n - q*10;
+//   return q + ((r + 6) >> 4);
+// }
+//
+// ----------------------------------------------------------------------
 
 div10:        acex                  ; save n in P[9:8]:Q
               regn=c  Q
