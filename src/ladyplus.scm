@@ -26,6 +26,7 @@
                      (DelayShell #xF14)
                      (KeyInputShell #xF1C)
                      (BoostBankSwitchers1 #xFC3)
+                     (BoostLegal7 #xCDD)
                      RPN (BoostFC2 #xFC2) (BoostPoll #xFDC))
             (checksum #xFFF hp41)
             (fill 0))
