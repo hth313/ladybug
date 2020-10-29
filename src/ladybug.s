@@ -3829,7 +3829,7 @@ LDI10:        acex
 STI:          nop
               nop
               gosub   argument
-              .con    Operand00     ; LDI 00 is default
+              .con    Operand00     ; STI 00 is default
               rxq     findIntegerBufferUserFlags
               rxq     loadX
               switchBank 2
@@ -6232,7 +6232,7 @@ EXCHANGE:     nop
 VIEWI:        nop
               nop
               gosub   argument
-              .con    Operand00     ; LDI 00 is default
+              .con    Operand00     ; VIEWI 00 is default
               rxq     findIntegerBuffer_rom2
               rxq     loadG
               c=b
