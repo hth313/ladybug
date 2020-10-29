@@ -4,7 +4,6 @@
 MAINFRAME = ../../mainframe/src
 OS4 = ../../OS4/src
 BOOST41 = ../../boost41/src
-LIB41 = ../../lib41/include
 
 VPATH = $(MAINFRAME):$(OS4):$(BOOST41)
 
@@ -22,12 +21,12 @@ OBJS = $(SRCS:%.s=%-plus.o)
 LADYPLUS = ladyplus.mod
 
 %-plus.o: %.s
-	asnut -DHP41CX --cpu=newt -I$(OS4) -I$(LIB41) -g --list-file=$(*F)-plus.lst $< -o $@
+	asnut -DHP41CX --cpu=newt -I$(OS4) -g --list-file=$(*F)-plus.lst $< -o $@
 
 all: $(LADYPLUS)
 
 $(LADYPLUS): $(OBJS) ladyplus.scm ladyplus.moddesc
-	lnnut -g $(OBJS) --list-file=ladyplus.lst --extra-output-formats=mod2 ladyplus.scm ladyplus.moddesc ../../lib41/src/lib41-os4.a
+	lnnut -g $(OBJS) --list-file=ladyplus.lst --extra-output-formats=mod2 ladyplus.scm ladyplus.moddesc
 
 clean:
 	rm $(OBJS) $(MOD)

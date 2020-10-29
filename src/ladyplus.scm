@@ -18,7 +18,7 @@
     ;; Boost
     (memory Boost1 (position independent)
             (bank 1) (address (#x0 . #xFFF))
-            (section (BoostFAT #x0) BoostCode BoostCode1 BoostTable Lib41Code
+            (section (BoostFAT #x0) BoostCode BoostCode1 BoostTable
                      BoostSecondary1
                      (ExtensionHandlers #xF00)
                      (CAT7Shell #xF04)
