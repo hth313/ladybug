@@ -27,7 +27,7 @@
                      (KeyInputShell #xF1C)
                      (BoostBankSwitchers1 #xFC3)
                      (BoostLegal7 #xCDD)
-                     RPN (BoostFC2 #xFC2) (BoostPoll #xFDC))
+                     RPN (BoostFC2 #xFC2) (BoostPoll #xFCE) (BoostPollPart2 #xFB6))
             (checksum #xFFF hp41)
             (fill 0))
     (memory Boost2 (position independent)
