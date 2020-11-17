@@ -16,6 +16,7 @@ SRCS = ladybug.s bank2.s \
        assign.s readrom16.s writerom16.s random.s partialKeys.s \
        compare.s delay.s returnStack.s luhn.s apx.s fixeng.s vmant.s \
        yntest.s alpha.s binbcds.s arithmetic.s code.s decode.s stack.s \
+       bufferUtils.s \
        cn0b.s cn1b.s cn2b.s cn3b.s cn4b.s cn5b.s cn6b.s \
        cn7b.s cn8b.s cn9b.s cn10b.s cn11b.s \
        extfuns.s time.s extfuns2.s
