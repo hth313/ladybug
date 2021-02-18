@@ -6,7 +6,7 @@ MOD = ladybug.mod ladybug.mod2
 all: $(MOD)
 
 %.o: %.s
-	asnut --cpu=NEWT -g -l $<
+	asnut --core=NEWT -g -l $<
 
 $(MOD): $(OBJS) linker.scm ladybug.moddesc
 	lnnut -g $(OBJS) --list-file=linker.lst  --extra-output-formats=mod2 linker.scm ladybug.moddesc -o ladybug
