@@ -1,5 +1,9 @@
-# Create an image with OS, Ratatosk and Ladybug as a single entity for
+# Create an image with OS, OS4, Boost41 and Ladybug as a single entity for
 # complete debugging.
+#
+# NOTE:
+# The hp41-OS4-interopability is intended to replace this, but I will
+# keep this one around for a while.
 
 MAINFRAME = ../../mainframe/src
 OS4 = ../../OS4/src
